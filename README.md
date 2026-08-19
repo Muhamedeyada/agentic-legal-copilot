@@ -45,7 +45,7 @@ server/src/
   presentation/      # Express routes, SSE
 client/src/          # React UI, AR/EN, RTL
 docs/
-data/corpus/         # synthetic / public contracts
+data/corpus/         # 32 synthetic AR/EN contracts + corpus_manifest.json
 teaching/
 ```
 
