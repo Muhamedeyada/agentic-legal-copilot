@@ -1,77 +1,74 @@
 # Agentic Legal Copilot
 
-ITI Instructor Assessment — **Variant D1T1**: Legal Contract Review & Research with bilingual Arabic + English (RTL and cross-lingual retrieval).
+ITI Instructor Assessment — **D1T1**: legal contract review and research, Arabic and English (RTL and cross-lingual retrieval).
 
-This repository is a governed, human-in-the-loop copilot for counsel: extract clauses, assess contractual risk, retrieve supporting authority in AR/EN, and draft a review memo that **does not ship without Counsel approval**.
+Counsel uploads a contract. The copilot extracts clauses, flags risk against a playbook, retrieves supporting chunks in AR/EN, and drafts a memo. The memo is not issued until Counsel approves it.
 
-**Stack (locked by `.cursorrules`):** Node.js + TypeScript (Express) in hexagonal layers on the server; React + Vite + Tailwind with RTL on the client.
+**Stack:** Node.js and TypeScript (Express) on the server, hexagonal layers. React, Vite and Tailwind on the client, with RTL for Arabic.
 
 ---
 
 ## Variant derivation (D1T1)
 
-Assessment identifiers are derived from student numbers (placeholder inputs used for this scaffold):
+From the assessment rule: Domain = (last two National ID digits) mod 7, Twist = (sum of all digits) mod 8.
 
 | Input | Formula | Result | Mapping |
 | --- | --- | --- | --- |
-| Domain seed `92` | `92 mod 7 = 1` | **D1** | Legal Contract Review & Research |
-| Twist seed `49` | `49 mod 8 = 1` | **T1** | Bilingual AR + EN (RTL + cross-lingual retrieval) |
+| Last two digits `92` | `92 mod 7 = 1` | **D1** | Legal — contract review and research |
+| Digit sum `49` | `49 mod 8 = 1` | **T1** | Bilingual AR + EN (RTL, cross-lingual retrieval) |
 
-**D1 — Legal Contract Review & Research.** Counsel uploads a contract (or a clause set). The system extracts structured clauses, flags risk, retrieves comparable language and corpus snippets, and produces a grounded review memo with citations.
+**D1.** Upload → segment clauses → compare to playbook → flag deviations → draft redline and risk memo. Agents: Clause Extractor, Risk Assessor, Memo Drafter. Counsel approves the memo. The failure mode to guard is silent omission of a dangerous clause.
 
-**T1 — Bilingual AR + EN.** The product must accept, retrieve, and present content in Arabic and English. Arabic UI surfaces are RTL (`dir="rtl"`). Retrieval is cross-lingual: an English query can surface Arabic corpus chunks (and vice versa) without leaking uncited generation.
-
----
-
-## Core principles
-
-1. **Clean / Hexagonal architecture.** `server/src/domain` and `server/src/application` never import LLM SDKs, vector databases, or Express. Adapters live in `infrastructure`; HTTP and SSE live in `presentation`.
-2. **Provider abstraction.** Completions, embeddings, and tool calls go through ports. Hosted API and local fallback are swappable adapters.
-3. **Typed multi-agent workflow.** Three agents plus an orchestrator communicate via typed schemas:
-   - **Clause Extractor** — structured clause inventory from the source contract.
-   - **Risk Assessor** — per-clause / per-theme risk with rationale and citations.
-   - **Memo Drafter** — bilingual review memo (Counsel-gated).
-4. **Human-in-the-loop.** Side-effecting operations (persist, export, send) and **final memo drafting** require Counsel approval.
-5. **Grounded answers.** Claims in the memo must cite retrieved corpus or contract spans. No silent invention of law or facts.
-6. **RTL-first client.** React sets `document.documentElement.dir` from locale. Arabic is not an afterthought CSS patch.
-7. **No secrets, no raw PII in git.** Conventional Commits. Corpus in this repo is synthetic or public-domain only.
+**T1.** Arabic documents must ingest and retrieve correctly. Queries work across languages. The UI is RTL for Arabic. Retrieval quality for Arabic is measured on its own, not mixed into an English-only score.
 
 ---
 
-## Repository layout
+## Design rules
+
+1. `server/src/domain` and `server/src/application` do not import LLM SDKs, vector clients, or Express.
+2. Completions and embeddings go through ports. Hosted and local adapters are selected by config.
+3. The three agents plus orchestrator use typed schemas.
+4. Side effects and final memo drafting require Counsel approval.
+5. Claims in answers and memos cite a chunk. If the corpus is not enough, the system refuses.
+6. The client sets `document.documentElement.dir` from the locale.
+7. Conventional Commits. No secrets and no real personal data in git. Corpus is synthetic or public.
+
+---
+
+## Layout
 
 ```
 server/src/
-  domain/            # entities, ports (zero npm framework imports)
+  domain/            # entities, ports
   application/       # use cases, DTOs, agent schemas, orchestrator
-  infrastructure/    # LLM / vector / approval adapters + config
-  presentation/      # Express routes, controllers, SSE
-client/src/          # React + Vite + Tailwind, AR/EN locale + RTL
-docs/                # BRD, design, architecture, security, eval, AI governance
-data/corpus/         # synthetic / public sample contracts (AR + EN)
-teaching/            # instructor-facing notes and walkthroughs
+  infrastructure/    # adapters and config
+  presentation/      # Express routes, SSE
+client/src/          # React UI, AR/EN, RTL
+docs/
+data/corpus/         # synthetic / public contracts
+teaching/
 ```
 
-npm workspaces: `@alc/server` and `@alc/client`, orchestrated from the root `package.json`.
+Root `package.json` is an npm workspace (`client`, `server`).
 
 ---
 
 ## Prerequisites
 
-| Tool | Suggested version | Why |
-| --- | --- | --- |
-| Node.js | 20+ (see `.nvmrc`) | Runtime for Express and Vite |
-| npm | 10+ | Workspaces |
-| Git | 2.40+ | Conventional Commits |
-| Optional: Docker | latest | Local Qdrant / later services |
-| Optional: Ollama (or equivalent) | latest | Local LLM fallback |
-| API key for a hosted chat + embedding provider | — | Development path; never commit the real key |
+| Tool | Version |
+| --- | --- |
+| Node.js | 20+ (`.nvmrc`) |
+| npm | 10+ |
+| Git | 2.40+ |
+| Docker | optional, for later services |
+| Ollama or similar | optional, local model |
+| Hosted API key | optional; never commit it |
 
-Copy `.env.example` → `.env` before running anything that talks to a provider.
+Copy `.env.example` to `.env` before calling a provider.
 
 ---
 
-## Quick start (scaffold)
+## Quick start
 
 ```powershell
 Copy-Item .env.example .env
@@ -79,62 +76,50 @@ npm install
 npm run dev
 ```
 
-| Script | What it does |
+| Script | |
 | --- | --- |
-| `npm run dev` | Server (`:3001`) and client (`:5173`) together |
-| `npm run dev:server` | Express only |
-| `npm run dev:client` | Vite only |
-| `npm run typecheck` | `tsc` on both workspaces |
+| `npm run dev` | API `:3001` and UI `:5173` |
+| `npm run dev:server` | API only |
+| `npm run dev:client` | UI only |
+| `npm run typecheck` | `tsc` on both packages |
 
-Smoke checks after `npm run dev`:
+What works today:
 
-- `GET http://127.0.0.1:3001/health` → `{ "status": "ok", "variant": "D1T1", ... }`
-- `GET http://127.0.0.1:3001/events` → SSE `hello` then `ping`
-- `POST http://127.0.0.1:3001/reviews/demo/memo` → **403** `APPROVAL_REQUIRED` while the Counsel gate is on
-- Client locale toggle flips `dir="rtl"` / `dir="ltr"`
+- `GET /health` — `{ "status": "ok", "variant": "D1T1" }`
+- `GET /events` — SSE heartbeat
+- `POST /reviews/:id/memo` — **403** `APPROVAL_REQUIRED` if Counsel has not approved
+- Locale toggle — `dir="rtl"` / `dir="ltr"`
 
-Agents are **stubs**. Do not expect clause extraction or a real memo yet.
+Clause extraction, retrieval, and memo text are not implemented yet.
 
 ---
 
 ## 5-minute demo path
 
-> Placeholder — fill after the MVP vertical slice exists.
+Update this table when the vertical slice is real. Current script:
 
-| Minute | Action | Expected evidence |
-| --- | --- | --- |
-| 0:00–0:45 | `npm run dev`; open client; toggle AR/EN | RTL layout; bilingual chrome |
-| 0:45–1:30 | Click Check `/health` | `{ status: "ok", variant: "D1T1" }` |
-| 1:30–2:15 | Upload a **synthetic** EN contract | Clause Extractor returns typed clause list |
-| 2:15–3:00 | Same flow on a **synthetic** AR contract | Clauses + RTL-safe presentation |
-| 3:00–3:45 | Cross-lingual question (EN query over AR clause / vice versa) | Retrieved chunks in both languages with citations |
-| 3:45–4:30 | Risk Assessor + Counsel gate | Memo **blocked** until approval (`403`) |
-| 4:30–5:00 | Approve as Counsel → Memo Drafter | Grounded bilingual memo; SSE progress; audit entry |
+1. `npm run dev` — open the UI, switch AR/EN, confirm RTL.
+2. Check `/health`.
+3. `POST /reviews/demo/memo` — expect 403 until approval exists.
 
-Demo contracts must be synthetic. Do not use real client agreements.
+Later: ingest one synthetic EN contract and one AR contract, a cross-lingual question with citations, risk flags, Counsel approve/reject/edit, then the memo.
+
+Do not demo on real client agreements.
 
 ---
 
-## Documentation index
+## Docs
 
-| Document | Purpose |
+| File | |
 | --- | --- |
-| [docs/BRD.md](docs/BRD.md) | Business requirements and traceability |
-| [docs/SYSTEM-DESIGN.md](docs/SYSTEM-DESIGN.md) | Target design vs MVP gap |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | C4 views, sequences, ADRs |
-| [docs/SECURITY.md](docs/SECURITY.md) | OWASP Web + LLM Top 10 mapping |
-| [docs/EVALUATION.md](docs/EVALUATION.md) | Golden set (25 Q/A) and bilingual metrics |
-| [docs/AGENTIC-WORKFLOW.md](docs/AGENTIC-WORKFLOW.md) | How this project is built with governed AI |
-| [docs/AI-USAGE-LOG.md](docs/AI-USAGE-LOG.md) | Per-session AI usage and decisions |
+| [docs/BRD.md](docs/BRD.md) | Requirements and traceability |
+| [docs/SYSTEM-DESIGN.md](docs/SYSTEM-DESIGN.md) | Target vs MVP gap |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | C4, sequences, ADRs |
+| [docs/SECURITY.md](docs/SECURITY.md) | OWASP Web and LLM |
+| [docs/EVALUATION.md](docs/EVALUATION.md) | Golden set and bilingual metrics |
+| [docs/AGENTIC-WORKFLOW.md](docs/AGENTIC-WORKFLOW.md) | Agents and repo rules |
+| [docs/AI-USAGE-LOG.md](docs/AI-USAGE-LOG.md) | Where a coding assistant was used |
 
----
+Teaching material: [`teaching/`](teaching/).
 
-## Teaching notes
-
-Instructor-facing material lives in [`teaching/`](teaching/). Keep walkthroughs aligned with the 5-minute demo and the evaluation golden set.
-
----
-
-## License / assessment use
-
-Prepared for ITI instructor assessment. Not a substitute for licensed legal advice. Outputs are assistive drafts for Counsel review only.
+This is an assistive draft for Counsel. It is not legal advice.

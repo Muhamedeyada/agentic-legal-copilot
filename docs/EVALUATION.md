@@ -38,7 +38,7 @@ Store fixtures later as `server/tests/evaluation/golden_set.jsonl` (one JSON obj
 
 Adjust IDs if a bucket needs another item; keep **total = 25**.
 
-### 1.3 Placeholder inventory
+### 1.3 Item inventory
 
 Fill `query` / `expected_answer` when corpus files exist.
 

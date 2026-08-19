@@ -2,7 +2,7 @@
 
 **Variant:** D1T1  
 **Stack:** Express (TypeScript) + React (Vite, RTL)  
-**Status:** Scaffold — Part A is the intended target; Part B tracks what the current MVP still lacks
+**Status:** Draft — Part A is the unconstrained target; Part B is what is actually running
 
 ---
 
@@ -69,7 +69,7 @@ Fill **Current MVP** as implementation lands. **Gap** is Target minus MVP. **Pha
 | ID | Capability (from Part A / BR) | Target | Current MVP | Gap | Phase |
 | --- | --- | --- | --- | --- | --- |
 | G-01 | Hexagonal TypeScript packages | Four layers + ports | Folders, entities, ports, stub orchestrator | Agents not implemented | Next: agent schemas + fakes |
-| G-02 | Express app + health | Locale-aware `/health` | Implemented | Auth later | Done (scaffold) |
+| G-02 | Express app + health | Locale-aware `/health` | Implemented | Auth later | Done |
 | G-03 | SSE endpoint | Agent progress events | Heartbeat `/events` only | Real event types | MVP-1 |
 | G-04 | Counsel memo gate | 403 until approval | `POST /reviews/:id/memo` uses `ApprovalPort` | Persist approvals; UI button | MVP-1 |
 | G-05 | React RTL shell | AR/EN toggle, `dir` | Locale provider + bilingual copy | Review workspace UI | MVP-1 |

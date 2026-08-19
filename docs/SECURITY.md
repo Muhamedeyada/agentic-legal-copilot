@@ -48,7 +48,7 @@ Adjust IDs if the course specifies a particular year.
 | LLM02 | Sensitive Information Disclosure | Contracts + keys in prompts | Redact secrets; do not send full `.env`; minimize prompt | TBD | |
 | LLM03 | Supply Chain | Model/provider swap | Ports + pinned model names in env; log `provider` + `model` | Factory stub | |
 | LLM04 | Data and Model Poisoning | Untrusted corpus | Git corpus = synthetic/public only; ingest MIME allow-list | `.gitignore` on binaries | |
-| LLM05 | Improper Output Handling | Memo rendered in React / exported | Encode output; citations required; no `dangerouslySetInnerHTML` from model | Client is text-only scaffold | |
+| LLM05 | Improper Output Handling | Memo rendered in React / exported | Encode output; citations required; no `dangerouslySetInnerHTML` from model | UI currently renders plain text only | |
 | LLM06 | Excessive Agency | Draft/send without human | Orchestrator: Memo Drafter and side effects **blocked** without Counsel approval | `ApprovalRequiredError` | |
 | LLM07 | System Prompt Leakage | Attackers ask for the prompt | Do not echo system prompts; least-privilege tools | TBD | |
 | LLM08 | Vector/embedding weaknesses | Cross-lingual index poisoning or leakage | Auth on upsert; metadata `lang` from detector not user claim alone | TBD | |

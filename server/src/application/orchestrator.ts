@@ -18,7 +18,7 @@ export interface OrchestratorPorts {
 
 /**
  * Coordinates Clause Extractor → Risk Assessor → (Counsel gate) → Memo Drafter.
- * Agent implementations are injected later; this scaffold only encodes the contract.
+ * Agent bodies are not wired yet; the class defines the call order and the gate.
  */
 export class ReviewOrchestrator {
   constructor(private readonly ports: OrchestratorPorts) {}

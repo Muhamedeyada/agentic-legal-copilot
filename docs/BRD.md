@@ -4,7 +4,7 @@
 **Variant:** D1T1 — Legal Contract Review & Research; bilingual AR + EN  
 **Stack:** Node.js + TypeScript (Express, hexagonal) · React + Vite + Tailwind (RTL)  
 **Audience:** Counsel (primary), paralegal (secondary), instructor (assessment)  
-**Status:** Scaffold — requirements to be refined as the MVP is specified
+**Status:** Draft — acceptance criteria will tighten as the MVP lands
 
 ---
 
