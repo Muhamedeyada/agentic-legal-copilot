@@ -1,0 +1,9 @@
+# Project Context & Architecture Rules
+- Domain: D1 (Legal Contract Review & Research)
+- Twist: T1 (Bilingual AR + EN with RTL support and cross-lingual retrieval)[cite: 1]
+- Stack: TypeScript / Node.js (Express or Fastify) for Backend, React (Vite + Tailwind/RTL) for Frontend.
+- Architecture: Strict Clean / Hexagonal Architecture. Core domain and application layers must NEVER depend on LLM SDKs, vector databases, or web frameworks[cite: 1].
+- Provider Abstraction: All AI models (completions, embeddings, tool calls) must use abstract interfaces with swappable adapters (e.g., hosted API vs. local fallback)[cite: 1].
+- Agents: 3 agents (Clause Extractor, Risk Assessor, Memo Drafter) + Orchestrator communicating via typed schemas[cite: 1].
+- Human-in-the-loop: Side-effecting operations and final memo drafting strictly require Counsel approval[cite: 1].
+- Commits & Git: Follow Conventional Commits. Never commit secrets or raw personal data[cite: 1].

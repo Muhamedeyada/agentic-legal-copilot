@@ -1,0 +1,58 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+coverage/
+*.tsbuildinfo
+
+# Vite
+client/dist/
+
+# Environment and secrets — never commit real values
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+secrets/
+credentials.json
+service-account*.json
+
+# IDE / editor
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Test / coverage
+.nyc_output/
+
+# Data that may contain sensitive or personal legal content
+data/uploads/
+data/runtime/
+*.sqlite
+*.db
+
+# Keep corpus placeholders; ignore dumped contract files unless they are synthetic
+data/corpus/*.pdf
+data/corpus/*.docx
+data/corpus/*.txt
+!data/corpus/.gitkeep
+!data/corpus/README.md
+
+# Vector stores / local indexes
+chroma_db/
+.qdrant/
+*.index
+
+# OS
+desktop.ini

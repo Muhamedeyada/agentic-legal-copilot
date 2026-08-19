@@ -1,0 +1,46 @@
+export type UiLocale = "ar" | "en";
+
+export const copy = {
+  en: {
+    product: "Agentic Legal Copilot",
+    variant: "D1T1 · Contract review · AR + EN",
+    toggle: "العربية",
+    intro:
+      "Governed review for counsel: extract clauses, assess risk, retrieve across Arabic and English, then draft a memo only after approval.",
+    extract: "Clause Extractor",
+    extractHint: "Structured clause inventory from the source contract.",
+    risk: "Risk Assessor",
+    riskHint: "Severity, rationale, and citations per clause.",
+    memo: "Memo Drafter",
+    memoHint: "Bilingual memo — blocked until Counsel approves.",
+    gate: "Counsel gate",
+    gateHint: "Side effects and final drafting require a human approval token.",
+    health: "API health",
+    healthIdle: "Not checked yet",
+    healthOk: "Server reachable",
+    healthFail: "Server unreachable — start npm run dev:server",
+    checkHealth: "Check /health",
+    scaffold: "Scaffold only. Agents are not wired to a live model yet.",
+  },
+  ar: {
+    product: "المساعد القانوني الوكيلي",
+    variant: "D1T1 · مراجعة العقود · عربي + إنجليزي",
+    toggle: "English",
+    intro:
+      "مراجعة محكومة للمستشار: استخراج البنود، تقييم المخاطر، استرجاع ثنائي اللغة، ثم صياغة المذكرة بعد الموافقة فقط.",
+    extract: "مستخرج البنود",
+    extractHint: "جرد منظم للبنود من نص العقد.",
+    risk: "مقيّم المخاطر",
+    riskHint: "الشدة والمبرر والاستشهاد لكل بند.",
+    memo: "صائغ المذكرة",
+    memoHint: "مذكرة ثنائية اللغة — موقوفة حتى موافقة المستشار.",
+    gate: "بوابة المستشار",
+    gateHint: "الآثار الجانبية والصياغة النهائية تتطلب موافقة بشرية.",
+    health: "صحة واجهة البرمجة",
+    healthIdle: "لم يُفحص بعد",
+    healthOk: "الخادم متاح",
+    healthFail: "الخادم غير متاح — شغّل npm run dev:server",
+    checkHealth: "فحص /health",
+    scaffold: "هيكل أولي فقط. الوكلاء غير متصلين بنموذج حي بعد.",
+  },
+} as const;
