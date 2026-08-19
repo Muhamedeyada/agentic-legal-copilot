@@ -1,93 +1,51 @@
-# Agentic workflow (governed AI setup)
+# Agentic workflow
 
-This project is built **with** AI assistance under explicit governance. The copilot we are building is also governed: three typed agents, an orchestrator, and Counsel in the loop.
+Two separate things live under this heading: how the **product** runs its three agents, and how **this repository** is built without the domain layer depending on SDKs.
 
 ---
 
-## 1. What “governed” means here
+## Product (runtime)
 
-| Rule | Practice |
+Review is not a single chat. An orchestrator calls three specialists with typed inputs and outputs:
+
+1. Clause Extractor — clause list from the contract
+2. Risk Assessor — severity and citations
+3. Memo Drafter — bilingual memo, only after Counsel approval
+
+```
+Orchestrator
+    → Clause Extractor
+    → Risk Assessor
+    → ApprovalPort (Counsel)
+    → Memo Drafter
+```
+
+Extractor and Assessor may read the vector store. They must not send email, write files, or publish a memo. Memo Drafter does not run until `ApprovalPort` says approved. That is the human gate in D1.
+
+---
+
+## Repository rules (how the code is written)
+
+Committed in `.cursorrules` so every change, with or without a coding assistant, is judged the same way:
+
+| Rule | Why |
 | --- | --- |
-| Architecture is non-negotiable | `.cursorrules` forbids domain/application from importing LLM SDKs, vector DBs, or Express |
-| Providers are ports | Completions, embeddings, and tools go through TypeScript interfaces; hosted vs local is an adapter choice |
-| Agents are typed | Clause Extractor, Risk Assessor, Memo Drafter speak schemas, not free-form chat |
-| Humans own side effects | Persist, export, send, and **final memo drafting** require Counsel approval |
-| Secrets stay out of git | Conventional Commits; `.env` never committed; no raw personal data |
-| Work is logged | Every substantial AI-assisted session is recorded in `docs/AI-USAGE-LOG.md` |
+| `domain` and `application` never import Express, an LLM SDK, or a vector client | Provider swap is an adapter, not a rewrite |
+| Completions and embeddings go through ports | Hosted vs local is configuration |
+| Agents talk schemas, not free text | Evaluation and tests can fail a bad payload |
+| Side effects and the final memo need Counsel | Matches D1 |
+| No secrets or real personal data in git | Assessment non-negotiable |
+
+I review imports on every change. If a domain file imports `express` or an OpenAI package, it is rejected.
+
+Prompts for the product will live as versioned files under a later `prompts/` tree, not as string literals in use cases. Until then, there are no live model calls.
 
 ---
 
-## 2. Instructor / developer loop (how we use Cursor)
+## Checks before I merge a change
 
-```
-You (intent) → .cursorrules + docs → Cursor agent → diff review → you approve → commit
-```
-
-1. **Specify.** Point at BRD / SYSTEM-DESIGN / the current gap row, not “just build an app”.
-2. **Constrain.** Keep hexagonal boundaries in the prompt (“ports in domain, Express only in presentation, React only in client”).
-3. **Generate small.** Prefer one layer or one agent schema per step — this scaffold is step 1.
-4. **Review as Counsel for code.** Check imports, secrets, and HITL. Reject any `domain` file that imports `express` or an OpenAI SDK.
-5. **Log.** Append `docs/AI-USAGE-LOG.md` with decisions, not only “used ChatGPT”.
-6. **Commit.** Conventional Commits (`feat:`, `docs:`, `chore:`). Never commit `.env`.
-
-Suggested Cursor usage:
-
-- Agent mode for scaffolding and boilerplate you will read.
-- Ask mode for architecture questions against `docs/ARCHITECTURE.md`.
-- Do not paste real contracts or live API keys into the chat.
-
----
-
-## 3. Runtime agent graph (the product)
-
-```
-                    ┌──────────────────┐
-                    │   Orchestrator   │
-                    │ (application)    │
-                    └────────┬─────────┘
-           ┌─────────────────┼─────────────────┐
-           ▼                 ▼                 ▼
-   Clause Extractor    Risk Assessor     Memo Drafter
-   typed clauses       severity+cites    bilingual memo
-           │                 │                 │
-           └────────┬────────┴────────┬────────┘
-                    ▼                 ▼
-             CompletionPort     ApprovalPort
-                    ▼                 ▼
-            infrastructure      Counsel (human)
-                    ▼
-              Express + SSE  →  React (RTL)
-```
-
-- Extractor and Assessor may run with retrieval (`VectorStorePort`) **without** creating an external side effect.
-- Memo Drafter is **not** invoked until `ApprovalPort` returns approved.
-- Orchestrator never “helpfully” emails a client.
-
----
-
-## 4. Tool and model policy
-
-- **Allowed in infrastructure only:** provider SDKs, HTTP clients, vector DB drivers.
-- **Allowed in presentation only:** Express, CORS, SSE headers.
-- **Allowed in domain:** entities, value objects, port *interfaces*, validation of citations — **zero npm framework imports**.
-- **Swappable:** if `LLM_PROVIDER` changes, use cases stay the same.
-- **Local fallback:** when hosted calls fail, the factory selects the local adapter; the user is told which provider produced the answer.
-
----
-
-## 5. Prompt and data hygiene
-
-- Contract body is **untrusted** (prompt-injection risk). Delimit it; never concatenate it as instructions.
-- Prompts should demand JSON conforming to the agent schema; invalid JSON is a hard fail, not a retry loop without a cap.
-- Evaluation queries live in `docs/EVALUATION.md` / later JSONL — not in production logs with full documents.
-
----
-
-## 6. Definition of done for an AI-assisted change
-
-- [ ] Matches the BRD row or gap-table id you named
-- [ ] No new inner-layer framework imports
-- [ ] No secrets in the diff
-- [ ] HITL still enforced if the change touches memo/export
-- [ ] `AI-USAGE-LOG.md` updated
-- [ ] Tests or a manual check noted for bilingual/RTL if UI or retrieval changed
+- Matches a BR or a row in the system-design gap table
+- No new framework import in domain/application
+- Memo/export still blocked without approval
+- This log updated if a coding assistant drafted more than a few lines
+- RTL still works if the UI or retrieval changed

@@ -1,6 +1,6 @@
 import { Router } from "express";
 
-/** SSE endpoint scaffold — stream agent progress events here in a later step. */
+/** SSE heartbeat. Agent progress events will use the same endpoint. */
 export function sseRouter(): Router {
   const router = Router();
 

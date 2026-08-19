@@ -15,7 +15,8 @@
     "build:server": "npm run build -w server",
     "build:client": "npm run build -w client",
     "start": "npm run start -w server",
-    "typecheck": "npm run typecheck -w server && npm run typecheck -w client"
+    "typecheck": "npm run typecheck -w server && npm run typecheck -w client",
+    "corpus:generate": "npx tsx scripts/generate_corpus.ts"
   },
   "engines": {
     "node": ">=20"

@@ -38,7 +38,6 @@ export default function App() {
       </header>
 
       <p className="mt-8 max-w-3xl text-lg leading-relaxed">{t.intro}</p>
-      <p className="mt-3 text-sm text-stone-600">{t.scaffold}</p>
 
       <section className="mt-10 grid gap-4 md:grid-cols-2">
         <AgentCard title={t.extract} hint={t.extractHint} />

@@ -1,0 +1,819 @@
+{
+  "corpus_id": "d1t1-synthetic-legal-v1",
+  "variant": "D1T1",
+  "generated_at": "2026-08-19T18:12:05.523Z",
+  "description": "Synthetic bilingual (AR+EN) contract corpus for Legal Contract Review & Research. No real personal data.",
+  "counts": {
+    "documents": 32,
+    "arabic": 16,
+    "english": 16,
+    "high_risk": 5,
+    "by_type": {
+      "nda": 8,
+      "sla": 6,
+      "msa": 6,
+      "saas": 6,
+      "employment": 6
+    }
+  },
+  "documents": [
+    {
+      "document_id": "D1T1-EN-NDA-001",
+      "filename": "D1T1-EN-NDA-001.md",
+      "language": "en",
+      "contract_type": "nda",
+      "version": "1.2",
+      "effective_date": "2024-01-15",
+      "title": "Mutual Non-Disclosure Agreement",
+      "parties": {
+        "disclosing_or_provider": "Helios Analytics Ltd",
+        "receiving_or_customer": "Nile Delta Trading SAE"
+      },
+      "governing_law": "England and Wales",
+      "clause_types": [
+        "confidentiality",
+        "liability_indemnification",
+        "termination_notice",
+        "governing_law_dispute_resolution",
+        "payment_terms_penalties"
+      ],
+      "high_risk": false,
+      "risk_indicators": [],
+      "synthetic": true
+    },
+    {
+      "document_id": "D1T1-EN-NDA-002",
+      "filename": "D1T1-EN-NDA-002.md",
+      "language": "en",
+      "contract_type": "nda",
+      "version": "1.0",
+      "effective_date": "2024-03-01",
+      "title": "One-Way Non-Disclosure Agreement",
+      "parties": {
+        "disclosing_or_provider": "Cobalt Systems GmbH",
+        "receiving_or_customer": "Qantara Retail LLC"
+      },
+      "governing_law": "laws of the Federal Republic of Germany",
+      "clause_types": [
+        "confidentiality",
+        "liability_indemnification",
+        "termination_notice",
+        "governing_law_dispute_resolution",
+        "payment_terms_penalties"
+      ],
+      "high_risk": false,
+      "risk_indicators": [],
+      "synthetic": true
+    },
+    {
+      "document_id": "D1T1-EN-NDA-003",
+      "filename": "D1T1-EN-NDA-003.md",
+      "language": "en",
+      "contract_type": "nda",
+      "version": "1.1",
+      "effective_date": "2024-06-10",
+      "title": "Mutual Confidentiality Deed",
+      "parties": {
+        "disclosing_or_provider": "Meridian Cloud Inc",
+        "receiving_or_customer": "Atlas Freight LLC"
+      },
+      "governing_law": "State of Delaware",
+      "clause_types": [
+        "confidentiality",
+        "liability_indemnification",
+        "termination_notice",
+        "governing_law_dispute_resolution",
+        "payment_terms_penalties"
+      ],
+      "high_risk": true,
+      "risk_indicators": [
+        {
+          "code": "unlimited_liability",
+          "article": "8.2",
+          "summary": "Liability cap disapplied; consequential and lost-profit claims left unlimited."
+        }
+      ],
+      "synthetic": true
+    },
+    {
+      "document_id": "D1T1-EN-NDA-004",
+      "filename": "D1T1-EN-NDA-004.md",
+      "language": "en",
+      "contract_type": "nda",
+      "version": "2.0",
+      "effective_date": "2025-02-01",
+      "title": "Evaluation NDA (Pilot Disclosure)",
+      "parties": {
+        "disclosing_or_provider": "Saffron Labs Pte Ltd",
+        "receiving_or_customer": "Red Sea Ports Authority Contracting Co"
+      },
+      "governing_law": "Singapore",
+      "clause_types": [
+        "confidentiality",
+        "liability_indemnification",
+        "termination_notice",
+        "governing_law_dispute_resolution",
+        "payment_terms_penalties"
+      ],
+      "high_risk": false,
+      "risk_indicators": [],
+      "synthetic": true
+    },
+    {
+      "document_id": "D1T1-AR-NDA-001",
+      "filename": "D1T1-AR-NDA-001.md",
+      "language": "ar",
+      "contract_type": "nda",
+      "version": "1.0",
+      "effective_date": "2024-02-20",
+      "title": "اتفاقية عدم إفشاء أسرار متبادلة",
+      "parties": {
+        "disclosing_or_provider": "شركة أفق التقنية ش.ذ.م.م",
+        "receiving_or_customer": "شركة وادي النيل للتوزيع ش.م.م"
+      },
+      "governing_law": "قوانين جمهورية مصر العربية",
+      "clause_types": [
+        "confidentiality",
+        "liability_indemnification",
+        "termination_notice",
+        "governing_law_dispute_resolution",
+        "payment_terms_penalties"
+      ],
+      "high_risk": false,
+      "risk_indicators": [],
+      "synthetic": true
+    },
+    {
+      "document_id": "D1T1-AR-NDA-002",
+      "filename": "D1T1-AR-NDA-002.md",
+      "language": "ar",
+      "contract_type": "nda",
+      "version": "1.3",
+      "effective_date": "2024-05-08",
+      "title": "اتفاقية عدم إفشاء أحادية الجانب",
+      "parties": {
+        "disclosing_or_provider": "شركة مدارات البرمجيات ش.ش.و",
+        "receiving_or_customer": "مؤسسة الخليج للخدمات اللوجستية"
+      },
+      "governing_law": "قوانين دولة الإمارات العربية المتحدة",
+      "clause_types": [
+        "confidentiality",
+        "liability_indemnification",
+        "termination_notice",
+        "governing_law_dispute_resolution",
+        "payment_terms_penalties"
+      ],
+      "high_risk": false,
+      "risk_indicators": [],
+      "synthetic": true
+    },
+    {
+      "document_id": "D1T1-AR-NDA-003",
+      "filename": "D1T1-AR-NDA-003.md",
+      "language": "ar",
+      "contract_type": "nda",
+      "version": "1.0",
+      "effective_date": "2024-09-01",
+      "title": "اتفاقية سرية لمشروع مشترك",
+      "parties": {
+        "disclosing_or_provider": "شركة النور للاستشارات المالية",
+        "receiving_or_customer": "شركة الرمال الذهبية للتطوير العقاري"
+      },
+      "governing_law": "أنظمة المملكة العربية السعودية",
+      "clause_types": [
+        "confidentiality",
+        "liability_indemnification",
+        "termination_notice",
+        "governing_law_dispute_resolution",
+        "payment_terms_penalties"
+      ],
+      "high_risk": false,
+      "risk_indicators": [],
+      "synthetic": true
+    },
+    {
+      "document_id": "D1T1-AR-NDA-004",
+      "filename": "D1T1-AR-NDA-004.md",
+      "language": "ar",
+      "contract_type": "nda",
+      "version": "1.1",
+      "effective_date": "2025-01-12",
+      "title": "اتفاقية سرية مع مورد",
+      "parties": {
+        "disclosing_or_provider": "شركة جسور البيانات ش.م.خ",
+        "receiving_or_customer": "مصنع الدلتا للصناعات الغذائية"
+      },
+      "governing_law": "قوانين سلطنة عمان",
+      "clause_types": [
+        "confidentiality",
+        "liability_indemnification",
+        "termination_notice",
+        "governing_law_dispute_resolution",
+        "payment_terms_penalties"
+      ],
+      "high_risk": false,
+      "risk_indicators": [],
+      "synthetic": true
+    },
+    {
+      "document_id": "D1T1-EN-SLA-001",
+      "filename": "D1T1-EN-SLA-001.md",
+      "language": "en",
+      "contract_type": "sla",
+      "version": "3.0",
+      "effective_date": "2024-04-01",
+      "title": "Managed Hosting Service Level Agreement",
+      "parties": {
+        "disclosing_or_provider": "Lumen Hosting Ltd",
+        "receiving_or_customer": "Cairo Medical Records Co"
+      },
+      "governing_law": "England and Wales",
+      "clause_types": [
+        "confidentiality",
+        "liability_indemnification",
+        "termination_notice",
+        "governing_law_dispute_resolution",
+        "payment_terms_penalties"
+      ],
+      "high_risk": false,
+      "risk_indicators": [],
+      "synthetic": true
+    },
+    {
+      "document_id": "D1T1-EN-SLA-002",
+      "filename": "D1T1-EN-SLA-002.md",
+      "language": "en",
+      "contract_type": "sla",
+      "version": "2.1",
+      "effective_date": "2024-07-15",
+      "title": "Payment Gateway Availability SLA",
+      "parties": {
+        "disclosing_or_provider": "Riviera Payments Inc",
+        "receiving_or_customer": "Souk Marketplace LLC"
+      },
+      "governing_law": "DIFC law",
+      "clause_types": [
+        "confidentiality",
+        "liability_indemnification",
+        "termination_notice",
+        "governing_law_dispute_resolution",
+        "payment_terms_penalties"
+      ],
+      "high_risk": false,
+      "risk_indicators": [],
+      "synthetic": true
+    },
+    {
+      "document_id": "D1T1-EN-SLA-003",
+      "filename": "D1T1-EN-SLA-003.md",
+      "language": "en",
+      "contract_type": "sla",
+      "version": "1.4",
+      "effective_date": "2025-03-01",
+      "title": "SOC Support Desk SLA",
+      "parties": {
+        "disclosing_or_provider": "Nightwatch SOC Ltd",
+        "receiving_or_customer": "Harbor Bank SAE"
+      },
+      "governing_law": "Arab Republic of Egypt",
+      "clause_types": [
+        "confidentiality",
+        "liability_indemnification",
+        "termination_notice",
+        "governing_law_dispute_resolution",
+        "payment_terms_penalties"
+      ],
+      "high_risk": false,
+      "risk_indicators": [],
+      "synthetic": true
+    },
+    {
+      "document_id": "D1T1-AR-SLA-001",
+      "filename": "D1T1-AR-SLA-001.md",
+      "language": "ar",
+      "contract_type": "sla",
+      "version": "2.0",
+      "effective_date": "2024-04-12",
+      "title": "اتفاقية مستوى الخدمة للحوسبة السحابية",
+      "parties": {
+        "disclosing_or_provider": "شركة سحاب المشرق لتقنية المعلومات",
+        "receiving_or_customer": "هيئة الخدمات البلدية التجريبية"
+      },
+      "governing_law": "قوانين إمارة أبوظبي",
+      "clause_types": [
+        "confidentiality",
+        "liability_indemnification",
+        "termination_notice",
+        "governing_law_dispute_resolution",
+        "payment_terms_penalties"
+      ],
+      "high_risk": false,
+      "risk_indicators": [],
+      "synthetic": true
+    },
+    {
+      "document_id": "D1T1-AR-SLA-002",
+      "filename": "D1T1-AR-SLA-002.md",
+      "language": "ar",
+      "contract_type": "sla",
+      "version": "1.0",
+      "effective_date": "2024-08-20",
+      "title": "اتفاقية مستوى خدمة لمكتب الدعم الفني",
+      "parties": {
+        "disclosing_or_provider": "شركة خط الدعم الذكي",
+        "receiving_or_customer": "جامعة النيل الأهلية (وحدة التحول الرقمي)"
+      },
+      "governing_law": "قوانين جمهورية مصر العربية",
+      "clause_types": [
+        "confidentiality",
+        "liability_indemnification",
+        "termination_notice",
+        "governing_law_dispute_resolution",
+        "payment_terms_penalties"
+      ],
+      "high_risk": true,
+      "risk_indicators": [
+        {
+          "code": "one_day_termination",
+          "article": "7",
+          "summary": "Either party may terminate for convenience on one calendar day's email notice, including weekends, with no wind-down."
+        }
+      ],
+      "synthetic": true
+    },
+    {
+      "document_id": "D1T1-AR-SLA-003",
+      "filename": "D1T1-AR-SLA-003.md",
+      "language": "ar",
+      "contract_type": "sla",
+      "version": "1.2",
+      "effective_date": "2025-01-05",
+      "title": "اتفاقية مستوى خدمة لشبكة الاتصالات",
+      "parties": {
+        "disclosing_or_provider": "شركة ألياف الصحراء للاتصالات",
+        "receiving_or_customer": "مجموعة التمور التجارية"
+      },
+      "governing_law": "أنظمة المملكة العربية السعودية",
+      "clause_types": [
+        "confidentiality",
+        "liability_indemnification",
+        "termination_notice",
+        "governing_law_dispute_resolution",
+        "payment_terms_penalties"
+      ],
+      "high_risk": false,
+      "risk_indicators": [],
+      "synthetic": true
+    },
+    {
+      "document_id": "D1T1-EN-MSA-001",
+      "filename": "D1T1-EN-MSA-001.md",
+      "language": "en",
+      "contract_type": "msa",
+      "version": "4.0",
+      "effective_date": "2023-11-01",
+      "title": "Master Services Agreement — Systems Integration",
+      "parties": {
+        "disclosing_or_provider": "Oakridge Integration Ltd",
+        "receiving_or_customer": "Delta Cement Holding SAE"
+      },
+      "governing_law": "England and Wales",
+      "clause_types": [
+        "confidentiality",
+        "liability_indemnification",
+        "termination_notice",
+        "governing_law_dispute_resolution",
+        "payment_terms_penalties"
+      ],
+      "high_risk": false,
+      "risk_indicators": [],
+      "synthetic": true
+    },
+    {
+      "document_id": "D1T1-EN-MSA-002",
+      "filename": "D1T1-EN-MSA-002.md",
+      "language": "en",
+      "contract_type": "msa",
+      "version": "2.2",
+      "effective_date": "2024-09-01",
+      "title": "Master Professional Services Agreement",
+      "parties": {
+        "disclosing_or_provider": "Brightline Advisory LLP",
+        "receiving_or_customer": "Maghreb Telecoms Ltd"
+      },
+      "governing_law": "laws of the State of New York",
+      "clause_types": [
+        "confidentiality",
+        "liability_indemnification",
+        "termination_notice",
+        "governing_law_dispute_resolution",
+        "payment_terms_penalties"
+      ],
+      "high_risk": false,
+      "risk_indicators": [],
+      "synthetic": true
+    },
+    {
+      "document_id": "D1T1-EN-MSA-003",
+      "filename": "D1T1-EN-MSA-003.md",
+      "language": "en",
+      "contract_type": "msa",
+      "version": "1.0",
+      "effective_date": "2025-04-01",
+      "title": "Outsourcing Master Agreement",
+      "parties": {
+        "disclosing_or_provider": "Peninsula BPO Pte Ltd",
+        "receiving_or_customer": "Levant Insurance Co"
+      },
+      "governing_law": "Singapore",
+      "clause_types": [
+        "confidentiality",
+        "liability_indemnification",
+        "termination_notice",
+        "governing_law_dispute_resolution",
+        "payment_terms_penalties"
+      ],
+      "high_risk": false,
+      "risk_indicators": [],
+      "synthetic": true
+    },
+    {
+      "document_id": "D1T1-AR-MSA-001",
+      "filename": "D1T1-AR-MSA-001.md",
+      "language": "ar",
+      "contract_type": "msa",
+      "version": "3.1",
+      "effective_date": "2024-01-07",
+      "title": "اتفاقية تقديم الخدمات الرئيسية لتقنية المعلومات",
+      "parties": {
+        "disclosing_or_provider": "شركة بناء النظم المتكاملة",
+        "receiving_or_customer": "بنك القناة التجاري"
+      },
+      "governing_law": "قوانين جمهورية مصر العربية",
+      "clause_types": [
+        "confidentiality",
+        "liability_indemnification",
+        "termination_notice",
+        "governing_law_dispute_resolution",
+        "payment_terms_penalties"
+      ],
+      "high_risk": false,
+      "risk_indicators": [],
+      "synthetic": true
+    },
+    {
+      "document_id": "D1T1-AR-MSA-002",
+      "filename": "D1T1-AR-MSA-002.md",
+      "language": "ar",
+      "contract_type": "msa",
+      "version": "1.0",
+      "effective_date": "2024-06-18",
+      "title": "اتفاقية خدمات استشارية رئيسية",
+      "parties": {
+        "disclosing_or_provider": "مكتب المشرق للحوكمة والمخاطر",
+        "receiving_or_customer": "شركة الأنابيب الصناعية ش.م.ع"
+      },
+      "governing_law": "قوانين مركز دبي المالي العالمي",
+      "clause_types": [
+        "confidentiality",
+        "liability_indemnification",
+        "termination_notice",
+        "governing_law_dispute_resolution",
+        "payment_terms_penalties"
+      ],
+      "high_risk": false,
+      "risk_indicators": [],
+      "synthetic": true
+    },
+    {
+      "document_id": "D1T1-AR-MSA-003",
+      "filename": "D1T1-AR-MSA-003.md",
+      "language": "ar",
+      "contract_type": "msa",
+      "version": "2.0",
+      "effective_date": "2024-12-01",
+      "title": "اتفاقية خدمات رئيسية للتشغيل والصيانة المعلوماتية",
+      "parties": {
+        "disclosing_or_provider": "شركة إسناد الخليج للتشغيل",
+        "receiving_or_customer": "الهيئة التجريبية للمناطق الصناعية"
+      },
+      "governing_law": "أنظمة المملكة العربية السعودية",
+      "clause_types": [
+        "confidentiality",
+        "liability_indemnification",
+        "termination_notice",
+        "governing_law_dispute_resolution",
+        "payment_terms_penalties"
+      ],
+      "high_risk": true,
+      "risk_indicators": [
+        {
+          "code": "uncapped_indemnity",
+          "article": "8",
+          "summary": "Customer indemnity for all loss classes, including indirect and punitive, with no monetary ceiling."
+        }
+      ],
+      "synthetic": true
+    },
+    {
+      "document_id": "D1T1-EN-SAAS-001",
+      "filename": "D1T1-EN-SAAS-001.md",
+      "language": "en",
+      "contract_type": "saas",
+      "version": "5.0",
+      "effective_date": "2024-05-01",
+      "title": "SaaS Subscription and Software Licence Agreement",
+      "parties": {
+        "disclosing_or_provider": "Folio Workspace Inc",
+        "receiving_or_customer": "North Africa Legal Aid Foundation"
+      },
+      "governing_law": "State of California",
+      "clause_types": [
+        "confidentiality",
+        "liability_indemnification",
+        "termination_notice",
+        "governing_law_dispute_resolution",
+        "payment_terms_penalties"
+      ],
+      "high_risk": true,
+      "risk_indicators": [
+        {
+          "code": "unilateral_ip",
+          "article": "10",
+          "summary": "Customer Data, derivatives, models and feedback assigned to the provider with only a revocable access right back."
+        }
+      ],
+      "synthetic": true
+    },
+    {
+      "document_id": "D1T1-EN-SAAS-002",
+      "filename": "D1T1-EN-SAAS-002.md",
+      "language": "en",
+      "contract_type": "saas",
+      "version": "2.3",
+      "effective_date": "2024-10-01",
+      "title": "On-Premises Software Licence (Perpetual, Support Annual)",
+      "parties": {
+        "disclosing_or_provider": "Kestrel ERP Ltd",
+        "receiving_or_customer": "Nile Cotton Mills SAE"
+      },
+      "governing_law": "England and Wales",
+      "clause_types": [
+        "confidentiality",
+        "liability_indemnification",
+        "termination_notice",
+        "governing_law_dispute_resolution",
+        "payment_terms_penalties"
+      ],
+      "high_risk": false,
+      "risk_indicators": [],
+      "synthetic": true
+    },
+    {
+      "document_id": "D1T1-EN-SAAS-003",
+      "filename": "D1T1-EN-SAAS-003.md",
+      "language": "en",
+      "contract_type": "saas",
+      "version": "1.6",
+      "effective_date": "2025-02-14",
+      "title": "API Access and Developer Licence",
+      "parties": {
+        "disclosing_or_provider": "Mapline Geospatial Ltd",
+        "receiving_or_customer": "Urban Mobility Cairo LLC"
+      },
+      "governing_law": "Ireland",
+      "clause_types": [
+        "confidentiality",
+        "liability_indemnification",
+        "termination_notice",
+        "governing_law_dispute_resolution",
+        "payment_terms_penalties"
+      ],
+      "high_risk": false,
+      "risk_indicators": [],
+      "synthetic": true
+    },
+    {
+      "document_id": "D1T1-AR-SAAS-001",
+      "filename": "D1T1-AR-SAAS-001.md",
+      "language": "ar",
+      "contract_type": "saas",
+      "version": "3.0",
+      "effective_date": "2024-03-22",
+      "title": "اتفاقية اشتراك في نظام موارد بشرية سحابي",
+      "parties": {
+        "disclosing_or_provider": "شركة موارد السحاب للبرمجيات",
+        "receiving_or_customer": "مجموعة الفنار للتجزئة"
+      },
+      "governing_law": "قوانين دولة الإمارات العربية المتحدة",
+      "clause_types": [
+        "confidentiality",
+        "liability_indemnification",
+        "termination_notice",
+        "governing_law_dispute_resolution",
+        "payment_terms_penalties"
+      ],
+      "high_risk": false,
+      "risk_indicators": [],
+      "synthetic": true
+    },
+    {
+      "document_id": "D1T1-AR-SAAS-002",
+      "filename": "D1T1-AR-SAAS-002.md",
+      "language": "ar",
+      "contract_type": "saas",
+      "version": "1.1",
+      "effective_date": "2024-11-11",
+      "title": "اتفاقية ترخيص نظام إدارة المستندات",
+      "parties": {
+        "disclosing_or_provider": "شركة أرشيف النيل الرقمية",
+        "receiving_or_customer": "مكتب الشروق للمحاماة والاستشارات"
+      },
+      "governing_law": "قوانين جمهورية مصر العربية",
+      "clause_types": [
+        "confidentiality",
+        "liability_indemnification",
+        "termination_notice",
+        "governing_law_dispute_resolution",
+        "payment_terms_penalties"
+      ],
+      "high_risk": false,
+      "risk_indicators": [],
+      "synthetic": true
+    },
+    {
+      "document_id": "D1T1-AR-SAAS-003",
+      "filename": "D1T1-AR-SAAS-003.md",
+      "language": "ar",
+      "contract_type": "saas",
+      "version": "2.0",
+      "effective_date": "2025-01-20",
+      "title": "اتفاقية برمجيات فوترة سحابية",
+      "parties": {
+        "disclosing_or_provider": "شركة حسابات المشرق",
+        "receiving_or_customer": "شركة المياه المعبأة الصفوة"
+      },
+      "governing_law": "أنظمة المملكة العربية السعودية",
+      "clause_types": [
+        "confidentiality",
+        "liability_indemnification",
+        "termination_notice",
+        "governing_law_dispute_resolution",
+        "payment_terms_penalties"
+      ],
+      "high_risk": false,
+      "risk_indicators": [],
+      "synthetic": true
+    },
+    {
+      "document_id": "D1T1-EN-EMP-001",
+      "filename": "D1T1-EN-EMP-001.md",
+      "language": "en",
+      "contract_type": "employment",
+      "version": "1.0",
+      "effective_date": "2024-02-01",
+      "title": "Contract of Employment — Senior Counsel",
+      "parties": {
+        "disclosing_or_provider": "Helios Analytics Ltd",
+        "receiving_or_customer": "Amira N. (synthetic employee identifier EMP-4412)"
+      },
+      "governing_law": "England and Wales",
+      "clause_types": [
+        "confidentiality",
+        "liability_indemnification",
+        "termination_notice",
+        "governing_law_dispute_resolution",
+        "payment_terms_penalties"
+      ],
+      "high_risk": false,
+      "risk_indicators": [],
+      "synthetic": true
+    },
+    {
+      "document_id": "D1T1-EN-EMP-002",
+      "filename": "D1T1-EN-EMP-002.md",
+      "language": "en",
+      "contract_type": "employment",
+      "version": "1.2",
+      "effective_date": "2024-08-01",
+      "title": "Independent Contractor Agreement — Data Engineer",
+      "parties": {
+        "disclosing_or_provider": "Riviera Payments Inc",
+        "receiving_or_customer": "Kite Systems Studio Ltd (contractor)"
+      },
+      "governing_law": "State of Delaware",
+      "clause_types": [
+        "confidentiality",
+        "liability_indemnification",
+        "termination_notice",
+        "governing_law_dispute_resolution",
+        "payment_terms_penalties"
+      ],
+      "high_risk": true,
+      "risk_indicators": [
+        {
+          "code": "punitive_late_fees",
+          "article": "6",
+          "summary": "Fifteen percent of outstanding balance charged per calendar day on late invoices, compounding daily, plus immediate suspension."
+        }
+      ],
+      "synthetic": true
+    },
+    {
+      "document_id": "D1T1-EN-EMP-003",
+      "filename": "D1T1-EN-EMP-003.md",
+      "language": "en",
+      "contract_type": "employment",
+      "version": "1.0",
+      "effective_date": "2025-03-15",
+      "title": "Fixed-Term Consulting Agreement — Playbook Author",
+      "parties": {
+        "disclosing_or_provider": "Oakridge Integration Ltd",
+        "receiving_or_customer": "Cedar Clause Review Ltd"
+      },
+      "governing_law": "Ireland",
+      "clause_types": [
+        "confidentiality",
+        "liability_indemnification",
+        "termination_notice",
+        "governing_law_dispute_resolution",
+        "payment_terms_penalties"
+      ],
+      "high_risk": false,
+      "risk_indicators": [],
+      "synthetic": true
+    },
+    {
+      "document_id": "D1T1-AR-EMP-001",
+      "filename": "D1T1-AR-EMP-001.md",
+      "language": "ar",
+      "contract_type": "employment",
+      "version": "1.0",
+      "effective_date": "2024-03-01",
+      "title": "عقد عمل محدد المدة — أخصائي امتثال",
+      "parties": {
+        "disclosing_or_provider": "شركة أفق التقنية ش.ذ.م.م",
+        "receiving_or_customer": "الموظف الاصطناعي رقم EMP-7781"
+      },
+      "governing_law": "قانون العمل الإماراتي والأنظمة ذات الصلة",
+      "clause_types": [
+        "confidentiality",
+        "liability_indemnification",
+        "termination_notice",
+        "governing_law_dispute_resolution",
+        "payment_terms_penalties"
+      ],
+      "high_risk": false,
+      "risk_indicators": [],
+      "synthetic": true
+    },
+    {
+      "document_id": "D1T1-AR-EMP-002",
+      "filename": "D1T1-AR-EMP-002.md",
+      "language": "ar",
+      "contract_type": "employment",
+      "version": "1.1",
+      "effective_date": "2024-09-15",
+      "title": "عقد استشارات قانونية على أساس أتعاب شهرية",
+      "parties": {
+        "disclosing_or_provider": "بنك القناة التجاري",
+        "receiving_or_customer": "مكتب النيل للاستشارات القانونية"
+      },
+      "governing_law": "قوانين جمهورية مصر العربية",
+      "clause_types": [
+        "confidentiality",
+        "liability_indemnification",
+        "termination_notice",
+        "governing_law_dispute_resolution",
+        "payment_terms_penalties"
+      ],
+      "high_risk": false,
+      "risk_indicators": [],
+      "synthetic": true
+    },
+    {
+      "document_id": "D1T1-AR-EMP-003",
+      "filename": "D1T1-AR-EMP-003.md",
+      "language": "ar",
+      "contract_type": "employment",
+      "version": "1.0",
+      "effective_date": "2025-02-01",
+      "title": "عقد عمل بدوام جزئي — مترجم قانوني",
+      "parties": {
+        "disclosing_or_provider": "شركة أرشيف النيل الرقمية",
+        "receiving_or_customer": "الموظف الاصطناعي رقم EMP-2209"
+      },
+      "governing_law": "قانون العمل المصري",
+      "clause_types": [
+        "confidentiality",
+        "liability_indemnification",
+        "termination_notice",
+        "governing_law_dispute_resolution",
+        "payment_terms_penalties"
+      ],
+      "high_risk": false,
+      "risk_indicators": [],
+      "synthetic": true
+    }
+  ]
+}
