@@ -20,7 +20,6 @@ export const copy = {
     healthOk: "Server reachable",
     healthFail: "Server unreachable — start npm run dev:server",
     checkHealth: "Check /health",
-    scaffold: "Scaffold only. Agents are not wired to a live model yet.",
   },
   ar: {
     product: "المساعد القانوني الوكيلي",
@@ -41,6 +40,5 @@ export const copy = {
     healthOk: "الخادم متاح",
     healthFail: "الخادم غير متاح — شغّل npm run dev:server",
     checkHealth: "فحص /health",
-    scaffold: "هيكل أولي فقط. الوكلاء غير متصلين بنموذج حي بعد.",
   },
 } as const;

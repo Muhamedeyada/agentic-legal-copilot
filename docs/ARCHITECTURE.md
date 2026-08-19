@@ -24,7 +24,7 @@ C4Context
   Rel(copilot, vdb, "Upsert / query via ports")
 ```
 
-**Placeholder:** Replace this sketch with a reviewed Context diagram (PNG or updated Mermaid) before the assessment demo.
+Export a PNG of this view before the demo if the examiner prefers images; keep the Mermaid as source.
 
 ---
 
@@ -50,7 +50,7 @@ C4Container
   Rel(app, db, "ApprovalPort / AuditPort")
 ```
 
-**Placeholder:** Add a Container diagram that names real adapters once they exist.
+Name the concrete adapters on this diagram when they are chosen (e.g. Qdrant vs Chroma).
 
 ---
 
@@ -101,7 +101,7 @@ flowchart LR
   UC --> E
 ```
 
-**Placeholder:** Component diagram should show **typed schemas** on each agent boundary (see `server/src/application/agents/schemas.ts`).
+Agent I/O types are in `server/src/application/agents/schemas.ts`.
 
 ---
 
@@ -133,13 +133,13 @@ sequenceDiagram
   end
 ```
 
-**Placeholder:** Add extract/assess sequences when those routes exist. Scaffold today: memo route always 403 until an approval adapter records the review id (in-memory, empty on boot).
+Until extract/assess routes exist, `POST /reviews/:id/memo` returns 403 because the in-memory approval store starts empty.
 
 ---
 
-## 5. C4 — Code (Level 4)
+## 5. Code path for `draftMemo`
 
-**Placeholder.** After the first vertical slice, document `draftMemo` end-to-end:
+Walk this list after the first working slice:
 
 - `presentation` DTO → `application` command
 - `ApprovalPort.isApproved()`
@@ -147,7 +147,7 @@ sequenceDiagram
 - `CompletionPort.complete()`
 - citation validator in `domain`
 
-Link to source files here when they exist. Current entrypoints:
+Current entrypoints:
 
 - `server/src/main.ts`
 - `server/src/presentation/http/app.ts`
@@ -209,4 +209,4 @@ Forbidden:
 - `server/src/domain/**` importing `express`, `openai`, vector clients, etc.
 - `server/src/application/**` doing the same.
 
-**Placeholder:** Add `dependency-cruiser` or an ESLint boundary rule in a later step.
+Add `dependency-cruiser` or an ESLint boundary rule before submission so this is machine-checked.
