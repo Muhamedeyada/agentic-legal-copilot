@@ -1,14 +1,17 @@
 import cors from "cors";
 import express, { type Express } from "express";
-import type { AppConfig } from "../../infrastructure/config.js";
+import type { HybridRetrieveUseCase } from "../../application/hybrid-retrieve.js";
 import { ReviewOrchestrator } from "../../application/orchestrator.js";
+import type { AppConfig } from "../../infrastructure/config.js";
 import { healthRouter } from "./routes/health.js";
-import { sseRouter } from "./routes/sse.js";
+import { retrieveRouter } from "./routes/retrieve.js";
 import { reviewsRouter } from "./routes/reviews.js";
+import { sseRouter } from "./routes/sse.js";
 
 export interface HttpDeps {
   readonly config: AppConfig;
   readonly orchestrator: ReviewOrchestrator;
+  readonly retrieve: HybridRetrieveUseCase;
 }
 
 export function createApp(deps: HttpDeps): Express {
@@ -24,6 +27,7 @@ export function createApp(deps: HttpDeps): Express {
   app.use("/health", healthRouter(deps.config));
   app.use("/events", sseRouter());
   app.use("/reviews", reviewsRouter(deps.orchestrator));
+  app.use("/retrieve", retrieveRouter(deps.retrieve));
 
   return app;
 }

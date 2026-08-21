@@ -9,6 +9,11 @@ export interface AppConfig {
   readonly openaiChatModel: string;
   readonly localLlmBaseUrl: string;
   readonly localLlmModel: string;
+  readonly embeddingProvider: "openai" | "local";
+  readonly embeddingModel: string;
+  readonly vectorStoreProvider: "file" | "memory";
+  readonly vectorIndexPath: string;
+  readonly corpusDir: string;
   readonly requireCounselApproval: boolean;
   readonly defaultLocale: "ar" | "en";
 }
@@ -19,6 +24,8 @@ function env(name: string, fallback: string): string {
 
 export function loadConfig(): AppConfig {
   const provider = env("LLM_PROVIDER", "openai");
+  const embeddingProvider = env("EMBEDDING_PROVIDER", "local");
+  const vectorStore = env("VECTOR_STORE_PROVIDER", "file");
   return {
     nodeEnv: env("NODE_ENV", "development"),
     port: Number(env("PORT", "3001")),
@@ -30,6 +37,11 @@ export function loadConfig(): AppConfig {
     openaiChatModel: env("OPENAI_CHAT_MODEL", "gpt-4o-mini"),
     localLlmBaseUrl: env("LOCAL_LLM_BASE_URL", "http://127.0.0.1:11434/v1"),
     localLlmModel: env("LOCAL_LLM_MODEL", "llama3.1"),
+    embeddingProvider: embeddingProvider === "openai" ? "openai" : "local",
+    embeddingModel: env("EMBEDDING_MODEL", "text-embedding-3-small"),
+    vectorStoreProvider: vectorStore === "memory" ? "memory" : "file",
+    vectorIndexPath: env("VECTOR_INDEX_PATH", "./data/runtime/vector-index.json"),
+    corpusDir: env("CORPUS_DIR", "./data/corpus"),
     requireCounselApproval: env("REQUIRE_COUNSEL_APPROVAL", "true") !== "false",
     defaultLocale: env("DEFAULT_LOCALE", "en") === "ar" ? "ar" : "en",
   };

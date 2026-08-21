@@ -10,6 +10,11 @@ export type {
   AssessRiskInput,
   DraftMemoInput,
   ReviewJob,
+  IngestCorpusResult,
+  IngestDocumentResult,
+  RetrieveQuery,
+  RetrieveResult,
+  CitationHit,
 } from "./dto.js";
 export type {
   ClauseExtractorOutput,
@@ -17,3 +22,5 @@ export type {
   MemoDrafterOutput,
 } from "./agents/schemas.js";
 export { ReviewOrchestrator } from "./orchestrator.js";
+export { IngestCorpusUseCase } from "./ingest-corpus.js";
+export { HybridRetrieveUseCase } from "./hybrid-retrieve.js";
