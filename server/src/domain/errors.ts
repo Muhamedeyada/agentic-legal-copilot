@@ -6,3 +6,12 @@ export class ApprovalRequiredError extends Error {
     this.name = "ApprovalRequiredError";
   }
 }
+
+export class LowEvidenceError extends Error {
+  readonly code = "NOT_ENOUGH_INFORMATION";
+
+  constructor(message = "Not enough information in the corpus.") {
+    super(message);
+    this.name = "LowEvidenceError";
+  }
+}

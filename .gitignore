@@ -48,6 +48,8 @@ data/corpus/*.docx
 data/corpus/*.txt
 !data/corpus/.gitkeep
 !data/corpus/README.md
+!data/corpus/*.md
+!data/corpus/corpus_manifest.json
 
 # Vector stores / local indexes
 chroma_db/
