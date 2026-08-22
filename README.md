@@ -84,6 +84,7 @@ npm run dev
 | `npm run typecheck` | `tsc` on both packages |
 | `npm run ingest` | Chunk + embed + index `data/corpus/` (idempotent) |
 | `npm run test` | Server unit tests (chunker, RRF, retrieve) |
+| `npm run eval` | FR-3 golden-set harness (deterministic, no paid API) |
 
 What works today:
 

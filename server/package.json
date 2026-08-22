@@ -9,7 +9,8 @@
     "start": "node dist/main.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "eval": "tsx src/evaluation/run_eval.ts"
   },
   "dependencies": {
     "cors": "^2.8.5",

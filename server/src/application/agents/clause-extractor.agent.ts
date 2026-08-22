@@ -5,6 +5,8 @@ import type { TokenUsage } from "../../domain/entities/workflow.js";
 import { ClauseExtractorOutputZ, parseContract } from "./schemas.js";
 import type { ClauseExtractorOutput } from "./contracts.js";
 import { classifyClause } from "./classify.js";
+import { TRUSTED_SYSTEM_PREFIX, wrapUntrustedDocument } from "../security/prompt-isolation.js";
+import { clipPrompt } from "../security/token-budget.js";
 import type { ToolRegistry } from "../tools/registry.js";
 import type { ToolContext } from "../tools/registry.js";
 
@@ -56,13 +58,15 @@ export class ClauseExtractorAgent {
     try {
       const result = await this.completion.complete({
         jsonSchemaName: "clause_extractor_output",
-        system:
-          "You extract contract clauses. Return JSON only matching {clauses: ExtractedClause[]}. Categories: liability, indemnity, ip, payment, termination, jurisdiction, confidentiality, other. Support Arabic and English headings.",
-        user: JSON.stringify({
-          contractId: input.contractId,
-          text: input.text.slice(0, 12_000),
-          hint: fallback.map((c) => ({ id: c.id, heading: c.heading, category: c.category })),
-        }),
+        system: `${TRUSTED_SYSTEM_PREFIX} Extract contract clauses. Return JSON only matching {clauses: ExtractedClause[]}. Categories: liability, indemnity, ip, payment, termination, jurisdiction, confidentiality, other. Support Arabic and English headings.`,
+        user: wrapUntrustedDocument(
+          input.contractId,
+          JSON.stringify({
+            contractId: input.contractId,
+            text: clipPrompt(input.text, 12_000),
+            hint: fallback.map((c) => ({ id: c.id, heading: c.heading, category: c.category })),
+          }),
+        ),
       });
       const parsed = parseContract(ClauseExtractorOutputZ, "ClauseExtractorOutput", parseJsonObject(result.text));
       return {

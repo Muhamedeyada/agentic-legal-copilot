@@ -17,6 +17,7 @@ export type {
   MemoDrafterOutput,
 } from "./agents/contracts.js";
 export { LegalWorkflowOrchestrator, ReviewOrchestrator } from "./orchestrator.js";
+export { CorpusRagUseCase, indexContractText } from "./chat/corpus-rag.js";
 export { CounselApprovalUseCase } from "./hitl/counsel-approval.js";
 export { DirectRagUseCase } from "./chat/direct-rag.js";
 export { RunEventBus } from "./orchestration/event-bus.js";

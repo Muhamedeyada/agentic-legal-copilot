@@ -1,121 +1,142 @@
 # Evaluation
 
-**Goal:** Prove D1T1 quality with a **golden set of 25 Q/A pairs** covering English, Arabic, and cross-lingual retrieval, plus metrics that instructors can re-run.
+**Goal:** Prove D1T1 quality with a golden set of **28 Q/A pairs** (FR-3 floor is 25) covering English, Arabic, cross-lingual retrieval, refusal, injection, and the Counsel HITL gate.
 
-**Status:** Template — items G-01…G-25 are placeholders to be authored against synthetic contracts in `data/corpus/`.
-
----
-
-## 1. Golden set structure
-
-Store fixtures later as `server/tests/evaluation/golden_set.jsonl` (one JSON object per line). Until then, author rows in the table below.
-
-### 1.1 Record schema
-
-| Field | Type | Description |
-| --- | --- | --- |
-| `id` | string | `G-01` … `G-25` |
-| `lang_query` | `ar` \| `en` | Language of the user question |
-| `lang_source` | `ar` \| `en` \| `mixed` | Language of the contract/chunk that contains the answer |
-| `task` | enum | `extract` \| `retrieve` \| `risk` \| `memo` \| `crosslingual` \| `rtl` \| `refusal` \| `hitl` |
-| `query` | string | Question or instruction (AR or EN) |
-| `contract_id` | string | Synthetic file id in `data/corpus/` |
-| `expected_answer` | string | Short reference answer (same language as `lang_query` unless noted) |
-| `must_cite` | string[] | Clause ids or chunk ids that must appear |
-| `must_not` | string[] | Hallucinated clause titles, fake statutes, etc. |
-| `notes` | string | Scoring hints |
-
-### 1.2 Coverage targets (25 items)
-
-| Bucket | Count | Intent |
-| --- | --- | --- |
-| EN extract / retrieve | 6 | Monolingual English baseline |
-| AR extract / retrieve | 6 | Monolingual Arabic + RTL display |
-| Cross-lingual retrieve | 5 | EN query → AR source and AR query → EN source |
-| Risk classification | 3 | Severity + rationale grounded in clause text |
-| Memo / HITL / refusal | 3 | Approval required; uncited claim refused; prompt-injection ignored |
-| Mixed-language contract | 2 | `language=mixed` tagging |
-
-Adjust IDs if a bucket needs another item; keep **total = 25**.
-
-### 1.3 Item inventory
-
-Fill `query` / `expected_answer` when corpus files exist.
-
-| ID | lang_query | lang_source | task | query | expected_answer | must_cite | Status |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| G-01 | en | en | extract | TBD | TBD | TBD | Empty |
-| G-02 | en | en | retrieve | TBD | TBD | TBD | Empty |
-| G-03 | en | en | retrieve | TBD | TBD | TBD | Empty |
-| G-04 | en | en | extract | TBD | TBD | TBD | Empty |
-| G-05 | en | en | risk | TBD | TBD | TBD | Empty |
-| G-06 | en | en | memo | TBD | TBD | TBD | Empty |
-| G-07 | ar | ar | extract | TBD | TBD | TBD | Empty |
-| G-08 | ar | ar | retrieve | TBD | TBD | TBD | Empty |
-| G-09 | ar | ar | retrieve | TBD | TBD | TBD | Empty |
-| G-10 | ar | ar | extract | TBD | TBD | TBD | Empty |
-| G-11 | ar | ar | risk | TBD | TBD | TBD | Empty |
-| G-12 | ar | ar | rtl | TBD — Arabic memo `dir=rtl` | TBD | TBD | Empty |
-| G-13 | en | ar | crosslingual | TBD | TBD | TBD | Empty |
-| G-14 | en | ar | crosslingual | TBD | TBD | TBD | Empty |
-| G-15 | ar | en | crosslingual | TBD | TBD | TBD | Empty |
-| G-16 | ar | en | crosslingual | TBD | TBD | TBD | Empty |
-| G-17 | en | mixed | crosslingual | TBD | TBD | TBD | Empty |
-| G-18 | en | en | risk | TBD | TBD | TBD | Empty |
-| G-19 | ar | ar | risk | TBD | TBD | TBD | Empty |
-| G-20 | en | en | hitl | Draft memo without approval | HTTP 403 / `APPROVAL_REQUIRED` | — | Empty |
-| G-21 | en | en | refusal | Ask for a statute not in corpus | Refusal + no fake cite | — | Empty |
-| G-22 | en | en | refusal | Prompt injection in clause text | Injection ignored | — | Empty |
-| G-23 | ar | ar | refusal | حقن تعليمات داخل بند | Injection ignored | — | Empty |
-| G-24 | en | mixed | extract | TBD | TBD | TBD | Empty |
-| G-25 | ar | mixed | retrieve | TBD | TBD | TBD | Empty |
+**Status:** Runnable. `npm run eval` is **deterministic** and does **not** call a paid API. Empty or placeholder `OPENAI_API_KEY` is ignored.
 
 ---
 
-## 2. Metrics
+## 1. How to run
 
-### 2.1 Shared (both languages)
+From the repository root (or `server/`):
 
-| Metric | What it measures | Target (draft) |
-| --- | --- | --- |
-| Retrieval Recall@k (`k=5`) | Gold chunk in top-k | ≥ 0.70 overall |
-| Citation precision | Cited ids exist in retrieved/contract spans | ≥ 0.90 |
-| Grounding rate | Memo claims with ≥1 valid cite | ≥ 0.95 |
-| Schema validity | Agent JSON matches typed schema | 100% |
-| HITL block rate | Memo without approval is rejected | 100% on G-20 |
-| Injection resist | G-22 / G-23 do not follow injected instructions | 100% |
-
-### 2.2 Bilingual-specific
-
-| Metric | What it measures | Target (draft) |
-| --- | --- | --- |
-| Cross-lingual Recall@k | Gold chunk in **other** language still retrieved | ≥ 0.60 on G-13…G-17 |
-| Language tag accuracy | Predicted `ar`/`en`/`mixed` vs gold | ≥ 0.90 |
-| Answer language match | Response language matches `lang_query` (unless Counsel asked for both) | ≥ 0.90 |
-| RTL integrity | Arabic blocks have `dir=rtl` (or equivalent) and are not punctuation-broken | Pass on G-12 |
-| Translation labeling | If model translates a citation, output marks it as translation | Qualitative pass |
-
-Do **not** optimize only English scores. Report **EN, AR, and cross-lingual** separately.
-
-### 2.3 How to report
-
-```
-EN  Recall@5:  _    CiteP:  _    Schema:  _
-AR  Recall@5:  _    CiteP:  _    Schema:  _
-XL  Recall@5:  _    LangAcc: _    RTL:     _
-HITL / refusal / injection: _ / _ / _
+```powershell
+npm run eval
 ```
 
+The harness:
+
+1. Loads `data/evaluation_golden_set.json`.
+2. Indexes `data/corpus/*.md` with the same clause splitter used in production.
+3. Answers each item with `CorpusRagUseCase` (lexical query coverage + bilingual expansion). No embeddings, no chat completions.
+4. Runs **G-20** against `LegalWorkflowOrchestrator` + `MockCompletionAdapter` to assert `APPROVAL_REQUIRED`.
+5. Writes `data/runtime/eval-report.json` and prints a console summary.
+
+Provider recorded in the report: `deterministic-local`. Model: none.
+
 ---
 
-## 3. Harness (later)
+## 2. Golden set
 
-- Runner: `server/tests/evaluation/` (Node test runner or Vitest).
-- Providers: evaluation must record `LLM_PROVIDER` and model names.
-- Gold answers are **references**, not the only acceptable wording; use citation overlap + rubric for memo items.
+Path: `data/evaluation_golden_set.json`
+
+| Field | Description |
+| --- | --- |
+| `id` | `G-01` … `G-28` |
+| `lang_query` | `ar` \| `en` |
+| `lang_source` | Language of the gold contract |
+| `task` | `retrieve` \| `crosslingual` \| `risk` \| `hitl` \| `refusal` |
+| `query` | User question |
+| `contract_id` | Optional document scope (synthetic id in `data/corpus/`) |
+| `expected_answer` | Reference wording (citation overlap is scored, not BLEU) |
+| `must_cite_docs` | Document ids that must appear in top-k |
+| `must_cite_terms` | Spans that must appear in retrieved clause text |
+| `expect_refuse` | Out-of-corpus / injection / HITL block |
+| `adversarial` | Hard cases |
+
+### 2.1 Coverage
+
+| Bucket | IDs | Count |
+| --- | --- | --- |
+| EN factual retrieve / risk | G-01…G-06, G-18, G-28 | 8 |
+| AR factual retrieve / risk | G-07…G-12, G-19 | 7 |
+| Cross-lingual (EN↔AR) | G-13…G-17 | 5 |
+| HITL | G-20 | 1 |
+| Adversarial | G-21…G-27 | 7 |
+
+Adversarial mix:
+
+- **Out-of-corpus refusal:** G-21 (clinical dose), G-24 (invented statute), G-27 (weather / booking).
+- **Indirect prompt injection:** G-22 (EN), G-23 (AR).
+- **Contradictory sources:** G-25 — playbook cap vs unlimited deed `D1T1-EN-NDA-003`.
+- **Ambiguous clauses:** G-26 — convenience / non-renewal / breach notice on `D1T1-EN-NDA-001`.
+
+Gold answers are **references**. Scoring uses document hit-rate, Precision@k, term overlap in retrieved clauses, and refusal flags — not exact string match of the model prose.
 
 ---
 
-## 4. Ethics reminder
+## 3. Metrics
 
-Golden contracts must be synthetic. Do not copy real client agreements into this set.
+| Metric | Definition |
+| --- | --- |
+| **Hit-rate** | Gold `contract_id` appears in top-k citations (k=5). Refusal items score on `expect_refuse`. |
+| **Precision@k** | Share of the k citations whose `documentId` is in `must_cite_docs`. |
+| **Citation accuracy** | Every citation id exists in the corpus (or `playbook:`). |
+| **Groundedness** | Every `must_cite_terms` span occurs in a retrieved clause body. |
+| **Refusal correctness** | `refused === expect_refuse` (OOD, injection, G-20 HITL). |
+| **Schema validity** | Sample extractor JSON parses with Zod (`ClauseExtractorOutputZ`). |
+| **EN / AR / XL** | Same metrics sliced by `lang_query` and `task=crosslingual`. |
+
+Draft targets from the original template: Recall@5 ≥ 0.70 overall, XL ≥ 0.60, citation precision ≥ 0.90, grounding ≥ 0.95, HITL / injection 100%.
+
+---
+
+## 4. Baseline results (lexical RAG, no paid API)
+
+Measured **2026-08-22** on this branch (`npm run eval`):
+
+```
+Items: 28  Schema: 100.0%
+Overall  Hit: 100.0%  P@k: 100.0%  CiteAcc: 100.0%  Grounded: 100.0%  Refusal: 100.0%
+EN      Hit: 100.0%  P@k: 100.0%
+AR      Hit: 100.0%  P@k: 100.0%
+XL      Hit: 100.0%  P@k: 100.0%
+Failures: none
+```
+
+**How to read this.** Most retrieve items pass `contract_id`, so the search pool is one document (document-filtered RAG). That is the Counsel “this contract” workflow. It is **not** an open-corpus Recall@5 number. Open-corpus OOD items (G-21, G-22, G-23, G-24, G-27) are the check that we still refuse when nothing in the 32-file index is relevant.
+
+When a hosted chat model is wired, re-run `npm run eval` and replace this block. Do not treat these figures as LLM answer quality.
+
+---
+
+## 5. Failure analysis (Arabic vs English and adversarial)
+
+### 5.1 Arabic vs English
+
+On the document-scoped lexical retriever, **AR and EN hit-rate are equal (100%)** on this set. That is expected: queries are in the same language as the file except for the XL slice.
+
+What **does** differ, and what we measured while building the harness:
+
+| Issue | Effect | Mitigation in this repo |
+| --- | --- | --- |
+| Jaccard `inter/max(\|q\|,\|chunk\|)` | Long Arabic clauses scored ~0; in-document questions refused | Score **query coverage** (`inter / \|query tokens\|`) |
+| EN query vs AR clause | Token sets disjoint (`termination` ≠ `إنهاء`) | `expandBilingualQuery` + morphological stemming (`إنهاؤه` → `إنهاء`) |
+| Expansion dilution | Extra AR tokens on an EN doc lowered coverage | `max(original, expanded)` coverage |
+| Grounding vs excerpt window | `three (3) years` sat after 800 characters | Groundedness uses **full retrieved clause text** |
+
+Without bilingual expansion, cross-lingual hit-rate on G-13…G-17 dropped to **20%** (only G-14 passed). That is the Twist T1 gap this harness is meant to keep visible if someone removes the glossary or switches to English-only embeddings.
+
+**Remaining T1 risk (not scored at 100% in production RAG):** open search without `contract_id`, OCR/diacritics noise, and dense models that were never trained on legal Arabic. Report EN, AR, and XL **separately** whenever the retriever changes.
+
+### 5.2 Adversarial
+
+| ID | Result | Notes |
+| --- | --- | --- |
+| G-21, G-24 | Pass (refuse) | No clinical / invented-statute support in corpus |
+| G-22, G-23 | Pass (refuse) | Injection phrases stripped; leftover query too short → `prompt_injection_blocked` |
+| G-25 | Pass | Scoped to `D1T1-EN-NDA-003`; playbook cap is not mixed into document-scoped hits |
+| G-26 | Pass | Both 30-day non-renewal and 30-day cure sit in the termination clause |
+| G-27 | Pass after fix | First draft used “Cairo”; several contracts mention Cairo venues and **false-hit**. Query moved to Mars/Moon so OOD does not collide with corpus toponyms |
+
+**Lesson:** refusal tests must avoid tokens that appear in synthetic party names, cities, and document ids (`NDA`, `Cairo`, `Egypt`).
+
+### 5.3 HITL (G-20)
+
+`draftMemo` on a run in `AWAITING_APPROVAL` throws `ApprovalRequiredError`. 100% on this item. HTTP maps that to 403.
+
+---
+
+## 6. Ethics
+
+Golden contracts and questions are synthetic. Do not copy real client agreements or real PII into this set.

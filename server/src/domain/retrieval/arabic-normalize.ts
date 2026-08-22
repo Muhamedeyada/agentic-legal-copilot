@@ -41,12 +41,60 @@ const EN_STOP = new Set([
 
 const AR_STOP = new Set(["في", "من", "على", "الى", "إلى", "و", "أو", "ان", "أن", "ال", "هذا", "هذه", "ذلك"]);
 
+function stemArabic(token: string): string {
+  if (!/[\u0600-\u06FF]/.test(token)) {
+    return token;
+  }
+  return token.replace(/(ها|هم|هن|ات|ون|ين|ان|وا)$/u, "").replace(/[هة]$/u, "");
+}
+
+function stemEnglish(token: string): string {
+  if (/ing$/.test(token) && token.length > 6) {
+    return token.slice(0, -3);
+  }
+  if (/ed$/.test(token) && token.length > 5) {
+    return token.slice(0, -2);
+  }
+  if (/s$/.test(token) && token.length > 4 && !token.endsWith("ss")) {
+    return token.slice(0, -1);
+  }
+  return token;
+}
+
 export function tokenize(text: string): string[] {
   const folded = normalizeArabic(text);
-  return folded
+  const parts = folded
     .split(/[^\p{L}\p{N}]+/u)
     .map((t) => t.trim())
     .filter((t) => t.length > 1 && !EN_STOP.has(t) && !AR_STOP.has(t));
+  const out: string[] = [];
+  for (const t of parts) {
+    out.push(t);
+    const ar = stemArabic(t);
+    if (ar !== t && ar.length > 2) {
+      out.push(ar);
+    }
+    const en = stemEnglish(t);
+    if (en !== t && en.length > 2) {
+      out.push(en);
+    }
+  }
+  return out;
+}
+
+export function queryCoverage(query: string, document: string): number {
+  const q = new Set(tokenize(query));
+  const d = new Set(tokenize(document));
+  if (q.size === 0) {
+    return 0;
+  }
+  let inter = 0;
+  for (const t of q) {
+    if (d.has(t)) {
+      inter += 1;
+    }
+  }
+  return inter / q.size;
 }
 
 export function tokenOverlap(a: string, b: string): number {

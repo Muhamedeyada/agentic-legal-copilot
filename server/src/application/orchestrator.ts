@@ -1,3 +1,4 @@
+import { redactPii } from "../domain/security/pii-redact.js";
 import { randomUUID } from "node:crypto";
 import { AsyncLocalStorage } from "node:async_hooks";
 import {
@@ -218,7 +219,7 @@ export class LegalWorkflowOrchestrator {
       runId: randomUUID(),
       contractId: input.contractId,
       language: input.language,
-      contractText: input.text,
+      contractText: redactPii(input.text).text,
       state: "INIT",
       clauses: [],
       findings: [],
