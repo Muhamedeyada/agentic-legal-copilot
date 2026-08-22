@@ -60,3 +60,12 @@ export class RunNotFoundError extends Error {
     this.name = "RunNotFoundError";
   }
 }
+
+export class RunCancelledError extends Error {
+  readonly code = "RUN_CANCELLED";
+
+  constructor(runId: string) {
+    super(`Workflow run ${runId} was cancelled.`);
+    this.name = "RunCancelledError";
+  }
+}

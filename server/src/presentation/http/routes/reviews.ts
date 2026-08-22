@@ -7,24 +7,11 @@ import {
 } from "../../../domain/errors.js";
 import type { LegalWorkflowOrchestrator } from "../../../application/orchestrator.js";
 import type { CounselApprovalUseCase } from "../../../application/hitl/counsel-approval.js";
+import { runSnapshot } from "../snapshot.js";
 import type { WorkflowRun } from "../../../domain/entities/workflow.js";
 
 function snapshot(run: WorkflowRun) {
-  return {
-    runId: run.runId,
-    contractId: run.contractId,
-    language: run.language,
-    state: run.state,
-    clauses: run.clauses,
-    findings: run.findings,
-    memo: run.memo,
-    rejectionReason: run.rejectionReason,
-    tokenUsage: run.tokenUsage,
-    traces: run.traces,
-    iteration: run.iteration,
-    createdAt: run.createdAt,
-    updatedAt: run.updatedAt,
-  };
+  return runSnapshot(run);
 }
 
 export function reviewsRouter(

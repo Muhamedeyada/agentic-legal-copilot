@@ -42,5 +42,7 @@ export {
   ToolNotAllowedError,
   SchemaViolationError,
   RunNotFoundError,
+  RunCancelledError,
 } from "./errors.js";
+export type { ContractCatalogPort, ContractRecord, ContractSummary } from "./ports/contract-catalog.port.js";
 export { assertTransition, canTransition } from "./workflow/transitions.js";

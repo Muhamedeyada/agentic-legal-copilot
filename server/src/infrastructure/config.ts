@@ -11,6 +11,7 @@ export interface AppConfig {
   readonly localLlmModel: string;
   readonly requireCounselApproval: boolean;
   readonly defaultLocale: "ar" | "en";
+  readonly corpusDir: string;
 }
 
 function env(name: string, fallback: string): string {
@@ -32,5 +33,6 @@ export function loadConfig(): AppConfig {
     localLlmModel: env("LOCAL_LLM_MODEL", "llama3.1"),
     requireCounselApproval: env("REQUIRE_COUNSEL_APPROVAL", "true") !== "false",
     defaultLocale: env("DEFAULT_LOCALE", "en") === "ar" ? "ar" : "en",
+    corpusDir: env("CORPUS_DIR", ""),
   };
 }

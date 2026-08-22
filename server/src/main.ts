@@ -13,6 +13,9 @@ const app = createApp({
   config,
   orchestrator: services.orchestrator,
   counselGate: services.counselGate,
+  events: services.events,
+  catalog: services.catalog,
+  rag: services.rag,
 });
 
 app.listen(config.port, config.host, () => {

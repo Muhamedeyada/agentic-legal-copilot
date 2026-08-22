@@ -4,6 +4,7 @@ import type { RunStorePort } from "../../domain/ports/run-store.port.js";
 import type { WorkflowRun } from "../../domain/entities/workflow.js";
 import { assertTransition } from "../../domain/workflow/transitions.js";
 import type { ReviewMemo } from "../../domain/entities/memo.js";
+import type { RunEventBus } from "../orchestration/event-bus.js";
 
 export interface CounselGateInput {
   readonly runId: string;
@@ -14,6 +15,7 @@ export class CounselApprovalUseCase {
   constructor(
     private readonly approval: ApprovalPort,
     private readonly runs: RunStorePort,
+    private readonly events?: RunEventBus,
   ) {}
 
   async approveRun(runId: string, counselId: string): Promise<WorkflowRun> {
@@ -25,6 +27,7 @@ export class CounselApprovalUseCase {
     }
     this.move(run, "COMPLETED");
     await this.runs.save(run);
+    this.announce(runId, "approved", run.updatedAt);
     return run;
   }
 
@@ -38,6 +41,7 @@ export class CounselApprovalUseCase {
     this.move(run, "REJECTED");
     this.move(run, "COMPLETED");
     await this.runs.save(run);
+    this.announce(runId, "rejected", run.updatedAt);
     return run;
   }
 
@@ -61,7 +65,12 @@ export class CounselApprovalUseCase {
     this.move(run, "EDITED");
     this.move(run, "COMPLETED");
     await this.runs.save(run);
+    this.announce(runId, "edited", run.updatedAt);
     return run;
+  }
+
+  private announce(runId: string, decision: "approved" | "rejected" | "edited", at: string): void {
+    this.events?.publish({ type: "HITL_DECISION", runId, at, decision });
   }
 
   private async requireAwaiting(runId: string): Promise<WorkflowRun> {
