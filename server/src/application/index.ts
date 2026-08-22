@@ -15,5 +15,6 @@ export type {
   ClauseExtractorOutput,
   RiskAssessorOutput,
   MemoDrafterOutput,
-} from "./agents/schemas.js";
-export { ReviewOrchestrator } from "./orchestrator.js";
+} from "./agents/contracts.js";
+export { LegalWorkflowOrchestrator, ReviewOrchestrator } from "./orchestrator.js";
+export { CounselApprovalUseCase } from "./hitl/counsel-approval.js";

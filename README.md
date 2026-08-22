@@ -82,15 +82,19 @@ npm run dev
 | `npm run dev:server` | API only |
 | `npm run dev:client` | UI only |
 | `npm run typecheck` | `tsc` on both packages |
+| `npm run ingest` | Chunk + embed + index `data/corpus/` (idempotent) |
+| `npm run test` | Server unit tests (chunker, RRF, retrieve) |
 
 What works today:
 
+- `npm run ingest` — clause-level chunks into `data/runtime/vector-index.json` (no Docker). Default embeddings are local/deterministic; set `EMBEDDING_PROVIDER=openai` and a real key to use `text-embedding-3-small`.
+- `POST /retrieve` `{ "query": "..." }` — hybrid dense + BM25 with RRF; citations or `NOT_ENOUGH_INFORMATION`
 - `GET /health` — `{ "status": "ok", "variant": "D1T1" }`
 - `GET /events` — SSE heartbeat
 - `POST /reviews/:id/memo` — **403** `APPROVAL_REQUIRED` if Counsel has not approved
 - Locale toggle — `dir="rtl"` / `dir="ltr"`
 
-Clause extraction, retrieval, and memo text are not implemented yet.
+Agents (extract / risk / memo draft) are not implemented yet.
 
 ---
 
