@@ -1,3 +1,4 @@
+import { redactPii } from "../domain/security/pii-redact.js";
 import { randomUUID } from "node:crypto";
 import { ApprovalRequiredError, MaxIterationsError, RunNotFoundError } from "../domain/errors.js";
 import type { CompletionPort } from "../domain/ports/completion.port.js";
@@ -103,7 +104,7 @@ export class LegalWorkflowOrchestrator {
       runId: randomUUID(),
       contractId: input.contractId,
       language: input.language,
-      contractText: input.text,
+      contractText: redactPii(input.text).text,
       state: "INIT",
       clauses: [],
       findings: [],
@@ -122,7 +123,7 @@ export class LegalWorkflowOrchestrator {
       await this.transition(run, "EXTRACTING");
       await this.step(run, "EXTRACTING", "clause_extractor", async () => {
         const { output, tokenUsage, usedLlm } = await this.extractor.run(
-          { contractId: input.contractId, text: input.text },
+          { contractId: input.contractId, text: run.contractText },
           { runId: run.runId, agentId: "clause_extractor", state: "EXTRACTING" },
         );
         run.clauses = [...output.clauses];

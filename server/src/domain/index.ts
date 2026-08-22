@@ -44,3 +44,6 @@ export {
   RunNotFoundError,
 } from "./errors.js";
 export { assertTransition, canTransition } from "./workflow/transitions.js";
+export { redactPii } from "./security/pii-redact.js";
+export { detectPromptInjection, stripInjectionPhrases } from "./security/prompt-injection.js";
+export { expandBilingualQuery } from "./retrieval/bilingual-expand.js";

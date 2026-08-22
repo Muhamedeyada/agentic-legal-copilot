@@ -10,5 +10,5 @@ export { MockCompletionAdapter } from "./llm/mock.adapter.js";
 export { InMemoryApprovalAdapter } from "./approval/in-memory.adapter.js";
 export { InMemoryPlaybookAdapter } from "./playbook/in-memory.adapter.js";
 export { InMemoryRunStoreAdapter } from "./runs/in-memory.adapter.js";
-export { createCompletionAdapter } from "./llm/factory.js";
+export { CappedCompletionAdapter } from "./llm/capped.adapter.js";
 export { createLegalServices } from "./composition.js";
