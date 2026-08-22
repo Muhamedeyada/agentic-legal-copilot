@@ -42,7 +42,9 @@ export {
   ToolNotAllowedError,
   SchemaViolationError,
   RunNotFoundError,
+  RunCancelledError,
 } from "./errors.js";
+export type { ContractCatalogPort, ContractRecord, ContractSummary } from "./ports/contract-catalog.port.js";
 export { assertTransition, canTransition } from "./workflow/transitions.js";
 export { redactPii } from "./security/pii-redact.js";
 export { detectPromptInjection, stripInjectionPhrases } from "./security/prompt-injection.js";

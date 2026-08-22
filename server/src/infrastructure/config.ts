@@ -11,6 +11,7 @@ export interface AppConfig {
   readonly localLlmModel: string;
   readonly requireCounselApproval: boolean;
   readonly defaultLocale: "ar" | "en";
+  readonly corpusDir: string;
   readonly rateLimitPerMinute: number;
   readonly maxPromptChars: number;
   readonly maxCompletionChars: number;
@@ -36,6 +37,7 @@ export function loadConfig(): AppConfig {
     localLlmModel: env("LOCAL_LLM_MODEL", "llama3.1"),
     requireCounselApproval: env("REQUIRE_COUNSEL_APPROVAL", "true") !== "false",
     defaultLocale: env("DEFAULT_LOCALE", "en") === "ar" ? "ar" : "en",
+    corpusDir: env("CORPUS_DIR", ""),
     rateLimitPerMinute: Number(env("RATE_LIMIT_PER_MINUTE", "60")),
     maxPromptChars: Number(env("MAX_PROMPT_CHARS", "12000")),
     maxCompletionChars: Number(env("MAX_COMPLETION_CHARS", "8000")),

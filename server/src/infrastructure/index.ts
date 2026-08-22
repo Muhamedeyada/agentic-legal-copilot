@@ -11,4 +11,6 @@ export { InMemoryApprovalAdapter } from "./approval/in-memory.adapter.js";
 export { InMemoryPlaybookAdapter } from "./playbook/in-memory.adapter.js";
 export { InMemoryRunStoreAdapter } from "./runs/in-memory.adapter.js";
 export { CappedCompletionAdapter } from "./llm/capped.adapter.js";
-export { createLegalServices } from "./composition.js";
+export { createCompletionAdapter } from "./llm/factory.js";
+export { createLegalServices, resolveCorpusDir } from "./composition.js";
+export { FileContractCatalogAdapter } from "./corpus/file-catalog.adapter.js";
