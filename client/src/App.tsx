@@ -15,9 +15,11 @@ import {
 } from "./api/client";
 import type { ContractRecord, ContractSummary, RagAnswer } from "./api/types";
 import { useWorkflowStream } from "./hooks/useWorkflowStream";
+import { CitationFocusProvider } from "./citation-focus";
 import { ContractPane } from "./components/ContractPane";
 import { AgentStepper } from "./components/AgentStepper";
 import { RiskPanel } from "./components/RiskPanel";
+import { RedlineViewer } from "./components/RedlineViewer";
 import { CounselGate } from "./components/CounselGate";
 import { CitationsPanel } from "./components/CitationsPanel";
 import { TraceDrawer } from "./components/TraceDrawer";
@@ -91,107 +93,138 @@ export default function App() {
   }, [health, t.healthFail, t.healthOk]);
 
   return (
-    <div className="mx-auto min-h-dvh max-w-7xl px-4 py-6 md:px-6">
-      <header className="flex flex-wrap items-start justify-between gap-4 border-b border-(--color-rule) pb-5">
-        <div>
-          <p className="text-xs font-medium tracking-wide text-(--color-accent)">{t.variant}</p>
-          <h1 className="mt-2 text-3xl font-semibold">{t.product}</h1>
-          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-stone-700">{t.intro}</p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <p className="text-xs text-stone-600" aria-live="polite">
-            {statusLabel}
-          </p>
-          <button
-            type="button"
-            className="rounded border border-(--color-ink) px-3 py-1.5 text-sm"
-            onClick={() => setLocale(locale === "ar" ? "en" : "ar")}
-          >
-            {t.toggle}
-          </button>
-          <button
-            type="button"
-            disabled={!selected || busy}
-            className="rounded bg-(--color-accent) px-4 py-2 text-sm text-white disabled:opacity-40"
-            onClick={() => void handleRun()}
-          >
-            {busy ? t.running : t.runReview}
-          </button>
-          {runId ? (
+    <CitationFocusProvider clauses={liveClauses}>
+      <div className="flex h-dvh flex-col overflow-hidden bg-slate-50">
+        <header className="z-20 flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-slate-800 bg-slate-900 px-4 py-2.5 text-white">
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-white/10 text-[11px] font-semibold tracking-wide">
+              D1
+            </span>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold tracking-tight">{t.product}</p>
+              <p className="truncate text-[11px] text-slate-300" dir="rtl">
+                {t.productAr}
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span
+              className="inline-flex items-center gap-2 rounded-full bg-white/10 px-2.5 py-1 text-[11px] text-slate-200"
+              aria-live="polite"
+            >
+              <span
+                className={`h-1.5 w-1.5 rounded-full ${
+                  health === true ? "bg-emerald-400 status-pulse" : health === false ? "bg-rose-400" : "bg-slate-400"
+                }`}
+              />
+              {statusLabel}
+            </span>
+            <div className="flex rounded-full bg-slate-800 p-0.5 text-[11px] font-medium">
+              <button
+                type="button"
+                className={`rounded-full px-2.5 py-1 transition duration-150 ${
+                  locale === "en" ? "bg-white text-slate-900" : "text-slate-300 hover:text-white"
+                }`}
+                onClick={() => setLocale("en")}
+              >
+                {t.langEn}
+              </button>
+              <button
+                type="button"
+                className={`rounded-full px-2.5 py-1 transition duration-150 ${
+                  locale === "ar" ? "bg-white text-slate-900" : "text-slate-300 hover:text-white"
+                }`}
+                onClick={() => setLocale("ar")}
+              >
+                {t.langAr}
+              </button>
+            </div>
             <button
               type="button"
-              className="rounded border border-(--color-rule) px-3 py-2 text-sm"
-              onClick={() => {
-                void cancelRun(runId);
-              }}
+              disabled={!selected || busy}
+              className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-slate-900 transition duration-150 hover:bg-slate-100 disabled:opacity-40"
+              onClick={() => void handleRun()}
             >
-              {t.cancel}
+              {busy ? t.running : t.runReview}
             </button>
-          ) : null}
-        </div>
-      </header>
+            {runId ? (
+              <button
+                type="button"
+                className="rounded-lg border border-white/20 px-3 py-2 text-sm text-slate-200 transition duration-150 hover:bg-white/10"
+                onClick={() => {
+                  void cancelRun(runId);
+                }}
+              >
+                {t.cancel}
+              </button>
+            ) : null}
+          </div>
+        </header>
 
-      <div className="mt-6 grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
-        <ContractPane
-          t={t}
-          locale={locale}
-          items={items}
-          selected={selected}
-          clauses={liveClauses}
-          onSelect={(id) => void handleSelect(id)}
-          onUpload={(file) => void handleUpload(file)}
-        />
-        <div className="flex flex-col gap-4">
-          <AgentStepper t={t} progress={progress} lastEvent={lastEvent} />
-          <RiskPanel t={t} findings={liveFindings} />
-        </div>
-      </div>
+        <main className="min-h-0 flex-1 overflow-y-auto lg:overflow-hidden">
+          <div className="mx-auto grid h-full max-w-[1680px] gap-4 p-4 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)_minmax(0,0.95fr)]">
+            <ContractPane
+              t={t}
+              locale={locale}
+              items={items}
+              selected={selected}
+              clauses={liveClauses}
+              loadingList={health === null && items.length === 0}
+              loadingClauses={progress.extract === "active" && liveClauses.length === 0}
+              onSelect={(id) => void handleSelect(id)}
+              onUpload={(file) => void handleUpload(file)}
+            />
+            <div className="flex min-h-0 flex-col gap-4 lg:overflow-y-auto lg:pe-1">
+              <AgentStepper t={t} progress={progress} lastEvent={lastEvent} />
+              <RiskPanel t={t} findings={liveFindings} loading={progress.risk === "active"} />
+              <RedlineViewer t={t} locale={locale} findings={liveFindings} clauses={liveClauses} />
+            </div>
+            <div className="flex min-h-0 flex-col gap-4 lg:overflow-y-auto lg:pe-1">
+              <CounselGate
+                t={t}
+                locale={locale}
+                snapshot={snapshot}
+                contractTitle={selected?.title ?? snapshot?.contractId ?? "contract"}
+                busy={busy}
+                drafting={progress.memo === "active"}
+                onApprove={(counselId) => {
+                  if (!runId) return;
+                  void approveRun(runId, counselId).then(setSnapshot);
+                }}
+                onReject={(counselId, reason) => {
+                  if (!runId) return;
+                  void rejectRun(runId, reason, counselId).then(setSnapshot);
+                }}
+                onEditApprove={(counselId, body) => {
+                  if (!runId) return;
+                  const edited = locale === "ar" ? { bodyAr: body } : { bodyEn: body };
+                  void editAndApproveRun(runId, counselId, edited).then(setSnapshot);
+                }}
+              />
+              <RagChat
+                t={t}
+                locale={locale}
+                {...(selected ? { documentId: selected.id } : {})}
+                result={rag}
+                busy={ragBusy}
+                onAsk={(query) => {
+                  setRagBusy(true);
+                  void askRag({
+                    query,
+                    language: locale,
+                    ...(selected ? { documentId: selected.id } : {}),
+                  })
+                    .then(setRag)
+                    .finally(() => setRagBusy(false));
+                }}
+              />
+              <CitationsPanel t={t} memoCitations={memoCitations} ragCitations={ragCitations} />
+            </div>
+          </div>
+        </main>
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-2">
-        <CounselGate
-          t={t}
-          locale={locale}
-          snapshot={snapshot}
-          busy={busy}
-          onApprove={(counselId) => {
-            if (!runId) return;
-            void approveRun(runId, counselId).then(setSnapshot);
-          }}
-          onReject={(counselId, reason) => {
-            if (!runId) return;
-            void rejectRun(runId, reason, counselId).then(setSnapshot);
-          }}
-          onEditApprove={(counselId, body) => {
-            if (!runId) return;
-            const edited = locale === "ar" ? { bodyAr: body } : { bodyEn: body };
-            void editAndApproveRun(runId, counselId, edited).then(setSnapshot);
-          }}
-        />
-        <div className="flex flex-col gap-4">
-          <RagChat
-            t={t}
-            locale={locale}
-            {...(selected ? { documentId: selected.id } : {})}
-            result={rag}
-            busy={ragBusy}
-            onAsk={(query) => {
-              setRagBusy(true);
-              void askRag({
-                query,
-                language: locale,
-                ...(selected ? { documentId: selected.id } : {}),
-              })
-                .then(setRag)
-                .finally(() => setRagBusy(false));
-            }}
-          />
-          <CitationsPanel t={t} memoCitations={memoCitations} ragCitations={ragCitations} />
-        </div>
-      </div>
-
-      <div className="mt-4">
         <TraceDrawer t={t} snapshot={snapshot} />
       </div>
-    </div>
+    </CitationFocusProvider>
   );
 }
