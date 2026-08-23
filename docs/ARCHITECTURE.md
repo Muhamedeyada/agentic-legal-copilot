@@ -133,7 +133,7 @@ sequenceDiagram
   end
 ```
 
-Until extract/assess routes exist, `POST /reviews/:id/memo` returns 403 because the in-memory approval store starts empty.
+`POST /reviews/:id/memo` returns 403 while the run is `AWAITING_APPROVAL` (or the run id is unknown). Counsel uses `/api/workflow/:runId/approve` (or the UI). The live stream is `GET /api/workflow/stream/:runId`, not the heartbeat `/events` route.
 
 ---
 
@@ -164,7 +164,7 @@ Keep ADRs short: context, decision, consequences. Four records are required for 
 
 | Field | Content |
 | --- | --- |
-| Status | Proposed |
+| Status | Accepted |
 | Context | Assessment requires Clean/Hexagonal architecture; Express is the HTTP framework; React is a separate SPA. |
 | Decision | Domain and application contain no Express/LLM/vector imports. Express lives only in `server/src/presentation`. React lives only in `client/`. |
 | Consequences | Slightly more types/ports early; use cases testable without spinning HTTP. |
@@ -173,7 +173,7 @@ Keep ADRs short: context, decision, consequences. Four records are required for 
 
 | Field | Content |
 | --- | --- |
-| Status | Proposed |
+| Status | Accepted |
 | Context | Hosted APIs may be unavailable; models will change. |
 | Decision | `CompletionPort`, `EmbeddingPort`, and (later) tool ports in domain; hosted and local adapters in infrastructure, selected by `LLM_PROVIDER`. |
 | Consequences | Factory in infrastructure; domain tests use fakes. |
@@ -182,7 +182,7 @@ Keep ADRs short: context, decision, consequences. Four records are required for 
 
 | Field | Content |
 | --- | --- |
-| Status | Proposed |
+| Status | Accepted |
 | Context | Unbounded “one agent with tools” is hard to evaluate and easy to over-act. |
 | Decision | Clause Extractor, Risk Assessor, Memo Drafter, coordinated by `ReviewOrchestrator` via typed schemas. Memo drafting and side effects require Counsel approval (`ApprovalRequiredError` → HTTP 403). |
 | Consequences | More hops per review; clear eval surfaces per agent; no silent exports. |
@@ -191,10 +191,10 @@ Keep ADRs short: context, decision, consequences. Four records are required for 
 
 | Field | Content |
 | --- | --- |
-| Status | Proposed |
+| Status | Accepted |
 | Context | Twist T1. Monolingual RAG fails Counsel who work in both languages. |
-| Decision | Tag every chunk and clause with `language`. Use a multilingual embedding space (or dual encode). The React app sets `dir="rtl"` for `ar`. Translations are labeled, never silently substituted for source text. |
-| Consequences | Need bilingual golden set and RTL checks; embedding model choice is coupled to the index. |
+| Decision | Tag every chunk and clause with `language`. **MVP retrieve is lexical** (Arabic fold + bilingual expand). A multilingual embedding space remains the target (ADR increment). The React app sets `dir="rtl"` for `ar`. Translations are labeled, never silently substituted for source text. |
+| Consequences | Golden set reports EN/AR/XL separately; dense index is a later adapter swap, not a domain rewrite. |
 
 ---
 
@@ -209,4 +209,4 @@ Forbidden:
 - `server/src/domain/**` importing `express`, `openai`, vector clients, etc.
 - `server/src/application/**` doing the same.
 
-Add `dependency-cruiser` or an ESLint boundary rule before submission so this is machine-checked.
+Enforced in CI by `npm run lint` (`scripts/check-boundaries.mjs`). `dependency-cruiser` can replace it later.

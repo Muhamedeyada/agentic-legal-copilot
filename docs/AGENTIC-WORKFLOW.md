@@ -20,7 +20,7 @@ Orchestrator
     → Memo Drafter
 ```
 
-Extractor and Assessor may read the vector store. They must not send email, write files, or publish a memo. Memo Drafter does not run until `ApprovalPort` says approved. That is the human gate in D1.
+Extractor and Assessor may call `retrieval_tool` (playbook lexical search; vector port is optional). They must not send email, write files, or publish a memo. Memo Drafter **may write a pending draft**; Counsel must approve before `draftMemo` / HTTP issue it. That is the human gate in D1.
 
 ---
 
