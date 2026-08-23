@@ -6,6 +6,7 @@ import { SlidingWindowLimiter } from "../../src/application/security/rate-limit.
 import { expandBilingualQuery } from "../../src/domain/retrieval/bilingual-expand.js";
 import { wrapUntrustedDocument } from "../../src/application/security/prompt-isolation.js";
 import { parseContract, ClauseExtractorOutputZ } from "../../src/application/agents/schemas.js";
+import { parseOrigins } from "../../src/presentation/http/app.js";
 
 describe("PII redaction", () => {
   it("strips emails and keeps surrounding legal text", () => {
@@ -67,5 +68,14 @@ describe("privilege separation", () => {
 describe("schema validation", () => {
   it("rejects unstructured model JSON", () => {
     expect(() => parseContract(ClauseExtractorOutputZ, "x", { clauses: [{ id: "" }] })).toThrow();
+  });
+});
+
+describe("CORS origins", () => {
+  it("splits comma-separated CLIENT_ORIGIN for Docker + Vite", () => {
+    expect(parseOrigins("http://localhost:5173,http://localhost:3000")).toEqual([
+      "http://localhost:5173",
+      "http://localhost:3000",
+    ]);
   });
 });

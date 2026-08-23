@@ -23,6 +23,18 @@ export interface HttpDeps {
   readonly rag: DirectRagUseCase;
 }
 
+/** Comma-separated CLIENT_ORIGIN values (local Vite + Docker nginx). */
+export function parseOrigins(raw: string): string | string[] {
+  const parts = raw
+    .split(",")
+    .map((item) => item.trim())
+    .filter((item) => item.length > 0);
+  if (parts.length === 0) {
+    return "http://localhost:5173";
+  }
+  return parts.length === 1 ? (parts[0] ?? "http://localhost:5173") : parts;
+}
+
 export function createApp(deps: HttpDeps): Express {
   const app = express();
   app.disable("x-powered-by");
@@ -41,7 +53,7 @@ export function createApp(deps: HttpDeps): Express {
   });
   app.use(
     cors({
-      origin: deps.config.clientOrigin,
+      origin: parseOrigins(deps.config.clientOrigin),
     }),
   );
 

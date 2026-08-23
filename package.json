@@ -16,6 +16,7 @@
     "build:client": "npm run build -w client",
     "start": "npm run start -w server",
     "typecheck": "npm run typecheck -w server && npm run typecheck -w client",
+    "lint": "node scripts/check-boundaries.mjs",
     "test": "npm run test -w server",
     "eval": "npm run eval -w server",
     "corpus:generate": "npx tsx scripts/generate_corpus.ts"
