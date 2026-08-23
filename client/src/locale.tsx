@@ -25,13 +25,17 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
   const [locale, setLocaleState] = useState<UiLocale>(initialLocale);
 
   useEffect(() => {
-    document.documentElement.lang = locale;
-    document.documentElement.dir = locale === "ar" ? "rtl" : "ltr";
+    const root = document.documentElement;
+    root.lang = locale;
+    root.dir = locale === "ar" ? "rtl" : "ltr";
+    root.classList.add("locale-switching");
+    const timer = window.setTimeout(() => root.classList.remove("locale-switching"), 320);
     try {
       localStorage.setItem("alc-locale", locale);
     } catch {
       /* ignore */
     }
+    return () => window.clearTimeout(timer);
   }, [locale]);
 
   const value = useMemo(

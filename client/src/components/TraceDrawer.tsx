@@ -12,33 +12,47 @@ export function TraceDrawer({ t, snapshot }: { t: T; snapshot: WorkflowSnapshot 
   const tokens = (snapshot?.tokenUsage.promptTokens ?? 0) + (snapshot?.tokenUsage.completionTokens ?? 0);
 
   return (
-    <section className="border border-(--color-rule) bg-white">
+    <footer className="z-20 shrink-0 border-t border-slate-200 bg-white/95 shadow-[0_-8px_24px_-16px_rgba(15,23,42,0.25)] backdrop-blur">
       <button
         type="button"
-        className="flex w-full items-center justify-between px-4 py-3 text-start text-sm font-semibold"
+        className="flex w-full items-center justify-between gap-3 px-4 py-2.5 text-start"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
       >
-        <span>{t.trace}</span>
-        <span className="text-xs font-normal text-stone-500">{t.traceHint}</span>
+        <span className="text-[12px] font-semibold text-slate-900">{t.trace}</span>
+        <span className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[11px] text-slate-500">
+          <span>
+            {t.runId}: {snapshot?.runId ?? "—"}
+          </span>
+          <span>
+            {t.tokens}: {tokens}
+          </span>
+          <span>
+            {t.tools}: {tools.length}
+          </span>
+          <span>
+            {t.latency}: {latency}ms
+          </span>
+        </span>
       </button>
       {open ? (
-        <div className="border-t border-(--color-rule) px-4 py-3 text-sm">
-          <p>
-            {t.tokens}: {tokens} · {t.tools}: {tools.length} · {t.latency}: {latency}ms
-          </p>
-          <ol className="mt-3 max-h-64 space-y-2 overflow-auto font-mono text-xs">
-            {traces.map((tr, i) => (
-              <li key={`${tr.at}-${i}`} className="border border-(--color-rule) p-2">
-                {tr.at} · {tr.step}
-                {tr.agentId ? ` · ${tr.agentId}` : ""}
-                {tr.toolName ? ` · ${tr.toolName}` : ""} · {tr.latencyMs}ms
-                {tr.error ? ` · ${tr.error}` : ""}
-              </li>
-            ))}
+        <div className="max-h-52 overflow-y-auto border-t border-slate-200 px-4 py-3 text-sm">
+          <ol className="space-y-2 font-mono text-[11px] text-slate-600">
+            {traces.length === 0 ? (
+              <li>{t.traceHint}</li>
+            ) : (
+              traces.map((tr, i) => (
+                <li key={`${tr.at}-${i}`} className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2">
+                  {tr.at} · {tr.step}
+                  {tr.agentId ? ` · ${tr.agentId}` : ""}
+                  {tr.toolName ? ` · ${tr.toolName}` : ""} · {tr.latencyMs}ms
+                  {tr.error ? ` · ${tr.error}` : ""}
+                </li>
+              ))
+            )}
           </ol>
         </div>
       ) : null}
-    </section>
+    </footer>
   );
 }
