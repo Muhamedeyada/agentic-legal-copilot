@@ -94,7 +94,7 @@ export default function App() {
 
   return (
     <CitationFocusProvider clauses={liveClauses}>
-      <div className="flex h-dvh flex-col overflow-hidden bg-slate-50">
+      <div className="app-shell flex h-dvh flex-col overflow-hidden bg-slate-50 print:hidden">
         <header className="z-20 flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-slate-800 bg-slate-900 px-4 py-2.5 text-white">
           <div className="flex min-w-0 items-center gap-3">
             <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-white/10 text-[11px] font-semibold tracking-wide">
@@ -169,6 +169,7 @@ export default function App() {
               items={items}
               selected={selected}
               clauses={liveClauses}
+              findings={liveFindings}
               loadingList={health === null && items.length === 0}
               loadingClauses={progress.extract === "active" && liveClauses.length === 0}
               onSelect={(id) => void handleSelect(id)}
@@ -185,6 +186,7 @@ export default function App() {
                 locale={locale}
                 snapshot={snapshot}
                 contractTitle={selected?.title ?? snapshot?.contractId ?? "contract"}
+                findings={liveFindings}
                 busy={busy}
                 drafting={progress.memo === "active"}
                 onApprove={(counselId) => {

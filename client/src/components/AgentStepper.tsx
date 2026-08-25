@@ -26,9 +26,15 @@ function statusLabel(t: T, status: string): string {
 }
 
 export function AgentStepper({ t, progress, lastEvent }: { t: T; progress: LiveProgress; lastEvent: string | null }) {
+  const streaming = progress.extract === "active" || progress.risk === "active" || progress.memo === "active";
   return (
-    <Card aria-live="polite">
+    <Card aria-live="polite" aria-busy={streaming}>
       <PaneTitle hint={lastEvent ?? undefined}>{t.pipeline}</PaneTitle>
+      {streaming ? (
+        <div className="skeleton-bar mt-3" aria-hidden="true">
+          <span className="skeleton-bar-fill" />
+        </div>
+      ) : null}
       <ol className="mt-4 flex items-start gap-1">
         {steps.map((step, index) => {
           const status = progress[step.field];
