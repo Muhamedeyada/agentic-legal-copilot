@@ -1,13 +1,16 @@
-import { useEffect, useRef, useState } from "react";
-import type { ContractRecord, ContractSummary, ExtractedClause } from "../api/types";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { ContractRecord, ContractSummary, ExtractedClause, RiskFinding } from "../api/types";
 import type { copy } from "../copy";
 import type { UiLocale } from "../copy";
 import { useCitationFocus } from "../citation-focus";
 import { clauseDomId } from "../lib/resolve-citation";
 import { ClauseSkeleton } from "./Skeleton";
+import { CopyButton } from "./CopyButton";
+import { ExpandableText } from "./ExpandableText";
 import { Card, fieldClass } from "./ui";
 
 type T = (typeof copy)[UiLocale];
+type ClauseFilter = "all" | "critical" | "missing";
 
 interface Props {
   t: T;
@@ -15,6 +18,7 @@ interface Props {
   items: ContractSummary[];
   selected: ContractRecord | null;
   clauses: ExtractedClause[];
+  findings: RiskFinding[];
   loadingClauses: boolean;
   loadingList: boolean;
   onSelect: (id: string) => void;
@@ -27,6 +31,7 @@ export function ContractPane({
   items,
   selected,
   clauses,
+  findings,
   loadingClauses,
   loadingList,
   onSelect,
@@ -38,12 +43,30 @@ export function ContractPane({
   const sourceRef = useRef<HTMLPreElement>(null);
   const focused = clauses.find((c) => c.id === focusedClauseId) ?? null;
   const [tab, setTab] = useState<"source" | "clauses">("source");
+  const [filter, setFilter] = useState<ClauseFilter>("all");
+
+  const criticalIds = useMemo(() => {
+    return new Set(
+      findings.filter((f) => !f.omitted && f.severity === "critical").map((f) => f.clauseId),
+    );
+  }, [findings]);
+  const omissions = useMemo(() => findings.filter((f) => f.omitted), [findings]);
+  const visibleClauses = useMemo(() => {
+    if (filter === "critical") {
+      return clauses.filter((c) => criticalIds.has(c.id));
+    }
+    if (filter === "missing") {
+      return [];
+    }
+    return clauses;
+  }, [clauses, criticalIds, filter]);
 
   useEffect(() => {
     if (!focusedClauseId) {
       return;
     }
     setTab("clauses");
+    setFilter("all");
     const node = document.getElementById(clauseDomId(focusedClauseId));
     const motion = prefersReducedMotion() ? "auto" : "smooth";
     window.setTimeout(() => {
@@ -151,38 +174,98 @@ export function ContractPane({
           </pre>
         </article>
       ) : (
-        <article className="min-h-0 flex-1 overflow-y-auto p-4">
+        <article className="min-h-0 flex-1 overflow-y-auto p-4" aria-busy={loadingClauses}>
+          <div className="mb-3 flex flex-wrap gap-1.5" role="toolbar" aria-label={t.clauses}>
+            <FilterChip
+              pressed={filter === "all"}
+              count={clauses.length}
+              onClick={() => setFilter("all")}
+              label={t.filterAll}
+            />
+            <FilterChip
+              pressed={filter === "critical"}
+              count={criticalIds.size}
+              onClick={() => setFilter("critical")}
+              label={t.filterCritical}
+            />
+            <FilterChip
+              pressed={filter === "missing"}
+              count={omissions.length}
+              onClick={() => setFilter("missing")}
+              label={t.filterMissing}
+            />
+          </div>
           {loadingClauses ? (
             <ClauseSkeleton />
+          ) : filter === "missing" ? (
+            omissions.length === 0 ? (
+              <p className="text-sm text-slate-500">{t.noFilterMatches}</p>
+            ) : (
+              <ul className="space-y-2.5">
+                {omissions.map((f) => (
+                  <li key={f.id} className="rounded-lg border border-rose-200 bg-rose-50 p-3">
+                    <p className="text-[10px] font-semibold tracking-wide text-rose-800 uppercase">{t.omission}</p>
+                    <p className="mt-1 text-sm font-semibold text-slate-900">{t.category[f.category]}</p>
+                    <p className="mt-2 text-sm leading-relaxed text-rose-800">{t.omissionHint}</p>
+                  </li>
+                ))}
+              </ul>
+            )
+          ) : loadingClauses ? null : visibleClauses.length === 0 ? (
+            <p className="text-sm text-slate-500">{clauses.length === 0 ? t.noContract : t.noFilterMatches}</p>
           ) : (
             <ul className="space-y-2.5">
-              {clauses.length === 0 ? (
-                <li className="text-sm text-slate-500">{t.noContract}</li>
-              ) : (
-                clauses.map((c) => (
-                  <li
-                    key={c.id}
-                    id={clauseDomId(c.id)}
-                    data-focused={focusedClauseId === c.id ? "true" : undefined}
-                    className={`rounded-lg border p-3 transition duration-150 ${
-                      focusedClauseId === c.id
-                        ? "border-indigo-900 bg-indigo-50/60"
-                        : "border-slate-200 hover:border-slate-300"
-                    }`}
-                  >
-                    <p className="text-[10px] font-semibold tracking-wide text-indigo-900 uppercase">
-                      {c.category}
-                    </p>
-                    <p className="mt-1 text-sm font-semibold text-slate-900">{c.heading || c.title}</p>
-                    <p className="mt-2 text-sm leading-relaxed text-slate-600">{c.text.slice(0, 420)}</p>
-                  </li>
-                ))
-              )}
+              {visibleClauses.map((c) => (
+                <li
+                  key={c.id}
+                  id={clauseDomId(c.id)}
+                  data-focused={focusedClauseId === c.id ? "true" : undefined}
+                  className={`rounded-lg border p-3 transition duration-150 ${
+                    focusedClauseId === c.id
+                      ? "border-indigo-900 bg-indigo-50/60"
+                      : "border-slate-200 hover:border-slate-300"
+                  }`}
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <p className="text-[10px] font-semibold tracking-wide text-indigo-900 uppercase">{c.category}</p>
+                    <CopyButton text={c.text} label={t.copyClause} copiedLabel={t.copied} />
+                  </div>
+                  <p className="mt-1 text-sm font-semibold text-slate-900">{c.heading || c.title}</p>
+                  <div className="mt-2">
+                    <ExpandableText
+                      text={c.text}
+                      more={t.expand}
+                      less={t.collapse}
+                      expanded={focusedClauseId === c.id}
+                      className="text-sm leading-relaxed text-slate-600"
+                    />
+                  </div>
+                </li>
+              ))}
             </ul>
           )}
         </article>
       )}
     </Card>
+  );
+}
+
+function FilterChip({
+  label,
+  count,
+  pressed,
+  onClick,
+}: {
+  label: string;
+  count: number;
+  pressed: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button type="button" className="filter-chip" aria-pressed={pressed} onClick={onClick}>
+      {label}
+      <span className="filter-count">{count}</span>
+    </button>
   );
 }
 

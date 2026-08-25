@@ -4,6 +4,7 @@ import { playbookText } from "../lib/playbook";
 import { findClauseForCategory } from "../lib/resolve-citation";
 import { diffWords, isStackedRedline } from "../lib/word-diff";
 import { useCitationFocus } from "../citation-focus";
+import { CopyButton } from "./CopyButton";
 import { Card, PaneTitle } from "./ui";
 
 type T = (typeof copy)[UiLocale];
@@ -48,15 +49,18 @@ export function RedlineViewer({
                 <p className="text-[11px] font-semibold tracking-wide text-indigo-900 uppercase">
                   {t.category[finding.category]}
                 </p>
-                {clause ? (
-                  <button
-                    type="button"
-                    className="text-[11px] font-semibold text-indigo-900 underline-offset-2 hover:underline"
-                    onClick={() => focusClauseId(clause.id)}
-                  >
-                    {t.jumpToClause}
-                  </button>
-                ) : null}
+                <div className="flex items-center gap-2">
+                  <CopyButton text={proposed} label={t.copyPlaybook} copiedLabel={t.copied} />
+                  {clause ? (
+                    <button
+                      type="button"
+                      className="text-[11px] font-semibold text-indigo-900 underline-offset-2 hover:underline"
+                      onClick={() => focusClauseId(clause.id)}
+                    >
+                      {t.jumpToClause}
+                    </button>
+                  ) : null}
+                </div>
               </div>
               {isStackedRedline(tokens) ? (
                 <div className="mt-2 space-y-2" dir={locale === "ar" ? "rtl" : "ltr"}>

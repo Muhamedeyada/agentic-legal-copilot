@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
-import type { ReviewMemo, WorkflowSnapshot } from "../api/types";
+import { createPortal } from "react-dom";
+import type { ReviewMemo, RiskFinding, WorkflowSnapshot } from "../api/types";
 import type { copy, UiLocale } from "../copy";
 import { buildMemoMarkdown, downloadTextFile } from "../lib/export-memo";
+import { CopyButton } from "./CopyButton";
+import { PrintMemo } from "./PrintMemo";
 import { CitationBadge } from "./CitationBadge";
 import { Skeleton } from "./Skeleton";
 import { Card, PaneTitle, fieldClass, ghostBtn } from "./ui";
@@ -13,6 +16,7 @@ interface Props {
   locale: UiLocale;
   snapshot: WorkflowSnapshot | null;
   contractTitle: string;
+  findings: RiskFinding[];
   busy: boolean;
   drafting: boolean;
   onApprove: (counselId: string) => void;
@@ -25,6 +29,7 @@ export function CounselGate({
   locale,
   snapshot,
   contractTitle,
+  findings,
   busy,
   drafting,
   onApprove,
@@ -63,13 +68,25 @@ export function CounselGate({
   }
 
   return (
+    <>
     <Card>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <PaneTitle>{t.memoTitle}</PaneTitle>
-        <button type="button" disabled={!approved} className={ghostBtn} onClick={exportMemo}>
-          {t.exportMemo}
-        </button>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <CopyButton text={edited} label={t.copyMemo} copiedLabel={t.copied} />
+          <button type="button" disabled={!memo} className={ghostBtn} onClick={() => window.print()}>
+            {t.printPdf}
+          </button>
+          <button type="button" disabled={!approved} className={ghostBtn} onClick={exportMemo}>
+            {t.exportMemo}
+          </button>
+        </div>
       </div>
+      {drafting && !memo ? (
+        <div className="skeleton-bar mt-3" aria-hidden="true">
+          <span className="skeleton-bar-fill" />
+        </div>
+      ) : null}
       {awaiting ? (
         <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">{t.awaitingHelp}</p>
       ) : approved ? (
@@ -136,6 +153,20 @@ export function CounselGate({
         </button>
       </div>
     </Card>
+    {typeof document !== "undefined"
+      ? createPortal(
+          <PrintMemo
+            t={t}
+            locale={locale}
+            snapshot={snapshot}
+            contractTitle={contractTitle}
+            counselId={counselId}
+            findings={findings}
+          />,
+          document.body,
+        )
+      : null}
+    </>
   );
 }
 
