@@ -162,24 +162,33 @@ export default function App() {
         </header>
 
         <main className="min-h-0 flex-1 overflow-y-auto lg:overflow-hidden">
-          <div className="mx-auto grid h-full max-w-[1680px] gap-4 p-4 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)_minmax(0,0.95fr)]">
-            <ContractPane
+          <div className="mx-auto flex h-full max-w-[1680px] flex-col gap-4 p-4">
+            <AgentStepper
               t={t}
-              locale={locale}
-              items={items}
-              selected={selected}
-              clauses={liveClauses}
-              findings={liveFindings}
-              loadingList={health === null && items.length === 0}
-              loadingClauses={progress.extract === "active" && liveClauses.length === 0}
-              onSelect={(id) => void handleSelect(id)}
-              onUpload={(file) => void handleUpload(file)}
+              progress={progress}
+              lastEvent={lastEvent}
+              clauseCount={liveClauses.length}
+              findingCount={liveFindings.length}
             />
-            <div className="flex min-h-0 flex-col gap-4 lg:overflow-y-auto lg:pe-1">
-              <AgentStepper t={t} progress={progress} lastEvent={lastEvent} />
-              <RiskPanel t={t} findings={liveFindings} loading={progress.risk === "active"} />
-              <RedlineViewer t={t} locale={locale} findings={liveFindings} clauses={liveClauses} />
-            </div>
+            <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)_minmax(0,0.95fr)] lg:overflow-hidden">
+              <div className="flex min-h-0 flex-col lg:overflow-y-auto">
+                <ContractPane
+                  t={t}
+                  locale={locale}
+                  items={items}
+                  selected={selected}
+                  clauses={liveClauses}
+                  findings={liveFindings}
+                  loadingList={health === null && items.length === 0}
+                  loadingClauses={progress.extract === "active" && liveClauses.length === 0}
+                  onSelect={(id) => void handleSelect(id)}
+                  onUpload={(file) => void handleUpload(file)}
+                />
+              </div>
+              <div className="flex min-h-0 flex-col gap-4 lg:overflow-y-auto lg:pe-1">
+                <RiskPanel t={t} findings={liveFindings} loading={progress.risk === "active"} />
+                <RedlineViewer t={t} locale={locale} findings={liveFindings} clauses={liveClauses} />
+              </div>
             <div className="flex min-h-0 flex-col gap-4 lg:overflow-y-auto lg:pe-1">
               <CounselGate
                 t={t}
@@ -221,6 +230,7 @@ export default function App() {
                 }}
               />
               <CitationsPanel t={t} memoCitations={memoCitations} ragCitations={ragCitations} />
+              </div>
             </div>
           </div>
         </main>
