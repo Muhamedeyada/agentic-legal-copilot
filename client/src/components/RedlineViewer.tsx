@@ -6,6 +6,7 @@ import { diffWords, isStackedRedline } from "../lib/word-diff";
 import { useCitationFocus } from "../citation-focus";
 import { CopyButton } from "./CopyButton";
 import { Card, PaneTitle } from "./ui";
+import { usePlaybookInspector } from "./PlaybookInspectorHost";
 
 type T = (typeof copy)[UiLocale];
 
@@ -21,6 +22,7 @@ export function RedlineViewer({
   clauses: ExtractedClause[];
 }) {
   const { focusClauseId } = useCitationFocus();
+  const { inspectFinding } = usePlaybookInspector();
   const ranked = pickDemoRedlines(findings);
   if (ranked.length === 0) {
     return null;
@@ -44,13 +46,29 @@ export function RedlineViewer({
           const current = clause?.text ?? "";
           const tokens = current.trim().length === 0 ? [{ type: "ins" as const, text: proposed }] : diffWords(current, proposed);
           return (
-            <li key={finding.id} className="rounded-lg border border-slate-200 p-3">
+            <li
+              key={finding.id}
+              className="cursor-pointer rounded-lg border border-slate-200 p-3 transition duration-150 hover:border-indigo-300 hover:bg-slate-50/80"
+              onClick={(event) => {
+                if ((event.target as HTMLElement).closest("button")) {
+                  return;
+                }
+                inspectFinding(finding);
+              }}
+            >
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="text-[11px] font-semibold tracking-wide text-indigo-900 uppercase">
                   {t.category[finding.category]}
                 </p>
                 <div className="flex items-center gap-2">
                   <CopyButton text={proposed} label={t.copyPlaybook} copiedLabel={t.copied} />
+                  <button
+                    type="button"
+                    className="text-[11px] font-semibold text-indigo-900 underline-offset-2 hover:underline"
+                    onClick={() => inspectFinding(finding)}
+                  >
+                    {t.inspectPlaybook}
+                  </button>
                   {clause ? (
                     <button
                       type="button"

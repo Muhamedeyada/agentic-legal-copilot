@@ -6,6 +6,7 @@ import { CopyButton } from "./CopyButton";
 import { ExpandableText } from "./ExpandableText";
 import { FindingSkeleton } from "./Skeleton";
 import { Card, PaneTitle } from "./ui";
+import { usePlaybookInspector } from "./PlaybookInspectorHost";
 
 type T = (typeof copy)[UiLocale];
 type RiskFilter = "all" | "critical" | "high" | "medium" | "omitted";
@@ -27,6 +28,7 @@ export function RiskPanel({
   loading: boolean;
 }) {
   const { focusClauseId } = useCitationFocus();
+  const { inspectFinding } = usePlaybookInspector();
   const [filter, setFilter] = useState<RiskFilter>("all");
   const counts = useMemo(
     () => ({
@@ -102,7 +104,13 @@ export function RiskPanel({
             ranked.map((f) => (
               <li
                 key={f.id}
-                className="flex flex-col gap-2 rounded-lg border border-slate-200 p-3 transition duration-150 hover:border-slate-300 sm:flex-row sm:items-start sm:justify-between"
+                className="flex cursor-pointer flex-col gap-2 rounded-lg border border-slate-200 p-3 transition duration-150 hover:border-indigo-300 hover:bg-slate-50/80 sm:flex-row sm:items-start sm:justify-between"
+                onClick={(event) => {
+                  if ((event.target as HTMLElement).closest("button")) {
+                    return;
+                  }
+                  inspectFinding(f);
+                }}
               >
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center justify-between gap-2">
@@ -121,15 +129,24 @@ export function RiskPanel({
                       className="text-sm leading-relaxed text-slate-600"
                     />
                   </div>
-                  {!f.omitted ? (
+                  <div className="mt-2 flex flex-wrap gap-3">
                     <button
                       type="button"
-                      className="mt-2 text-[11px] font-semibold text-indigo-900 underline-offset-2 hover:underline"
-                      onClick={() => focusClauseId(f.clauseId)}
+                      className="text-[11px] font-semibold text-indigo-900 underline-offset-2 hover:underline"
+                      onClick={() => inspectFinding(f)}
                     >
-                      {t.jumpToClause}
+                      {t.inspectPlaybook}
                     </button>
-                  ) : null}
+                    {!f.omitted ? (
+                      <button
+                        type="button"
+                        className="text-[11px] font-semibold text-indigo-900 underline-offset-2 hover:underline"
+                        onClick={() => focusClauseId(f.clauseId)}
+                      >
+                        {t.jumpToClause}
+                      </button>
+                    ) : null}
+                  </div>
                 </div>
                 <span
                   className={`inline-flex h-fit shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${badge[f.severity]}`}

@@ -24,6 +24,7 @@ import { CounselGate } from "./components/CounselGate";
 import { CitationsPanel } from "./components/CitationsPanel";
 import { TraceDrawer } from "./components/TraceDrawer";
 import { RagChat } from "./components/RagChat";
+import { PlaybookInspectorHost } from "./components/PlaybookInspectorHost";
 
 export default function App() {
   const { locale, setLocale } = useLocale();
@@ -35,6 +36,8 @@ export default function App() {
   const [busy, setBusy] = useState(false);
   const [ragBusy, setRagBusy] = useState(false);
   const [rag, setRag] = useState<RagAnswer | null>(null);
+  const [memoDraft, setMemoDraft] = useState("");
+  const [draftPulse, setDraftPulse] = useState(0);
   const { snapshot, setSnapshot, clauses, findings, progress, lastEvent } = useWorkflowStream(runId);
 
   const liveClauses = snapshot?.clauses.length ? snapshot.clauses : clauses;
@@ -55,6 +58,7 @@ export default function App() {
     setSelected(doc);
     setRunId(null);
     setRag(null);
+    setMemoDraft("");
   }
 
   async function handleUpload(file: File): Promise<void> {
@@ -64,6 +68,7 @@ export default function App() {
     await refreshList();
     setSelected(record);
     setRunId(null);
+    setMemoDraft("");
   }
 
   async function handleRun(): Promise<void> {
@@ -78,6 +83,7 @@ export default function App() {
         text: selected.text,
       });
       setRunId(started.runId);
+      setMemoDraft("");
     } finally {
       setBusy(false);
     }
@@ -92,8 +98,22 @@ export default function App() {
     return "…";
   }, [health, t.healthFail, t.healthOk]);
 
+  const applyPlaybookToMemo = useCallback((block: string): "applied" | "duplicate" => {
+    const trimmed = block.trim();
+    if (memoDraft.includes(trimmed)) {
+      return "duplicate";
+    }
+    setMemoDraft((prev) => (prev.trim().length === 0 ? block : `${prev.replace(/\s+$/u, "")}\n\n${block}`));
+    setDraftPulse((n) => n + 1);
+    window.requestAnimationFrame(() => {
+      document.getElementById("counsel-memo-draft")?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    });
+    return "applied";
+  }, [memoDraft]);
+
   return (
     <CitationFocusProvider clauses={liveClauses}>
+      <PlaybookInspectorHost t={t} locale={locale} clauses={liveClauses} onApplyToMemo={applyPlaybookToMemo}>
       <div className="app-shell flex h-dvh flex-col overflow-hidden bg-slate-50 print:hidden">
         <header className="z-20 flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-slate-800 bg-slate-900 px-4 py-2.5 text-white">
           <div className="flex min-w-0 items-center gap-3">
@@ -189,6 +209,9 @@ export default function App() {
                 findings={liveFindings}
                 busy={busy}
                 drafting={progress.memo === "active"}
+                draft={memoDraft}
+                onDraftChange={setMemoDraft}
+                draftPulse={draftPulse}
                 onApprove={(counselId) => {
                   if (!runId) return;
                   void approveRun(runId, counselId).then(setSnapshot);
@@ -227,6 +250,7 @@ export default function App() {
 
         <TraceDrawer t={t} snapshot={snapshot} />
       </div>
+      </PlaybookInspectorHost>
     </CitationFocusProvider>
   );
 }
