@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
+import type { Dispatch, SetStateAction } from "react";
 import { createPortal } from "react-dom";
 import type { ReviewMemo, RiskFinding, WorkflowSnapshot } from "../api/types";
 import type { copy, UiLocale } from "../copy";
 import { buildMemoMarkdown, downloadTextFile } from "../lib/export-memo";
+import { mergeMemoWithInserts } from "../lib/playbook-insert";
 import { CopyButton } from "./CopyButton";
 import { PrintMemo } from "./PrintMemo";
 import { CitationBadge } from "./CitationBadge";
@@ -19,6 +21,9 @@ interface Props {
   findings: RiskFinding[];
   busy: boolean;
   drafting: boolean;
+  draft: string;
+  onDraftChange: Dispatch<SetStateAction<string>>;
+  draftPulse: number;
   onApprove: (counselId: string) => void;
   onReject: (counselId: string, reason: string) => void;
   onEditApprove: (counselId: string, body: string) => void;
@@ -32,13 +37,16 @@ export function CounselGate({
   findings,
   busy,
   drafting,
+  draft,
+  onDraftChange,
+  draftPulse,
   onApprove,
   onReject,
   onEditApprove,
 }: Props) {
   const [counselId, setCounselId] = useState("counsel-1");
   const [reason, setReason] = useState("");
-  const [edited, setEdited] = useState("");
+  const [draftFlash, setDraftFlash] = useState(false);
   const awaiting = snapshot?.state === "AWAITING_APPROVAL";
   const memo = snapshot?.memo;
   const approved = Boolean(snapshot?.state === "COMPLETED" && memo?.approvedByCounsel);
@@ -48,8 +56,17 @@ export function CounselGate({
       return;
     }
     const next = locale === "ar" ? (memo.bodyAr ?? memo.bodyEn ?? "") : (memo.bodyEn ?? memo.bodyAr ?? "");
-    setEdited((prev) => (prev.trim().length === 0 ? next : prev));
-  }, [memo, locale]);
+    onDraftChange((prev) => mergeMemoWithInserts(next, prev, t.redlineInsertHeading));
+  }, [memo, locale, onDraftChange, t.redlineInsertHeading]);
+
+  useEffect(() => {
+    if (draftPulse === 0) {
+      return;
+    }
+    setDraftFlash(true);
+    const id = window.setTimeout(() => setDraftFlash(false), 1100);
+    return () => window.clearTimeout(id);
+  }, [draftPulse]);
 
   function exportMemo(): void {
     if (!snapshot || !memo || !memo.approvedByCounsel) {
@@ -73,7 +90,7 @@ export function CounselGate({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <PaneTitle>{t.memoTitle}</PaneTitle>
         <div className="flex flex-wrap items-center gap-1.5">
-          <CopyButton text={edited} label={t.copyMemo} copiedLabel={t.copied} />
+          <CopyButton text={draft} label={t.copyMemo} copiedLabel={t.copied} />
           <button type="button" disabled={!memo} className={ghostBtn} onClick={() => window.print()}>
             {t.printPdf}
           </button>
@@ -108,11 +125,12 @@ export function CounselGate({
       <label className="mt-3 block text-[11px] font-semibold text-slate-600">
         {t.editBody}
         <textarea
-          className={`${fieldClass} max-h-48 min-h-32 font-sans leading-relaxed`}
+          id="counsel-memo-draft"
+          className={`${fieldClass} max-h-48 min-h-32 font-sans leading-relaxed ${draftFlash ? "clause-flash" : ""}`}
           rows={7}
           dir={locale === "ar" ? "rtl" : "ltr"}
-          value={edited}
-          onChange={(e) => setEdited(e.target.value)}
+          value={draft}
+          onChange={(e) => onDraftChange(e.target.value)}
           placeholder={memo?.bodyEn ?? memo?.bodyAr ?? ""}
         />
       </label>
@@ -145,9 +163,9 @@ export function CounselGate({
         </button>
         <button
           type="button"
-          disabled={!awaiting || busy || edited.trim().length === 0}
+          disabled={!awaiting || busy || draft.trim().length === 0}
           className="rounded-lg bg-slate-900 px-3.5 py-2 text-sm font-semibold text-white transition duration-150 hover:bg-indigo-950 disabled:opacity-40"
-          onClick={() => onEditApprove(counselId, edited)}
+          onClick={() => onEditApprove(counselId, draft)}
         >
           {t.editApprove}
         </button>
