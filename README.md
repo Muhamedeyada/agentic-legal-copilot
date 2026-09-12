@@ -175,10 +175,12 @@ Synthetic contracts only.
 2. Open the UI. Toggle AR/EN — `html` `dir` flips to `rtl` / `ltr`.
 3. Select **`D1T1-EN-NDA-003`** (unlimited liability). Click **Run review**.
 4. Watch the stepper and open **Trace** (`AGENT_START`, `TOOL_EXEC`, `RISK_FOUND`). Expect a **Critical** liability finding.
-5. Before Approve, `POST /reviews/{runId}/memo` → **403** `APPROVAL_REQUIRED`.
-6. Counsel **Approve**. Snapshot moves to `COMPLETED`.
-7. Optional: select `D1T1-AR-SLA-002`, ask in English “What is the termination notice period?” — citation should include `يوم تقويمي واحد`.
-8. `npm run eval` — EN / AR / XL printed separately; adversarial refusals pass.
+5. Open a risk or redline card (**Compare with playbook**). Confirm category, similarity %, and the side-by-side contract vs golden clause. **Apply playbook clause** inserts fallback text into the Counsel memo draft; **Copy reference text** shows a toast.
+6. Filter clauses (**All** / **Critical risks** / **Missing clauses**). **Print / Save PDF** for a formal memo layout (signature line). Markdown **Export** stays disabled until Approve.
+7. Before Approve, `POST /reviews/{runId}/memo` → **403** `APPROVAL_REQUIRED`.
+8. Counsel **Approve**. Snapshot moves to `COMPLETED`.
+9. Optional: select `D1T1-AR-SLA-002`, ask in English “What is the termination notice period?” — citation should include `يوم تقويمي واحد`.
+10. `npm run eval` — EN / AR / XL printed separately; adversarial refusals pass.
 
 Do not demo on real client agreements.
 

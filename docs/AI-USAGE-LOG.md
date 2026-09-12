@@ -85,6 +85,24 @@ I did **not** claim `npm run ingest` or hybrid RRF as shipped. I did not invent 
 
 ---
 
+## 2026-08-25 — Review workstation polish (client only)
+
+I asked for filter chips, copy/expand affordances, print CSS, and later a playbook comparator sheet. Domain logic and SSE contracts stayed unchanged.
+
+I kept:
+
+- clause / risk filter chips with live counts
+- copy buttons + expandable long text
+- `@media print` counsel memorandum (metadata header, disclaimer, signature line)
+- `PlaybookInspector` side sheet: contract vs golden playbook, client-side similarity %, Apply into the memo draft, copy toast
+- bilingual RTL/LTR labels in `client/src/copy.ts`
+
+I did **not** add similarity onto `RiskFinding` or change `/api/workflow/stream`. Scoring in the sheet is token overlap in `client/src/lib/token-overlap.ts`.
+
+**Reviewed:** inspector opens from risk cards and redline items; Apply appends `## Playbook redline` without overwriting an existing memo body.
+
+---
+
 ## What I still own (not the assistant)
 
 - Variant math and the D1 silent-omission rule
