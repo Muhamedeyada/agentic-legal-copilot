@@ -3,7 +3,7 @@ import type { RagAnswer } from "../api/types";
 import type { copy, UiLocale } from "../copy";
 import { CitationBadge } from "./CitationBadge";
 import { Skeleton } from "./Skeleton";
-import { Card, PaneTitle, fieldClass, primaryBtn } from "./ui";
+import { Card, PaneTitle, fieldClass, focusRing, primaryBtn } from "./ui";
 
 type T = (typeof copy)[UiLocale];
 
@@ -30,7 +30,7 @@ export function RagChat({
         <PaneTitle hint={documentId}>{t.rag}</PaneTitle>
         <button
           type="button"
-          className="text-[11px] font-semibold text-muted hover:text-ink"
+          className={`rounded-sm text-[11px] font-semibold text-muted select-none hover:text-ink ${focusRing}`}
           onClick={() => setOpen((v) => !v)}
         >
           {open ? t.ragCollapse : t.ragExpand}

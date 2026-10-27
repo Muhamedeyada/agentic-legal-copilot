@@ -27,7 +27,6 @@ function statusLabel(t: T, status: string): string {
 
 type StepTone = "idle" | "active" | "done" | "gate";
 
-/** "waiting" only occurs on the Counsel gate: the run is paused on a human, not an agent. */
 function stepTone(status: string): StepTone {
   if (status === "done") return "done";
   if (status === "waiting") return "gate";

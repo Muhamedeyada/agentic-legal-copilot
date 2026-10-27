@@ -7,7 +7,7 @@ import { clauseDomId } from "../lib/resolve-citation";
 import { ClauseSkeleton } from "./Skeleton";
 import { CopyButton } from "./CopyButton";
 import { ExpandableText } from "./ExpandableText";
-import { Card, fieldClass, linkBtn, tone } from "./ui";
+import { Card, fieldClass, linkBtn, pressable, tone } from "./ui";
 
 type T = (typeof copy)[UiLocale];
 type ClauseFilter = "all" | "critical" | "missing";
@@ -133,20 +133,20 @@ export function ContractPane({
           <div className="flex rounded-lg bg-surface-sunken p-0.5 text-[11px] font-medium">
             <button
               type="button"
-              className={`rounded-md px-2.5 py-1 transition duration-150 ${tab === "source" ? "bg-surface text-ink shadow-sm" : "text-body hover:text-ink"}`}
+              className={`rounded-md px-2.5 py-1 ${pressable} ${tab === "source" ? "bg-surface text-ink shadow-sm" : "text-body hover:bg-surface/60 hover:text-ink"}`}
               onClick={() => setTab("source")}
             >
               {t.original}
             </button>
             <button
               type="button"
-              className={`rounded-md px-2.5 py-1 transition duration-150 ${tab === "clauses" ? "bg-surface text-ink shadow-sm" : "text-body hover:text-ink"}`}
+              className={`rounded-md px-2.5 py-1 ${pressable} ${tab === "clauses" ? "bg-surface text-ink shadow-sm" : "text-body hover:bg-surface/60 hover:text-ink"}`}
               onClick={() => setTab("clauses")}
             >
               {t.clauses}
             </button>
           </div>
-          <label className={`cursor-pointer ${linkBtn}`}>
+          <label className={`cursor-pointer ${linkBtn} has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-indigo-500/70`}>
             {t.upload}
             <input
               type="file"

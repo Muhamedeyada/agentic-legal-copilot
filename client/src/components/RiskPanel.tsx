@@ -5,7 +5,7 @@ import { useCitationFocus } from "../citation-focus";
 import { CopyButton } from "./CopyButton";
 import { ExpandableText } from "./ExpandableText";
 import { FindingSkeleton } from "./Skeleton";
-import { Card, PaneTitle, linkBtn, severityBadge, tone } from "./ui";
+import { Card, PaneTitle, clickableCard, isTextSelection, linkBtn, severityBadge, tone } from "./ui";
 import { usePlaybookInspector } from "./PlaybookInspectorHost";
 
 type T = (typeof copy)[UiLocale];
@@ -97,9 +97,9 @@ export function RiskPanel({
             ranked.map((f) => (
               <li
                 key={f.id}
-                className="flex cursor-pointer flex-col gap-2 rounded-lg border border-line p-3 transition duration-150 hover:border-indigo-300 hover:bg-surface-muted dark:hover:border-indigo-700 sm:flex-row sm:items-start sm:justify-between"
+                className={`flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between ${clickableCard}`}
                 onClick={(event) => {
-                  if ((event.target as HTMLElement).closest("button")) {
+                  if ((event.target as HTMLElement).closest("button") || isTextSelection()) {
                     return;
                   }
                   inspectFinding(f);

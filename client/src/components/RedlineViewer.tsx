@@ -5,7 +5,7 @@ import { findClauseForCategory } from "../lib/resolve-citation";
 import { diffWords, isStackedRedline } from "../lib/word-diff";
 import { useCitationFocus } from "../citation-focus";
 import { CopyButton } from "./CopyButton";
-import { Card, PaneTitle, linkBtn } from "./ui";
+import { Card, PaneTitle, clickableCard, isTextSelection, linkBtn } from "./ui";
 import { usePlaybookInspector } from "./PlaybookInspectorHost";
 
 type T = (typeof copy)[UiLocale];
@@ -48,9 +48,9 @@ export function RedlineViewer({
           return (
             <li
               key={finding.id}
-              className="cursor-pointer rounded-lg border border-line p-3 transition duration-150 hover:border-indigo-300 hover:bg-surface-muted dark:hover:border-indigo-700"
+              className={clickableCard}
               onClick={(event) => {
-                if ((event.target as HTMLElement).closest("button")) {
+                if ((event.target as HTMLElement).closest("button") || isTextSelection()) {
                   return;
                 }
                 inspectFinding(finding);
