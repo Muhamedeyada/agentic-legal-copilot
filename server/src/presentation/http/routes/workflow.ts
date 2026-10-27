@@ -12,6 +12,7 @@ import type { RunEventBus } from "../../../application/orchestration/event-bus.j
 import type { ContractCatalogPort } from "../../../domain/ports/contract-catalog.port.js";
 import type { WorkflowStreamEvent } from "../../../application/orchestration/events.js";
 import { runSnapshot } from "../snapshot.js";
+import { counselId, requireCounsel } from "../middleware/auth.js";
 
 function writeSse(res: Response, event: WorkflowStreamEvent | { type: "ping"; at: number }): void {
   res.write(`event: ${event.type}\ndata: ${JSON.stringify(event)}\n\n`);
@@ -132,21 +133,21 @@ export function workflowRouter(deps: {
     res.status(202).json({ runId, cancelled: true });
   });
 
-  router.post("/:runId/approve", async (req, res) => {
+  router.post("/:runId/approve", requireCounsel, async (req, res) => {
     const runId = req.params.runId;
     if (!runId) {
       res.status(400).json({ error: "INVALID_INPUT", message: "runId is required." });
       return;
     }
     try {
-      const run = await deps.counselGate.approveRun(runId, String(req.body?.counselId ?? "counsel"));
+      const run = await deps.counselGate.approveRun(runId, counselId(req));
       res.json(runSnapshot(run));
     } catch (err) {
       sendHitlError(res, err);
     }
   });
 
-  router.post("/:runId/reject", async (req, res) => {
+  router.post("/:runId/reject", requireCounsel, async (req, res) => {
     const runId = req.params.runId;
     if (!runId) {
       res.status(400).json({ error: "INVALID_INPUT", message: "runId is required." });
@@ -156,7 +157,7 @@ export function workflowRouter(deps: {
       const run = await deps.counselGate.rejectRun(
         runId,
         String(req.body?.reason ?? req.body?.comments ?? ""),
-        String(req.body?.counselId ?? "counsel"),
+        counselId(req),
       );
       res.json(runSnapshot(run));
     } catch (err) {
@@ -164,7 +165,7 @@ export function workflowRouter(deps: {
     }
   });
 
-  router.post("/:runId/edit-and-approve", async (req, res) => {
+  router.post("/:runId/edit-and-approve", requireCounsel, async (req, res) => {
     const runId = req.params.runId;
     if (!runId) {
       res.status(400).json({ error: "INVALID_INPUT", message: "runId is required." });
@@ -179,7 +180,7 @@ export function workflowRouter(deps: {
       const run = await deps.counselGate.editAndApproveRun(
         runId,
         editedMemo,
-        String(req.body?.counselId ?? "counsel"),
+        counselId(req),
       );
       res.json(runSnapshot(run));
     } catch (err) {

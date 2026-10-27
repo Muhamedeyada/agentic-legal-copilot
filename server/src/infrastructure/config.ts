@@ -16,16 +16,41 @@ export interface AppConfig {
   readonly maxPromptChars: number;
   readonly maxCompletionChars: number;
   readonly maxUploadChars: number;
+  /** Bearer token for the analyst role (`DEMO_API_TOKEN`). */
+  readonly analystToken: string;
+  /** Bearer token for the counsel role (`COUNSEL_TOKEN`). Required for HITL decisions. */
+  readonly counselToken: string;
 }
+
+/** Known demo tokens. Accepted outside production only; the client uses the same defaults. */
+export const DEMO_ANALYST_TOKEN = "demo-analyst-token";
+export const DEMO_COUNSEL_TOKEN = "demo-counsel-token";
 
 function env(name: string, fallback: string): string {
   return process.env[name] ?? fallback;
 }
 
+function authToken(name: string, demoFallback: string, nodeEnv: string): string {
+  const value = process.env[name]?.trim() ?? "";
+  if (value.length > 0) {
+    return value;
+  }
+  if (nodeEnv === "production") {
+    throw new Error(`${name} must be set when NODE_ENV=production.`);
+  }
+  return demoFallback;
+}
+
 export function loadConfig(): AppConfig {
   const provider = env("LLM_PROVIDER", "openai");
+  const nodeEnv = env("NODE_ENV", "development");
+  const analystToken = authToken("DEMO_API_TOKEN", DEMO_ANALYST_TOKEN, nodeEnv);
+  const counselToken = authToken("COUNSEL_TOKEN", DEMO_COUNSEL_TOKEN, nodeEnv);
+  if (analystToken === counselToken) {
+    throw new Error("DEMO_API_TOKEN and COUNSEL_TOKEN must differ.");
+  }
   return {
-    nodeEnv: env("NODE_ENV", "development"),
+    nodeEnv,
     port: Number(env("PORT", "3001")),
     host: env("HOST", "127.0.0.1"),
     clientOrigin: env("CLIENT_ORIGIN", "http://localhost:5173"),
@@ -42,5 +67,7 @@ export function loadConfig(): AppConfig {
     maxPromptChars: Number(env("MAX_PROMPT_CHARS", "12000")),
     maxCompletionChars: Number(env("MAX_COMPLETION_CHARS", "8000")),
     maxUploadChars: Number(env("MAX_UPLOAD_CHARS", "200000")),
+    analystToken,
+    counselToken,
   };
 }

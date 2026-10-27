@@ -9,6 +9,7 @@ import type { LegalWorkflowOrchestrator } from "../../../application/orchestrato
 import type { CounselApprovalUseCase } from "../../../application/hitl/counsel-approval.js";
 import { runSnapshot } from "../snapshot.js";
 import type { WorkflowRun } from "../../../domain/entities/workflow.js";
+import { counselId, requireCounsel } from "../middleware/auth.js";
 
 function snapshot(run: WorkflowRun) {
   return runSnapshot(run);
@@ -52,44 +53,41 @@ export function reviewsRouter(
     }
   });
 
-  router.post("/runs/:runId/approve", async (req, res) => {
+  router.post("/runs/:runId/approve", requireCounsel, async (req, res) => {
     try {
-      const counselId = String(req.body?.counselId ?? "counsel");
-      const run = await counselGate.approveRun(req.params.runId, counselId);
+      const run = await counselGate.approveRun(String(req.params.runId), counselId(req));
       res.json(snapshot(run));
     } catch (err) {
       sendHitlError(res, err);
     }
   });
 
-  router.post("/runs/:runId/reject", async (req, res) => {
+  router.post("/runs/:runId/reject", requireCounsel, async (req, res) => {
     try {
-      const counselId = String(req.body?.counselId ?? "counsel");
       const reason = String(req.body?.reason ?? "");
-      const run = await counselGate.rejectRun(req.params.runId, reason, counselId);
+      const run = await counselGate.rejectRun(String(req.params.runId), reason, counselId(req));
       res.json(snapshot(run));
     } catch (err) {
       sendHitlError(res, err);
     }
   });
 
-  router.post("/runs/:runId/edit-approve", async (req, res) => {
+  router.post("/runs/:runId/edit-approve", requireCounsel, async (req, res) => {
     try {
-      const counselId = String(req.body?.counselId ?? "counsel");
       const editedMemo = {
         ...(typeof req.body?.bodyEn === "string" ? { bodyEn: req.body.bodyEn as string } : {}),
         ...(typeof req.body?.bodyAr === "string" ? { bodyAr: req.body.bodyAr as string } : {}),
       };
-      const run = await counselGate.editAndApproveRun(req.params.runId, editedMemo, counselId);
+      const run = await counselGate.editAndApproveRun(String(req.params.runId), editedMemo, counselId(req));
       res.json(snapshot(run));
     } catch (err) {
       sendHitlError(res, err);
     }
   });
 
-  router.post("/:reviewId/memo", async (req, res) => {
+  router.post("/:reviewId/memo", requireCounsel, async (req, res) => {
     try {
-      const reviewId = req.params.reviewId;
+      const reviewId = String(req.params.reviewId);
       const language = req.body?.language === "ar" || req.body?.language === "both" ? req.body.language : "en";
       const result = await orchestrator.draftMemo({
         reviewId,
