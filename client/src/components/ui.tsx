@@ -65,11 +65,23 @@ export function isTextSelection(): boolean {
 }
 
 export const severityBadge: Record<RiskSeverity, string> = {
-  critical: "bg-rose-700 text-white",
-  high: "bg-rose-100 text-rose-800 dark:bg-rose-950/70 dark:text-rose-200 dark:ring-1 dark:ring-inset dark:ring-rose-800/60",
-  medium: "bg-amber-100 text-amber-800 dark:bg-amber-950/70 dark:text-amber-200 dark:ring-1 dark:ring-inset dark:ring-amber-800/60",
-  low: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-200 dark:ring-1 dark:ring-inset dark:ring-emerald-800/60",
+  critical: "border border-red-300 bg-red-50 text-red-700 dark:border-red-800 dark:bg-red-950/40 dark:text-red-400",
+  high: "border border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300",
+  medium: "border border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-300",
+  low: "border border-slate-300 bg-slate-100 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300",
 };
+
+export const severityRail: Record<RiskSeverity, string> = {
+  critical: "border-s-red-500 dark:border-s-red-500",
+  high: "border-s-amber-500 dark:border-s-amber-500",
+  medium: "border-s-blue-500 dark:border-s-blue-400",
+  low: "border-s-slate-300 dark:border-s-slate-600",
+};
+
+export const severityRank: Record<RiskSeverity, number> = { critical: 3, high: 2, medium: 1, low: 0 };
+
+export const approvedBadge =
+  "border border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300";
 
 export const tone = {
   danger: {
