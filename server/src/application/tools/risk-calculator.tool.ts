@@ -55,12 +55,17 @@ export function calculateRisk(input: RiskCalculatorInput): RiskCalculatorOutput 
   }
 
   if (!input.omitted) {
+    const similarity = input.similarityToPlaybook.toFixed(2);
     if (input.similarityToPlaybook < 0.2) {
       severity = worse(severity, "high");
-      reasons.push("Material deviation from playbook standard (similarity < 0.20).");
+      reasons.push(
+        `${input.deviationNote ?? "Material deviation from playbook standard."} (playbook similarity ${similarity} < 0.20)`,
+      );
     } else if (input.similarityToPlaybook < 0.45) {
       severity = worse(severity, "medium");
-      reasons.push("Partial deviation from playbook standard.");
+      reasons.push(
+        `${input.deviationNote ?? "Partial deviation from playbook standard."} (partial playbook match, similarity ${similarity} < 0.45)`,
+      );
     }
   }
 

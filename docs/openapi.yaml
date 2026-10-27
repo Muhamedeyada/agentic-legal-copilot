@@ -1,0 +1,921 @@
+openapi: 3.0.3
+info:
+  title: Agentic Legal Copilot API (D1T1)
+  version: 0.1.0
+  description: |
+    Bilingual (Arabic / English) contract review: clause extraction, deterministic risk scoring,
+    memo drafting, and a mandatory Counsel approval gate.
+
+    **Authentication.** Every route except health needs `Authorization: Bearer <token>`.
+    `DEMO_API_TOKEN` authenticates the `analyst` role and `COUNSEL_TOKEN` the `counsel` role.
+    The token decides the role; an `x-user-role: analyst` header may narrow a counsel token but can
+    never grant counsel. Approval decisions are recorded under the token's identity — any
+    `counselId` in a request body is ignored.
+
+    **Limits.** All routes are rate-limited per IP (`RATE_LIMIT_PER_MINUTE`, default 60 → HTTP 429).
+    A JSON `text` field longer than `MAX_UPLOAD_CHARS` (default 200000) is rejected with HTTP 413.
+
+    Source of truth: `server/src/presentation/http/`.
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+servers:
+  - url: http://localhost:3001
+    description: API (local `npm run dev` or Docker)
+  - url: http://localhost:3000
+    description: Docker nginx (proxies /api, /health, /events, /reviews)
+tags:
+  - name: Health
+    description: Unauthenticated liveness check.
+  - name: Contracts
+    description: Synthetic corpus catalog and text uploads.
+  - name: Chat
+    description: Cited retrieval answers; refuses out-of-corpus questions.
+  - name: Workflow
+    description: Agent pipeline runs and live progress.
+  - name: Counsel gate
+    description: Human-in-the-loop decisions. Counsel role only.
+  - name: Legacy
+    description: Older routes kept for compatibility. Prefer `/api/workflow/*`.
+security:
+  - BearerAuth: []
+
+paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: Liveness and runtime configuration
+      operationId: getHealth
+      security: []
+      responses:
+        "200":
+          description: Service is up.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Health" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+  /api/health:
+    get:
+      tags: [Health]
+      summary: Same as /health, under the /api prefix
+      operationId: getApiHealth
+      security: []
+      responses:
+        "200":
+          description: Service is up.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Health" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+
+  /api/contracts:
+    get:
+      tags: [Contracts]
+      summary: List corpus contracts and uploads
+      operationId: listContracts
+      responses:
+        "200":
+          description: Contract summaries (no text).
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/ContractSummary" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+  /api/contracts/{id}:
+    get:
+      tags: [Contracts]
+      summary: Get one contract with its full text
+      operationId: getContract
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+          example: D1T1-EN-NDA-001
+      responses:
+        "200":
+          description: The contract.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ContractRecord" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+  /api/contracts/upload:
+    post:
+      tags: [Contracts]
+      summary: Upload contract text (plain text / Markdown, held in memory)
+      operationId: uploadContract
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UploadContractRequest" }
+      responses:
+        "201":
+          description: Stored. `source` is `upload` and `id` starts with `upload-`.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ContractRecord" }
+        "400": { $ref: "#/components/responses/InvalidInput" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "413": { $ref: "#/components/responses/PayloadTooLarge" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+
+  /api/chat:
+    post:
+      tags: [Chat]
+      summary: Cited question answering over the playbook and an optional contract
+      description: |
+        Hybrid retrieval: BM25 and 256-dim hashed embeddings, fused with Reciprocal Rank Fusion
+        (k = 60). Chunks must pass a lexical relevance floor to be ranked; when none does the
+        request is refused with 404 `NOT_ENOUGH_INFORMATION`. Citation `score` is the normalised
+        fused score (0..1).
+      operationId: askChat
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ChatRequest" }
+      responses:
+        "200":
+          description: Answer with citations.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RagAnswer" }
+        "400": { $ref: "#/components/responses/InvalidInput" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "404":
+          description: Out of corpus — nothing relevant enough to cite.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RagRefusal" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+
+  /api/workflow/run:
+    post:
+      tags: [Workflow]
+      summary: Start a review run (returns immediately)
+      description: |
+        Runs Clause Extractor → Risk Assessor → Memo Drafter in the background and stops at
+        `AWAITING_APPROVAL`. Pass `text`, or a `contractId` from the catalog. Follow progress on
+        `/api/workflow/stream/{runId}`.
+      operationId: startWorkflow
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StartRunRequest" }
+      responses:
+        "202":
+          description: Run accepted.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [runId, state]
+                properties:
+                  runId: { type: string, format: uuid }
+                  state: { type: string, enum: [INIT] }
+        "400": { $ref: "#/components/responses/InvalidInput" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "413": { $ref: "#/components/responses/PayloadTooLarge" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        "500": { $ref: "#/components/responses/WorkflowFailed" }
+  /api/workflow/stream/{runId}:
+    get:
+      tags: [Workflow]
+      summary: Live run progress (Server-Sent Events)
+      description: |
+        `text/event-stream`. Each SSE `event:` name equals the payload `type`; `data:` is the JSON
+        payload (`StreamEvent`). Events already emitted for the run are replayed on connect, and a
+        `ping` is sent every 15 s. Browsers' `EventSource` cannot send headers, so the token may
+        be passed as `?access_token=` — accepted only for GET requests that send
+        `Accept: text/event-stream`. Closing the stream cancels the run after 1.5 s unless a client
+        reconnects.
+      operationId: streamWorkflow
+      security:
+        - BearerAuth: []
+        - SseQueryToken: []
+      parameters:
+        - $ref: "#/components/parameters/RunId"
+      responses:
+        "200":
+          description: Event stream.
+          content:
+            text/event-stream:
+              schema:
+                type: string
+                description: SSE frames; see `StreamEvent` for the JSON in each `data:` line.
+                example: |
+                  event: AGENT_DONE
+                  data: {"type":"AGENT_DONE","runId":"…","agentId":"clause_extractor","tokenUsage":{"promptTokens":2313,"completionTokens":2406}}
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "404": { $ref: "#/components/responses/RunNotFound" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+  /api/workflow/{runId}:
+    get:
+      tags: [Workflow]
+      summary: Run snapshot (clauses, findings, draft memo, traces, token usage)
+      description: "While the run is `AWAITING_APPROVAL` the memo is a draft (`approvedByCounsel: false`)."
+      operationId: getWorkflowRun
+      parameters:
+        - $ref: "#/components/parameters/RunId"
+      responses:
+        "200":
+          description: Current state of the run.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/WorkflowSnapshot" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "404": { $ref: "#/components/responses/RunNotFound" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        "500": { $ref: "#/components/responses/WorkflowFailed" }
+  /api/workflow/{runId}/cancel:
+    post:
+      tags: [Workflow]
+      summary: Cancel a running review
+      operationId: cancelWorkflow
+      parameters:
+        - $ref: "#/components/parameters/RunId"
+      responses:
+        "202":
+          description: Cancellation requested (a no-op if the run already finished).
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [runId, cancelled]
+                properties:
+                  runId: { type: string }
+                  cancelled: { type: boolean, enum: [true] }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+
+  /api/workflow/{runId}/approve:
+    post:
+      tags: [Counsel gate]
+      summary: Approve the draft memo
+      operationId: approveRun
+      parameters:
+        - $ref: "#/components/parameters/RunId"
+      responses:
+        "200": { $ref: "#/components/responses/Snapshot" }
+        "400": { $ref: "#/components/responses/HitlFailed" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/CounselRequired" }
+        "404": { $ref: "#/components/responses/RunNotFound" }
+        "409": { $ref: "#/components/responses/InvalidState" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+  /api/workflow/{runId}/reject:
+    post:
+      tags: [Counsel gate]
+      summary: Reject the draft memo with a reason
+      operationId: rejectRun
+      parameters:
+        - $ref: "#/components/parameters/RunId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RejectRequest" }
+      responses:
+        "200": { $ref: "#/components/responses/Snapshot" }
+        "400": { $ref: "#/components/responses/HitlFailed" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/CounselRequired" }
+        "404": { $ref: "#/components/responses/RunNotFound" }
+        "409": { $ref: "#/components/responses/InvalidState" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+  /api/workflow/{runId}/edit-and-approve:
+    post:
+      tags: [Counsel gate]
+      summary: Replace memo text and approve in one step
+      operationId: editAndApproveRun
+      parameters:
+        - $ref: "#/components/parameters/RunId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/EditApproveRequest" }
+      responses:
+        "200": { $ref: "#/components/responses/Snapshot" }
+        "400": { $ref: "#/components/responses/HitlFailed" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/CounselRequired" }
+        "404": { $ref: "#/components/responses/RunNotFound" }
+        "409": { $ref: "#/components/responses/InvalidState" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+
+  /reviews/runs:
+    post:
+      tags: [Legacy]
+      summary: Run a review synchronously
+      deprecated: true
+      operationId: legacyStartRun
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [text]
+              properties:
+                contractId: { type: string }
+                text: { type: string }
+                language: { $ref: "#/components/schemas/MemoLanguage" }
+      responses:
+        "201": { $ref: "#/components/responses/Snapshot" }
+        "400": { $ref: "#/components/responses/InvalidInput" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "413": { $ref: "#/components/responses/PayloadTooLarge" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        "500": { $ref: "#/components/responses/WorkflowFailed" }
+  /reviews/runs/{runId}:
+    get:
+      tags: [Legacy]
+      summary: Run snapshot
+      deprecated: true
+      operationId: legacyGetRun
+      parameters:
+        - $ref: "#/components/parameters/RunId"
+      responses:
+        "200": { $ref: "#/components/responses/Snapshot" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "404": { $ref: "#/components/responses/RunNotFound" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        "500": { $ref: "#/components/responses/WorkflowFailed" }
+  /reviews/runs/{runId}/approve:
+    post:
+      tags: [Legacy]
+      summary: Approve (use /api/workflow/{runId}/approve)
+      deprecated: true
+      operationId: legacyApproveRun
+      parameters:
+        - $ref: "#/components/parameters/RunId"
+      responses:
+        "200": { $ref: "#/components/responses/Snapshot" }
+        "400": { $ref: "#/components/responses/HitlFailed" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/CounselRequired" }
+        "404": { $ref: "#/components/responses/RunNotFound" }
+        "409": { $ref: "#/components/responses/InvalidState" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+  /reviews/runs/{runId}/reject:
+    post:
+      tags: [Legacy]
+      summary: Reject (use /api/workflow/{runId}/reject)
+      deprecated: true
+      operationId: legacyRejectRun
+      parameters:
+        - $ref: "#/components/parameters/RunId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason: { type: string, minLength: 1 }
+      responses:
+        "200": { $ref: "#/components/responses/Snapshot" }
+        "400": { $ref: "#/components/responses/HitlFailed" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/CounselRequired" }
+        "404": { $ref: "#/components/responses/RunNotFound" }
+        "409": { $ref: "#/components/responses/InvalidState" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+  /reviews/runs/{runId}/edit-approve:
+    post:
+      tags: [Legacy]
+      summary: Edit and approve (use /api/workflow/{runId}/edit-and-approve)
+      deprecated: true
+      operationId: legacyEditApproveRun
+      parameters:
+        - $ref: "#/components/parameters/RunId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                bodyEn: { type: string }
+                bodyAr: { type: string }
+      responses:
+        "200": { $ref: "#/components/responses/Snapshot" }
+        "400": { $ref: "#/components/responses/HitlFailed" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403": { $ref: "#/components/responses/CounselRequired" }
+        "404": { $ref: "#/components/responses/RunNotFound" }
+        "409": { $ref: "#/components/responses/InvalidState" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+  /reviews/{reviewId}/memo:
+    post:
+      tags: [Legacy]
+      summary: Fetch the memo of a run once Counsel has decided
+      description: |
+        Counsel only. While the run is `AWAITING_APPROVAL` this returns 403 `APPROVAL_REQUIRED`
+        even for Counsel: the memo is not final until a decision is recorded. An unknown run also
+        returns 403.
+      deprecated: true
+      operationId: legacyGetMemo
+      parameters:
+        - name: reviewId
+          in: path
+          required: true
+          description: The run id.
+          schema: { type: string }
+      responses:
+        "200":
+          description: The decided memo.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [memo]
+                properties:
+                  memo: { $ref: "#/components/schemas/ReviewMemo" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "403":
+          description: Not Counsel, or the memo is still awaiting approval.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: "#/components/schemas/ForbiddenError"
+                  - $ref: "#/components/schemas/Error"
+              examples:
+                notCounsel:
+                  value: { error: "Forbidden: Requires Legal Counsel authorization" }
+                awaitingApproval:
+                  value: { error: APPROVAL_REQUIRED, message: Counsel approval is required before this operation. }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        "501":
+          description: Unexpected failure.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+  /events:
+    get:
+      tags: [Legacy]
+      summary: SSE heartbeat only (no run events)
+      deprecated: true
+      operationId: legacyEvents
+      security:
+        - BearerAuth: []
+        - SseQueryToken: []
+      responses:
+        "200":
+          description: "`hello` once, then `ping` every 15 s."
+          content:
+            text/event-stream:
+              schema: { type: string }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      description: "`DEMO_API_TOKEN` → analyst, `COUNSEL_TOKEN` → counsel. Both default to demo values outside production."
+    SseQueryToken:
+      type: apiKey
+      in: query
+      name: access_token
+      description: "Same tokens as BearerAuth. Accepted only on GET requests with `Accept: text/event-stream`."
+
+  parameters:
+    RunId:
+      name: runId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+
+  responses:
+    Snapshot:
+      description: Run snapshot after the operation.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/WorkflowSnapshot" }
+    Unauthenticated:
+      description: Missing or invalid bearer token.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          example: { error: UNAUTHENTICATED, message: Bearer token is required. }
+    CounselRequired:
+      description: Authenticated, but not with the counsel role.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ForbiddenError" }
+          example: { error: "Forbidden: Requires Legal Counsel authorization" }
+    InvalidInput:
+      description: Required field missing or empty.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          example: { error: INVALID_INPUT, message: Contract text is required. }
+    NotFound:
+      description: Contract not found.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          example: { error: NOT_FOUND, message: Contract not found. }
+    RunNotFound:
+      description: No run with this id.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          example: { error: RUN_NOT_FOUND, message: Workflow run 1b2c… was not found. }
+    InvalidState:
+      description: The run is not `AWAITING_APPROVAL` (for example, already decided).
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          example: { error: INVALID_STATE_TRANSITION, message: Cannot transition workflow from COMPLETED to APPROVED. }
+    HitlFailed:
+      description: Decision rejected, e.g. a rejection without a reason.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          example: { error: HITL_FAILED, message: Rejection reason is required. }
+    PayloadTooLarge:
+      description: "`text` exceeds `MAX_UPLOAD_CHARS`."
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          example: { error: PAYLOAD_TOO_LARGE, message: Contract text exceeds 200000 characters. }
+    RateLimited:
+      description: Too many requests from this IP.
+      headers:
+        Retry-After:
+          schema: { type: integer, example: 60 }
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          example: { error: RATE_LIMITED, message: Too many requests. Retry after 60s. }
+    WorkflowFailed:
+      description: Unexpected failure while starting or reading a run.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          example: { error: WORKFLOW_FAILED, message: unknown-error }
+
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error: { type: string, description: Machine-readable code. }
+        message: { type: string }
+    ForbiddenError:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+          enum: ["Forbidden: Requires Legal Counsel authorization"]
+
+    Health:
+      type: object
+      required: [status, variant, locale, requireCounselApproval, llmProvider]
+      properties:
+        status: { type: string, enum: [ok] }
+        variant: { type: string, enum: [D1T1] }
+        locale: { type: string, enum: [ar, en] }
+        requireCounselApproval: { type: boolean }
+        llmProvider: { type: string, enum: [openai, local] }
+
+    Language:
+      type: string
+      enum: [ar, en]
+    MemoLanguage:
+      type: string
+      enum: [ar, en, both]
+      default: en
+    ClauseCategory:
+      type: string
+      enum: [liability, indemnity, ip, payment, termination, jurisdiction, confidentiality, other]
+    RiskSeverity:
+      type: string
+      enum: [low, medium, high, critical]
+    WorkflowState:
+      type: string
+      enum: [INIT, EXTRACTING, ASSESSING, DRAFTING, AWAITING_APPROVAL, APPROVED, REJECTED, EDITED, COMPLETED, FAILED]
+    AgentId:
+      type: string
+      enum: [clause_extractor, risk_assessor, memo_drafter]
+    ToolName:
+      type: string
+      enum: [retrieval_tool, clause_comparison_tool, risk_calculator_tool, save_draft_memo_tool]
+    TokenUsage:
+      type: object
+      required: [promptTokens, completionTokens]
+      properties:
+        promptTokens: { type: integer, minimum: 0 }
+        completionTokens: { type: integer, minimum: 0 }
+
+    ContractSummary:
+      type: object
+      required: [id, title, language, source]
+      properties:
+        id: { type: string, example: D1T1-EN-NDA-001 }
+        title: { type: string }
+        language: { $ref: "#/components/schemas/Language" }
+        source: { type: string, enum: [corpus, upload] }
+        contractType: { type: string, example: nda }
+        highRisk: { type: boolean }
+    ContractRecord:
+      allOf:
+        - $ref: "#/components/schemas/ContractSummary"
+        - type: object
+          required: [text]
+          properties:
+            text: { type: string }
+    UploadContractRequest:
+      type: object
+      required: [text]
+      properties:
+        title: { type: string, description: "Defaults to `filename`, then \"Uploaded contract\"." }
+        filename: { type: string }
+        language: { type: string, enum: [ar, en], default: en }
+        text: { type: string, minLength: 1, description: Plain text or Markdown. PDF/DOCX are not parsed. }
+
+    ChatRequest:
+      type: object
+      required: [query]
+      properties:
+        query: { type: string, minLength: 1, description: "`question` is accepted as an alias." }
+        question: { type: string }
+        language: { $ref: "#/components/schemas/Language" }
+        documentId: { type: string, description: Limit retrieval to this contract plus the playbook. }
+    RagCitation:
+      type: object
+      required: [chunkId, documentId, source, locator, excerpt, language, score]
+      properties:
+        chunkId: { type: string, example: "playbook:en:liability" }
+        documentId: { type: string }
+        source: { type: string, enum: [contract, playbook] }
+        locator: { type: string, description: Clause heading or playbook title. }
+        excerpt: { type: string }
+        language: { $ref: "#/components/schemas/Language" }
+        score: { type: number, minimum: 0, maximum: 1, description: Normalised RRF score. }
+    RagAnswer:
+      type: object
+      required: [answer, refused, citations]
+      properties:
+        answer: { type: string }
+        refused: { type: boolean, enum: [false] }
+        citations:
+          type: array
+          items: { $ref: "#/components/schemas/RagCitation" }
+    RagRefusal:
+      type: object
+      required: [error, refused, reason, citations, answer]
+      properties:
+        error: { type: string, enum: [NOT_ENOUGH_INFORMATION] }
+        refused: { type: boolean, enum: [true] }
+        reason: { type: string, example: not_enough_information }
+        answer: { type: string, enum: [""] }
+        citations:
+          type: array
+          items: { $ref: "#/components/schemas/RagCitation" }
+
+    StartRunRequest:
+      type: object
+      description: Provide `text`, or a catalog `contractId` (its text is loaded when `text` is empty).
+      properties:
+        contractId: { type: string, example: D1T1-AR-SLA-002 }
+        text: { type: string }
+        language: { $ref: "#/components/schemas/MemoLanguage" }
+    RejectRequest:
+      type: object
+      properties:
+        reason: { type: string, minLength: 1 }
+        comments: { type: string, description: Alias of `reason`. }
+    EditApproveRequest:
+      type: object
+      properties:
+        bodyEn: { type: string }
+        bodyAr: { type: string }
+        editedMemo: { type: string, description: Alias of `bodyEn`. }
+
+    ExtractedClause:
+      type: object
+      required: [id, contractId, category, title, text, language, heading, standard, spanStart, spanEnd]
+      properties:
+        id: { type: string, example: "D1T1-EN-NDA-001:clause:5" }
+        contractId: { type: string }
+        category: { $ref: "#/components/schemas/ClauseCategory" }
+        title: { type: string }
+        text: { type: string }
+        language: { type: string, enum: [ar, en, mixed] }
+        heading: { type: string }
+        standard: { type: boolean }
+        spanStart: { type: integer, minimum: 0 }
+        spanEnd: { type: integer, minimum: 0 }
+    RiskFinding:
+      type: object
+      required: [id, clauseId, category, severity, rationale, citationIds, omitted]
+      properties:
+        id: { type: string }
+        clauseId: { type: string, description: "`omitted:<category>` for a missing mandatory family." }
+        category: { $ref: "#/components/schemas/ClauseCategory" }
+        severity: { $ref: "#/components/schemas/RiskSeverity" }
+        rationale:
+          type: string
+          description: Deterministic reasons from `risk_calculator_tool`, including the category-specific deviation note.
+          example: "Termination notice of 15 days is below the 30-day minimum grace period. (playbook similarity 0.05 < 0.20)"
+        citationIds:
+          type: array
+          items: { type: string }
+        omitted: { type: boolean }
+    Citation:
+      type: object
+      required: [id, source, locator, language, excerpt, isTranslation]
+      properties:
+        id: { type: string }
+        source: { type: string, enum: [contract, corpus] }
+        locator: { type: string, description: Playbook clause title. }
+        language: { $ref: "#/components/schemas/Language" }
+        excerpt: { type: string, description: Text of the cited playbook clause. }
+        isTranslation: { type: boolean }
+    ReviewMemo:
+      type: object
+      required: [id, contractId, language, citations, approvedByCounsel]
+      properties:
+        id: { type: string }
+        contractId: { type: string }
+        language: { $ref: "#/components/schemas/MemoLanguage" }
+        bodyEn: { type: string }
+        bodyAr: { type: string }
+        citations:
+          type: array
+          items: { $ref: "#/components/schemas/Citation" }
+        approvedByCounsel: { type: boolean }
+    RunTraceEvent:
+      type: object
+      required: [at, step, latencyMs, input, output]
+      properties:
+        at: { type: string, format: date-time }
+        step: { $ref: "#/components/schemas/WorkflowState" }
+        agentId: { $ref: "#/components/schemas/AgentId" }
+        toolName: { $ref: "#/components/schemas/ToolName" }
+        latencyMs: { type: integer, minimum: 0 }
+        input: {}
+        output: {}
+        tokenUsage: { $ref: "#/components/schemas/TokenUsage" }
+        error: { type: string }
+    WorkflowSnapshot:
+      type: object
+      required: [runId, contractId, language, state, clauses, findings, tokenUsage, traces, iteration, createdAt, updatedAt]
+      properties:
+        runId: { type: string, format: uuid }
+        contractId: { type: string }
+        language: { $ref: "#/components/schemas/MemoLanguage" }
+        state: { $ref: "#/components/schemas/WorkflowState" }
+        clauses:
+          type: array
+          items: { $ref: "#/components/schemas/ExtractedClause" }
+        findings:
+          type: array
+          items: { $ref: "#/components/schemas/RiskFinding" }
+        memo: { $ref: "#/components/schemas/ReviewMemo" }
+        rejectionReason: { type: string }
+        tokenUsage: { $ref: "#/components/schemas/TokenUsage" }
+        traces:
+          type: array
+          items: { $ref: "#/components/schemas/RunTraceEvent" }
+        iteration: { type: integer, minimum: 0 }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    StreamEvent:
+      description: JSON payload of one SSE frame; `type` equals the SSE event name.
+      oneOf:
+        - $ref: "#/components/schemas/AgentStartEvent"
+        - $ref: "#/components/schemas/AgentDoneEvent"
+        - $ref: "#/components/schemas/ToolExecEvent"
+        - $ref: "#/components/schemas/ClauseExtractedEvent"
+        - $ref: "#/components/schemas/RiskFoundEvent"
+        - $ref: "#/components/schemas/AwaitingApprovalEvent"
+        - $ref: "#/components/schemas/HitlDecisionEvent"
+        - $ref: "#/components/schemas/RunFailedEvent"
+        - $ref: "#/components/schemas/RunCancelledEvent"
+        - $ref: "#/components/schemas/PingEvent"
+      discriminator:
+        propertyName: type
+        mapping:
+          AGENT_START: "#/components/schemas/AgentStartEvent"
+          AGENT_DONE: "#/components/schemas/AgentDoneEvent"
+          TOOL_EXEC: "#/components/schemas/ToolExecEvent"
+          CLAUSE_EXTRACTED: "#/components/schemas/ClauseExtractedEvent"
+          RISK_FOUND: "#/components/schemas/RiskFoundEvent"
+          AWAITING_APPROVAL: "#/components/schemas/AwaitingApprovalEvent"
+          HITL_DECISION: "#/components/schemas/HitlDecisionEvent"
+          RUN_FAILED: "#/components/schemas/RunFailedEvent"
+          RUN_CANCELLED: "#/components/schemas/RunCancelledEvent"
+          ping: "#/components/schemas/PingEvent"
+    RunEventBase:
+      type: object
+      required: [type, runId, at]
+      properties:
+        type: { type: string }
+        runId: { type: string }
+        at: { type: string, format: date-time }
+    AgentStartEvent:
+      allOf:
+        - $ref: "#/components/schemas/RunEventBase"
+        - type: object
+          required: [agentId, step]
+          properties:
+            type: { type: string, enum: [AGENT_START] }
+            agentId: { $ref: "#/components/schemas/AgentId" }
+            step: { $ref: "#/components/schemas/WorkflowState" }
+    AgentDoneEvent:
+      allOf:
+        - $ref: "#/components/schemas/RunEventBase"
+        - type: object
+          required: [agentId, step, latencyMs, tokenUsage, totalTokenUsage]
+          properties:
+            type: { type: string, enum: [AGENT_DONE] }
+            agentId: { $ref: "#/components/schemas/AgentId" }
+            step: { $ref: "#/components/schemas/WorkflowState" }
+            latencyMs: { type: integer, minimum: 0 }
+            tokenUsage: { $ref: "#/components/schemas/TokenUsage" }
+            totalTokenUsage: { $ref: "#/components/schemas/TokenUsage" }
+    ToolExecEvent:
+      allOf:
+        - $ref: "#/components/schemas/RunEventBase"
+        - type: object
+          required: [agentId, step, toolName, latencyMs]
+          properties:
+            type: { type: string, enum: [TOOL_EXEC] }
+            agentId: { $ref: "#/components/schemas/AgentId" }
+            step: { $ref: "#/components/schemas/WorkflowState" }
+            toolName: { $ref: "#/components/schemas/ToolName" }
+            latencyMs: { type: integer, minimum: 0 }
+            error: { type: string }
+    ClauseExtractedEvent:
+      allOf:
+        - $ref: "#/components/schemas/RunEventBase"
+        - type: object
+          required: [clause]
+          properties:
+            type: { type: string, enum: [CLAUSE_EXTRACTED] }
+            clause: { $ref: "#/components/schemas/ExtractedClause" }
+    RiskFoundEvent:
+      allOf:
+        - $ref: "#/components/schemas/RunEventBase"
+        - type: object
+          required: [finding]
+          properties:
+            type: { type: string, enum: [RISK_FOUND] }
+            finding: { $ref: "#/components/schemas/RiskFinding" }
+    AwaitingApprovalEvent:
+      allOf:
+        - $ref: "#/components/schemas/RunEventBase"
+        - type: object
+          required: [tokenUsage]
+          properties:
+            type: { type: string, enum: [AWAITING_APPROVAL] }
+            tokenUsage: { $ref: "#/components/schemas/TokenUsage" }
+    HitlDecisionEvent:
+      allOf:
+        - $ref: "#/components/schemas/RunEventBase"
+        - type: object
+          required: [decision]
+          properties:
+            type: { type: string, enum: [HITL_DECISION] }
+            decision: { type: string, enum: [approved, rejected, edited] }
+    RunFailedEvent:
+      allOf:
+        - $ref: "#/components/schemas/RunEventBase"
+        - type: object
+          required: [message]
+          properties:
+            type: { type: string, enum: [RUN_FAILED] }
+            message: { type: string }
+    RunCancelledEvent:
+      allOf:
+        - $ref: "#/components/schemas/RunEventBase"
+        - type: object
+          properties:
+            type: { type: string, enum: [RUN_CANCELLED] }
+    PingEvent:
+      type: object
+      required: [type, at]
+      properties:
+        type: { type: string, enum: [ping] }
+        at: { type: integer, description: Epoch milliseconds. }

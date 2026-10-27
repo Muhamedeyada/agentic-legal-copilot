@@ -58,7 +58,7 @@ This product is a **governed copilot**, not an autonomous lawyer. It extracts, r
 | BR-01 | Upload contract files with size limits | Must | **Partial:** JSON/text upload + 32-file catalog. PDF/DOCX MIME pipeline deferred |
 | BR-02 | Detect and tag language per document and per clause (`ar` / `en` / `mixed`) | Must | Heading splitter + script-count detector |
 | BR-03 | Extract clauses into a versioned typed schema | Must | Clause Extractor + Zod; deterministic fallback |
-| BR-04 | Classify contractual risk with severity and rationale | Must | Risk Assessor + `risk_calculator_tool` |
+| BR-04 | Classify contractual risk with severity and rationale | Must | Risk Assessor + `risk_calculator_tool`; category-specific deviation notes name a defect only when a deterministic check finds it |
 | BR-05 | Retrieve comparable / policy snippets in AR and EN (cross-lingual) | Must | Hybrid BM25 + hashed dense, RRF k=60; bilingual expand. Semantic multilingual embeddings deferred |
 | BR-06 | Render Arabic UI and reports RTL | Must | `locale.tsx` sets `html[dir]` |
 | BR-07 | Draft review memo in AR, EN, or both | Must | Memo Drafter; sanitized bodies |
@@ -70,6 +70,7 @@ This product is a **governed copilot**, not an autonomous lawyer. It extracts, r
 | BR-13 | Evaluation harness against ≥25 bilingual Q/A pairs | Must | 28-item gold set; EN/AR/XL sliced |
 | BR-14 | Never persist raw personal data in git or logs | Must | Synthetic corpus; `redactPii`; `.gitignore` on `.env` |
 | BR-15 | Stream review progress to the client via SSE | Should | `/api/workflow/stream/:runId` |
+| BR-16 | Publish a machine-readable API contract | Should | `docs/openapi.yaml`; route-coverage unit test |
 
 ---
 

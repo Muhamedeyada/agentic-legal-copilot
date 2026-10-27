@@ -115,6 +115,8 @@ export const RiskCalculatorInputZ = z.object({
   omitted: z.boolean(),
   similarityToPlaybook: z.number().min(0).max(1),
   flags: RiskFlagsZ,
+  /** Category-specific explanation used when the clause deviates from the playbook. */
+  deviationNote: z.string().min(1).optional(),
 });
 
 export const RiskCalculatorOutputZ = z.object({

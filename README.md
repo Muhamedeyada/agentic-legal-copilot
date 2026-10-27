@@ -156,20 +156,24 @@ From `server/src/infrastructure/config.ts` and the Vite client:
 
 ## HTTP surface (working)
 
-All routes except health need `Authorization: Bearer <token>` (401 otherwise). Approval routes need the counsel token (403 otherwise).
+Full contract: [`docs/openapi.yaml`](docs/openapi.yaml) (OpenAPI 3.0; `npx @redocly/cli lint docs/openapi.yaml`). A unit test calls every documented operation against the app, so the spec cannot list a route that does not exist.
+
+All routes except health need `Authorization: Bearer <token>` (401 otherwise). Approval routes need the counsel token (403 otherwise). Any route: 429 when rate-limited; a `text` field over `MAX_UPLOAD_CHARS` → 413.
 
 | Method | Path | |
 | --- | --- | --- |
-| `GET` | `/health`, `/api/health` | `{ status, variant: "D1T1" }` |
+| `GET` | `/health`, `/api/health` | `{ status, variant: "D1T1" }` — no auth |
 | `GET` | `/api/contracts` | Corpus + uploads |
 | `GET` | `/api/contracts/:id` | Full text |
-| `POST` | `/api/contracts/upload` | JSON `{ title, language, text }` |
+| `POST` | `/api/contracts/upload` | JSON `{ title, language, text }` → **201** |
 | `POST` | `/api/chat` | Hybrid RAG (BM25 + dense, RRF); 404 if refuse |
-| `POST` | `/api/workflow/run` | `{ runId }` immediately |
-| `GET` | `/api/workflow/stream/:runId` | SSE agent events |
-| `POST` | `/api/workflow/:runId/approve\|reject\|edit-and-approve\|cancel` | HITL |
-| `POST` | `/reviews/:id/memo` | **403** until Counsel approves |
-| `GET` | `/events` | Legacy SSE heartbeat only |
+| `POST` | `/api/workflow/run` | **202** `{ runId }` immediately |
+| `GET` | `/api/workflow/stream/:runId` | SSE agent events (`?access_token=` allowed) |
+| `GET` | `/api/workflow/:runId` | Run snapshot |
+| `POST` | `/api/workflow/:runId/cancel` | **202** |
+| `POST` | `/api/workflow/:runId/approve\|reject\|edit-and-approve` | Counsel only; 409 if not `AWAITING_APPROVAL` |
+| `POST` | `/reviews/:id/memo` | Legacy, counsel only; **403** until Counsel decides |
+| `*` | `/reviews/runs…`, `/events` | Legacy (deprecated in the spec) |
 
 ---
 
@@ -180,7 +184,7 @@ Synthetic contracts only.
 1. `npm run dev` or `docker compose up --build`.
 2. Open the UI. Toggle AR/EN — `html` `dir` flips to `rtl` / `ltr`.
 3. Select **`D1T1-EN-NDA-003`** (unlimited liability). Click **Run review**.
-4. Watch the stepper and open **Trace** (`AGENT_START`, `TOOL_EXEC`, `RISK_FOUND`). Expect a **Critical** liability finding.
+4. Watch the stepper and open **Trace** (`AGENT_START`, `TOOL_EXEC`, `RISK_FOUND`). Expect a **Critical** finding on clause 8 *Liability and Indemnification* (filed as indemnity): "Unlimited / uncapped liability. Broad indemnification obligation missing standard gross negligence exemptions."
 5. Open a risk or redline card (**Compare with playbook**). Confirm category, similarity %, and the side-by-side contract vs golden clause. **Apply playbook clause** inserts fallback text into the Counsel memo draft; **Copy reference text** shows a toast.
 6. Filter clauses (**All** / **Critical risks** / **Missing clauses**). **Print / Save PDF** for a formal memo layout (signature line). Markdown **Export** stays disabled until Approve.
 7. Before Approve, `POST /reviews/{runId}/memo` → **403** `APPROVAL_REQUIRED`.
@@ -202,6 +206,7 @@ Do not demo on real client agreements.
 | [docs/SECURITY.md](docs/SECURITY.md) | OWASP Web and LLM |
 | [docs/EVALUATION.md](docs/EVALUATION.md) | Golden set and bilingual metrics |
 | [docs/AGENTIC-WORKFLOW.md](docs/AGENTIC-WORKFLOW.md) | Agents and repo rules |
+| [docs/openapi.yaml](docs/openapi.yaml) | HTTP API contract (OpenAPI 3.0) |
 | [docs/AI-USAGE-LOG.md](docs/AI-USAGE-LOG.md) | Where a coding assistant was used |
 
 Teaching pack: [`teaching/`](teaching/) — [slides](teaching/SLIDES.md), [lab](teaching/LAB-SHEET.md), [mistakes](teaching/TRAINEE-MISTAKES.md).

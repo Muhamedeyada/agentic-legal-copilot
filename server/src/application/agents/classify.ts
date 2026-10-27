@@ -61,18 +61,39 @@ const CUES: readonly Cue[] = [
 const STANDARD_HEADING =
   /\b(liability|indemnity|termination|governing\s+law|jurisdiction|payment|intellectual|confidential|بند|المادة|مسؤول|تعويض|إنهاء|القانون|دفع|ملكية|سرية)/i;
 
+/** Definitions and recitals mention every family in passing; they carry no risk family of their own. */
+const NEUTRAL_HEADING = /\b(?:definitions?|interpretation|background|recitals)\b|التعاريف|تعريفات|التفسير|التمهيد/i;
+
+function matchingCues(text: string): Cue[] {
+  const folded = normalizeArabic(text);
+  return CUES.filter((cue) => cue.patterns.some((p) => p.test(text) || p.test(folded)));
+}
+
+function matchCue(text: string): ClauseCategory | undefined {
+  return matchingCues(text)[0]?.category;
+}
+
+/** Every family a heading names, e.g. "Liability and Indemnification" → liability + indemnity. */
+export function headingFamilies(heading: string): ClauseCategory[] {
+  return NEUTRAL_HEADING.test(heading) ? [] : matchingCues(heading).map((cue) => cue.category);
+}
+
+/**
+ * The heading decides when it names a family ("Confidentiality", "القانون الحاكم"); body cues are
+ * the fallback. Body-first matching filed confidentiality clauses under termination because they
+ * mention "termination", and so compared them with the wrong playbook clause.
+ */
 export function classifyClause(heading: string, text: string): {
   category: ClauseCategory;
   standard: boolean;
 } {
-  const blob = `${heading}\n${text}`;
-  const folded = normalizeArabic(blob);
-  for (const cue of CUES) {
-    if (cue.patterns.some((p) => p.test(blob) || p.test(folded))) {
-      return { category: cue.category, standard: STANDARD_HEADING.test(heading) };
-    }
+  if (NEUTRAL_HEADING.test(heading)) {
+    return { category: "other", standard: false };
   }
-  return { category: "other", standard: false };
+  const category = matchCue(heading) ?? matchCue(`${heading}\n${text}`);
+  return category
+    ? { category, standard: STANDARD_HEADING.test(heading) }
+    : { category: "other", standard: false };
 }
 
 export function detectRiskFlags(text: string): {
