@@ -1,6 +1,13 @@
-/** Strip Arabic tashkeel and fold common letter variants for bilingual matching. */
-export function normalizeArabic(text: string): string {
+/** Arabic-Indic (٠–٩) and Extended Arabic-Indic (۰–۹) digits → ASCII, so "٣٠ يوماً" reads as 30. */
+export function foldDigits(text: string): string {
   return text
+    .replace(/[٠-٩]/g, (d) => String(d.charCodeAt(0) - 0x0660))
+    .replace(/[۰-۹]/g, (d) => String(d.charCodeAt(0) - 0x06f0));
+}
+
+/** Strip Arabic tashkeel, fold common letter variants and digits for bilingual matching. */
+export function normalizeArabic(text: string): string {
+  return foldDigits(text)
     .normalize("NFKC")
     .replace(/[\u064B-\u065F\u0670\u06D6-\u06ED]/g, "")
     .replace(/[أإآٱ]/g, "ا")

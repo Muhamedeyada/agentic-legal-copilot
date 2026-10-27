@@ -184,7 +184,7 @@ Synthetic contracts only.
 1. `npm run dev` or `docker compose up --build`.
 2. Open the UI. Toggle AR/EN — `html` `dir` flips to `rtl` / `ltr`.
 3. Select **`D1T1-EN-NDA-003`** (unlimited liability). Click **Run review**.
-4. Watch the stepper and open **Trace** (`AGENT_START`, `TOOL_EXEC`, `RISK_FOUND`). Expect a **Critical** finding on clause 8 *Liability and Indemnification* (filed as indemnity): "Unlimited / uncapped liability. Broad indemnification obligation missing standard gross negligence exemptions."
+4. Watch the stepper and open **Trace** (`AGENT_START`, `TOOL_EXEC`, `RISK_FOUND`). Expect a **Critical** liability finding on clause 8 *Liability and Indemnification*: "Unlimited / uncapped liability. Uncapped liability structure lacking aggregate maximum and consequential damage exclusion."
 5. Open a risk or redline card (**Compare with playbook**). Confirm category, similarity %, and the side-by-side contract vs golden clause. **Apply playbook clause** inserts fallback text into the Counsel memo draft; **Copy reference text** shows a toast.
 6. Filter clauses (**All** / **Critical risks** / **Missing clauses**). **Print / Save PDF** for a formal memo layout (signature line). Markdown **Export** stays disabled until Approve.
 7. Before Approve, `POST /reviews/{runId}/memo` → **403** `APPROVAL_REQUIRED`.

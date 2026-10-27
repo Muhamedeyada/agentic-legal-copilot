@@ -14,9 +14,10 @@ export interface DeviationInput {
 const DEFAULT_MIN_NOTICE_DAYS = 30;
 
 /**
- * Category-specific wording for a playbook deviation. Each specific defect is named only when a
- * deterministic check (EN + AR) finds it in the clause; otherwise the note says what is known,
- * so Counsel never reads a defect the system did not detect.
+ * Category-specific wording for a playbook deviation. A specific defect is named only when a
+ * deterministic EN + AR pattern check finds it in the clause; otherwise the note says what is
+ * known. The checks are keyword heuristics, not legal parsing: unusual drafting can still slip
+ * past them, so the note is a pointer for Counsel, not a conclusion.
  */
 export function explainDeviation(input: DeviationInput): string {
   const text = input.clauseText;
@@ -45,23 +46,19 @@ function noStandard(what: string): string {
   return `The playbook has no standard for ${what}; review manually.`;
 }
 
+/** Sentences of the folded text (lower-case, Arabic letters and digits folded). */
 function sentences(text: string): string[] {
-  return text
-    .split(/(?<=[.!?؟])\s+|\n+/u)
+  return normalizeArabic(text)
+    .split(/(?<=[.!?؟;])\s+|\n+/u)
     .map((s) => s.trim())
     .filter((s) => s.length > 0);
-}
-
-function fold(text: string): string {
-  return normalizeArabic(text);
 }
 
 // --- Liability -------------------------------------------------------------------------------
 
 /** A sentence that excludes indirect / consequential loss, and is not itself disapplied. */
 export function excludesConsequentialLoss(text: string): boolean {
-  return sentences(text).some((sentence) => {
-    const s = fold(sentence);
+  return sentences(text).some((s) => {
     const mentionsLoss = /indirect|consequential|غير المباشر|التبعي/.test(s);
     const excludes =
       /not (?:be )?liable|no liability|neither party (?:is|shall be) liable|exclud|exclusion/.test(s) ||
@@ -89,7 +86,7 @@ function explainLiability(text: string): string {
 // --- Indemnity -------------------------------------------------------------------------------
 
 function explainIndemnity(text: string): string {
-  const s = fold(text);
+  const s = normalizeArabic(text);
   const grossNegligenceCarveOut = /gross(?:ly)? negligen|اهمال جسيم|الاهمال الجسيم/.test(s);
   // "shall not be subject to any monetary cap" mentions a cap without imposing one.
   const flags = detectRiskFlags(text);
@@ -106,39 +103,99 @@ function explainIndemnity(text: string): string {
 
 // --- Termination -----------------------------------------------------------------------------
 
-/** Shortest notice period (in days) stated in sentences about notice. */
+const EN_NUMBER_WORDS: Readonly<Record<string, number>> = {
+  one: 1,
+  two: 2,
+  three: 3,
+  five: 5,
+  seven: 7,
+  ten: 10,
+  fourteen: 14,
+  fifteen: 15,
+  thirty: 30,
+  sixty: 60,
+  ninety: 90,
+};
+const EN_COUNT = `(?:\\(?(\\d{1,3})\\)?|(${Object.keys(EN_NUMBER_WORDS).join("|")})(?:\\s*\\(\\d{1,3}\\))?)`;
+const EN_DAYS = `(?:calendar\\s+|business\\s+|working\\s+)?days?`;
+
+/**
+ * Days attached to the notice itself: "30 days' prior written notice", "one (1) calendar day's
+ * notice", "notice of thirty (30) days". Cure and delivery periods ("cure within 10 days",
+ * "30 days after written notice", "deemed received 2 days after posting") do not match.
+ */
+const EN_NOTICE_PERIOD: readonly RegExp[] = [
+  new RegExp(`${EN_COUNT}\\s*${EN_DAYS}(?:['’]s?)?\\s+(?:prior\\s+|advance\\s+)?(?:written\\s+)?notice\\b`, "g"),
+  new RegExp(
+    `\\bnotice(?:\\s+period)?\\s+of\\s+(?:at\\s+least\\s+|not\\s+less\\s+than\\s+)?${EN_COUNT}\\s*${EN_DAYS}`,
+    "g",
+  ),
+];
+
+/**
+ * "بإخطار كتابي سابق مدته 15 يوماً", "بإشعار لا يقل عن ثلاثين (30) يوماً". The notice word must come
+ * first, so the cure period "بعد ثلاثين (30) يوماً من الإخطار" does not match.
+ */
+const AR_NOTICE_PERIOD = /(?:اخطار|اشعار)(?:\s+(?!(?:من|بعد|خلال)(?=\s|$))\S+){0,4}?\s+\(?(\d{1,3})\)?\s*(?:يوم|ايام)/g;
+const AR_ONE_DAY_NOTICE = /(?:اخطار|اشعار)(?:\s+\S+){0,3}?\s+(?:مدته\s+)?يوم(?:\s+(?:تقويمي|عمل))?(?:\s+واحد)?(?=[\s.،(]|$)/;
+
+/** Shortest termination notice period in days, or undefined when the clause states none. */
 export function shortestNoticeDays(text: string): number | undefined {
   const days: number[] = [];
-  for (const sentence of sentences(text)) {
-    const s = fold(sentence);
-    if (!/notice|اخطار|مهله/.test(s)) {
-      continue;
+  for (const s of sentences(text)) {
+    for (const re of EN_NOTICE_PERIOD) {
+      for (const m of s.matchAll(re)) {
+        const n = m[1] !== undefined ? Number(m[1]) : EN_NUMBER_WORDS[m[2] ?? ""];
+        if (n !== undefined) {
+          days.push(n);
+        }
+      }
     }
-    if (detectRiskFlags(sentence).oneDayTermination) {
+    for (const m of s.matchAll(AR_NOTICE_PERIOD)) {
+      days.push(Number(m[1]));
+    }
+    if (AR_ONE_DAY_NOTICE.test(s)) {
       days.push(1);
-    }
-    for (const m of s.matchAll(/\(?(\d{1,3})\)?\s*(?:calendar\s+|business\s+)?days?\b/g)) {
-      days.push(Number(m[1]));
-    }
-    for (const m of s.matchAll(/\(?(\d{1,3})\)?\s*(?:يوم|ايام)/g)) {
-      days.push(Number(m[1]));
     }
   }
   return days.length > 0 ? Math.min(...days) : undefined;
 }
 
-/** A termination right granted to one named party rather than to either party. */
-export function isOneSidedTermination(text: string): boolean {
-  return sentences(text).some((sentence) => {
-    const s = fold(sentence);
-    const en = /^(.*?)\b(?:may|can|is entitled to|shall have the right to)\s+terminate\b/.exec(s);
-    if (en) {
-      return !/\b(?:either|each|any|both)\s+part(?:y|ies)\b|\bthe parties\b/.test(en[1] ?? "");
+const EN_GRANT =
+  /([^,;:]*?)\b(?:may|can|is\s+entitled\s+to|shall\s+be\s+entitled\s+to|has\s+the\s+right\s+to|shall\s+have\s+the\s+right\s+to|reserves\s+the\s+right\s+to)\s+terminate\b/g;
+const EN_MUTUAL = /\b(?:either|each|any|both)\s+(?:of\s+the\s+)?part(?:y|ies)\b|\bthe\s+parties\b|\b(?:or|and)\b/;
+const EN_NOT_A_PARTY = /\b(?:agreement|contract|order|statement\s+of\s+work|it|which)\s*$/;
+const AR_GRANT = /(?:يجوز|يحق)\s+(ل\S+(?:\s+\S+){0,3}?)\s+(?:انهاء|الانهاء|انهاوه|انهاءه|فسخ)/g;
+// JS `\b` is ASCII-only, so Arabic word ends use a lookahead.
+const AR_MUTUAL = /^(?:لاي|لكل|للطرفين|لكلا)(?=\s|$)|\s(?:او\s+|و)ل/;
+
+/** Named parties holding their own termination right (mutual grants are left out). */
+function singlePartyGrants(text: string): Set<string> {
+  const parties = new Set<string>();
+  for (const s of sentences(text)) {
+    for (const m of s.matchAll(EN_GRANT)) {
+      const subject = (m[1] ?? "").replace(/^(?:however|then|thereafter|in\s+addition|additionally)\s+/, "").trim();
+      if (subject.length === 0 || EN_MUTUAL.test(subject) || EN_NOT_A_PARTY.test(subject)) {
+        continue;
+      }
+      parties.add(subject.replace(/^the\s+/, "").split(/\s+/).slice(-3).join(" "));
     }
-    // "يجوز لمقدم الخدمة إنهاء" is one-sided; "يجوز لأي طرف" / "لكل طرف" is not.
-    const ar = /(?:يجوز|يحق)\s+ل(\S+)[^.]*?(?:انهاء|الانهاء)/.exec(s);
-    return ar ? !/^(?:اي|كل|لطرفين|طرفين)$/.test(ar[1] ?? "") && !/الطرفين/.test(s) : false;
-  });
+    for (const m of s.matchAll(AR_GRANT)) {
+      const subject = (m[1] ?? "").trim();
+      if (!AR_MUTUAL.test(subject)) {
+        parties.add(subject.split(/\s+/)[0] ?? subject);
+      }
+    }
+  }
+  return parties;
+}
+
+/**
+ * A termination right held by exactly one named party. "Either party", "the Client or the
+ * Provider", or two parties granted the right in separate sentences are all mutual.
+ */
+export function isOneSidedTermination(text: string): boolean {
+  return singlePartyGrants(text).size === 1;
 }
 
 function explainTermination(text: string, policyText: string): string {
@@ -153,29 +210,54 @@ function explainTermination(text: string, policyText: string): string {
     return `Termination notice of ${notice} day${notice === 1 ? "" : "s"} is below the ${minimum}-day minimum grace period.`;
   }
   if (oneSided) {
-    return "Asymmetric termination right: only one named party may terminate.";
+    return "Asymmetric termination right: only one named party is granted a termination right.";
   }
   return "Termination terms deviate from the cited playbook clause.";
 }
 
 // --- Jurisdiction ----------------------------------------------------------------------------
 
-/** The law named in a "governed by …" / "يخضع هذا العقد لـ …" sentence. */
+const EN_LAW =
+  /\b(?:governed\s+by|construed\s+(?:in\s+accordance\s+with|under))\s+(?:and\s+(?:construed|interpreted)\s+(?:in\s+accordance\s+with|under)\s+)?(?:the\s+)?(?:(?:substantive\s+)?laws?\s+(?:in\s+force\s+in|of)\s+)?(?:the\s+)?([^,.;\n]+)/gi;
+const EN_LAW_SHALL_GOVERN = /\blaws?\s+of\s+(?:the\s+)?([^,.;\n]+?)\s+(?:shall|will)\s+govern\b/i;
+/** Where the law's name ends: "England and Wales without regard to …" → "England and Wales". */
+const EN_LAW_TAIL =
+  /\s+(?:and\s+(?:construed|interpreted)|without\s+(?:regard|reference)|excluding|exclusive\s+of|save\s+that|and\s+(?:the|each|any)\s)[\s\S]*$/i;
+/** Captures that are cross-references, not laws: "governed by Clause 12", "governed by this Agreement". */
+const NOT_A_LAW = /^(?:clause|section|article|paragraph|schedule|annex|exhibit|appendix|this|these|that|such|its|their|the\s+(?:terms|provisions|order))\b|^\d/i;
+const AR_LAW =
+  /(?:يخضع|تخضع)\s+(?:هذا|هذه)\s+(?:العقد|الاتفاق|الاتفاقية)(?:\s+و(?:يفسر|تفسر))?(?:\s+وفقا)?\s+(?:لـ\s*|ل)([^.،\n]+?)(?=\s+دون|[.،\n]|$)/u;
+
+/** The governing law named in the clause, e.g. "State of Delaware" or "قوانين جمهورية مصر العربية". */
 export function governingLaw(text: string): string | undefined {
-  const en = /governed by\s+(?:the\s+)?(?:laws?\s+of\s+)?(?:the\s+)?([^,.;\n]+)/i.exec(text);
-  if (en?.[1]) {
-    return en[1].trim();
+  const plain = text.replace(/[ً-ٰٟ]/g, "");
+  for (const m of plain.matchAll(EN_LAW)) {
+    const law = (m[1] ?? "").replace(EN_LAW_TAIL, "").trim();
+    if (law.length > 0 && !NOT_A_LAW.test(law)) {
+      return law;
+    }
   }
-  const ar = /(?:يخضع|تخضع)\s+هذ[اه]\s+(?:العقد|الاتفاق|الاتفاقية)\s+(?:لـ\s*|ل)([^.،\n]+?)(?=\s+دون|[.،\n]|$)/u.exec(text);
-  return ar?.[1]?.trim();
+  const shall = EN_LAW_SHALL_GOVERN.exec(plain)?.[1]?.trim();
+  if (shall && !NOT_A_LAW.test(shall)) {
+    return shall;
+  }
+  return AR_LAW.exec(plain)?.[1]?.trim();
 }
 
 function lawKey(law: string): string {
-  return fold(law)
-    .replace(/\b(?:the|laws?|of|state|federal republic)\b/g, " ")
-    .replace(/قوانين|قانون|انظمه|امارة|اماره/g, " ")
+  return normalizeArabic(law)
+    .replace(/\benglish\b/g, "england")
+    .replace(/\b(?:the|laws?|of|state|federal republic|republic)\b/g, " ")
+    .replace(/قوانين|قانون|انظمه|امارة|اماره|جمهوريه/g, " ")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+/** "England" and "England and Wales", or "laws of the UAE" and "UAE", name the same law. */
+function sameLaw(a: string, b: string): boolean {
+  const x = lawKey(a);
+  const y = lawKey(b);
+  return x.length > 0 && y.length > 0 && (x.includes(y) || y.includes(x));
 }
 
 function explainJurisdiction(text: string, policyText: string): string {
@@ -186,25 +268,44 @@ function explainJurisdiction(text: string, policyText: string): string {
       ? `No governing law identified in the clause; the playbook default is ${standard}.`
       : "No governing law identified in the clause.";
   }
-  if (standard && lawKey(law) !== lawKey(standard)) {
+  if (standard && !sameLaw(law, standard)) {
     return `Designated foreign governing law (${law}) deviates from default domestic venue (${standard}).`;
   }
-  return "Governing law matches the playbook, but the venue or forum wording deviates.";
+  return standard
+    ? `Governing law matches the playbook (${standard}); the remaining wording differs from the cited playbook clause.`
+    : `Governing law: ${law}.`;
 }
 
 // --- Confidentiality -------------------------------------------------------------------------
 
+const SURVIVAL_SENTENCE =
+  /surviv|continue[sd]?\s+(?:in\s+(?:force|effect)|to\s+apply)|remain\s+in\s+(?:force|effect)|تسري|تظل|تبقي|تستمر|يستمر|يظل/;
+const INDEFINITE = /indefinite|perpetu|without\s+(?:time\s+)?limit|بصفه\s+دائمه|الي\s+اجل\s+غير\s+مسمي|غير\s+محدد\s+المده/;
+
+function survivalYears(sentence: string): number | undefined {
+  const n = /\(?(\d{1,2})\)?\s*years?\b/.exec(sentence)?.[1] ?? /\(?(\d{1,2})\)?\s*(?:سنوات|سنه|سنين|اعوام|عام)/.exec(sentence)?.[1];
+  if (n !== undefined) {
+    return Number(n);
+  }
+  return /سنتين|سنتان|عامين|عامان/.test(sentence) ? 2 : undefined;
+}
+
 function explainConfidentiality(text: string, hasPolicy: boolean): string {
-  const s = fold(text);
-  const years = /\(?(\d{1,2})\)?\s*years?\b/.exec(s)?.[1] ?? /\(?(\d{1,2})\)?\s*(?:سنوات|سنه)/.exec(s)?.[1];
-  const indefinite = /indefinite|perpetu|without (?:time )?limit|بصفه دائمه|الي اجل غير مسمي|غير محدد المده/.test(s);
-  const review = hasPolicy ? "compare it with the cited playbook clause." : "the playbook has no confidentiality standard yet, so review it manually.";
+  // Only survival sentences count: "a three (3) year licence" elsewhere is not the survival term.
+  const survival = sentences(text).filter(
+    (s) => SURVIVAL_SENTENCE.test(s) || (INDEFINITE.test(s) && /obligation|dut(?:y|ies)|confidential|التزام|السريه/.test(s)),
+  );
+  const years = survival.map(survivalYears).find((n) => n !== undefined);
+  const indefinite = survival.some((s) => INDEFINITE.test(s));
+  const review = hasPolicy
+    ? "compare it with the cited playbook clause."
+    : "the playbook has no confidentiality standard yet, so review it manually.";
   if (indefinite && years === undefined) {
     return "Indefinite survival term exceeding standard duration guidelines.";
   }
   if (years !== undefined) {
-    const tradeSecrets = indefinite && /trade secret|اسرار التجاريه/.test(s) ? " (trade secrets indefinitely)" : "";
-    return `Confidentiality survives ${years} year${years === "1" ? "" : "s"}${tradeSecrets}; ${review}`;
+    const tradeSecrets = indefinite && survival.some((s) => /trade secret|اسرار التجاريه/.test(s)) ? " (trade secrets indefinitely)" : "";
+    return `Confidentiality survives ${years} year${years === 1 ? "" : "s"}${tradeSecrets}; ${review}`;
   }
   return `This clause states no confidentiality survival term; ${review}`;
 }

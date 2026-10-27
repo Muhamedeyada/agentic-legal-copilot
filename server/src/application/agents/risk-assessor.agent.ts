@@ -5,7 +5,7 @@ import type { RiskFinding } from "../../domain/entities/risk.js";
 import type { PlaybookPort } from "../../domain/ports/playbook.port.js";
 import { RiskAssessorOutputZ, parseContract } from "./schemas.js";
 import type { RiskAssessorOutput } from "./contracts.js";
-import { detectRiskFlags, headingFamilies } from "./classify.js";
+import { detectRiskFlags, evidencedFamilies } from "./classify.js";
 import { explainDeviation } from "./risk-explanations.js";
 import type { ToolRegistry, ToolContext } from "../tools/registry.js";
 import type { RetrievalOutput } from "../tools/retrieval.tool.js";
@@ -32,12 +32,9 @@ export class RiskAssessorAgent {
     const findings: RiskFinding[] = [];
     // No model call here: usage is an estimate of the payload this agent inspects.
     let inspectedTokens = 0;
-    // A family counts as present when a clause is filed under it or its heading names it:
-    // "Liability and Indemnification" is filed as indemnity but must not make liability "omitted".
-    const present = new Set([
-      ...input.clauses.map((c) => c.category),
-      ...input.clauses.flatMap((c) => headingFamilies(c.heading)),
-    ]);
+    // Presence needs naming evidence, not the routing category: "Liability and Indemnification"
+    // makes both families present, while "Liquidated Damages" or "Notices" makes neither.
+    const present = new Set(input.clauses.flatMap((c) => evidencedFamilies(c.heading, c.text)));
     const lang = input.language === "both" ? undefined : input.language;
 
     for (const category of MANDATORY_CLAUSE_CATEGORIES) {
