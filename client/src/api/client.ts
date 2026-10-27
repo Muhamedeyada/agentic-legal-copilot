@@ -7,6 +7,19 @@ import type {
 
 const base = import.meta.env.VITE_API_URL ?? "";
 
+// Demo tokens match the server's non-production defaults. Anything in a Vite bundle is
+// visible to every user of the page, so these are not secrets: replace with real login before a shared deploy.
+const analystToken = import.meta.env.VITE_API_TOKEN || "demo-analyst-token";
+const counselToken = import.meta.env.VITE_COUNSEL_TOKEN || "demo-counsel-token";
+
+function authHeaders(token: string = analystToken): Record<string, string> {
+  return { Authorization: `Bearer ${token}` };
+}
+
+function jsonHeaders(token?: string): Record<string, string> {
+  return { "Content-Type": "application/json", ...authHeaders(token) };
+}
+
 async function parseJson<T>(res: Response): Promise<T> {
   const data = (await res.json()) as T;
   return data;
@@ -22,7 +35,7 @@ export async function fetchHealth(): Promise<boolean> {
 }
 
 export async function listContracts(): Promise<ContractSummary[]> {
-  const res = await fetch(`${base}/api/contracts`);
+  const res = await fetch(`${base}/api/contracts`, { headers: authHeaders() });
   if (!res.ok) {
     throw new Error("Failed to list contracts");
   }
@@ -31,7 +44,7 @@ export async function listContracts(): Promise<ContractSummary[]> {
 }
 
 export async function getContract(id: string): Promise<ContractRecord> {
-  const res = await fetch(`${base}/api/contracts/${encodeURIComponent(id)}`);
+  const res = await fetch(`${base}/api/contracts/${encodeURIComponent(id)}`, { headers: authHeaders() });
   if (!res.ok) {
     throw new Error("Failed to load contract");
   }
@@ -45,7 +58,7 @@ export async function uploadContract(input: {
 }): Promise<ContractRecord> {
   const res = await fetch(`${base}/api/contracts/upload`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: jsonHeaders(),
     body: JSON.stringify(input),
   });
   if (!res.ok) {
@@ -61,7 +74,7 @@ export async function startWorkflow(input: {
 }): Promise<{ runId: string }> {
   const res = await fetch(`${base}/api/workflow/run`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: jsonHeaders(),
     body: JSON.stringify(input),
   });
   if (!res.ok) {
@@ -71,25 +84,29 @@ export async function startWorkflow(input: {
 }
 
 export async function getRun(runId: string): Promise<WorkflowSnapshot> {
-  const res = await fetch(`${base}/api/workflow/${encodeURIComponent(runId)}`);
+  const res = await fetch(`${base}/api/workflow/${encodeURIComponent(runId)}`, { headers: authHeaders() });
   if (!res.ok) {
     throw new Error("Failed to load run");
   }
   return parseJson<WorkflowSnapshot>(res);
 }
 
+/** EventSource cannot send headers, so the stream takes the token as a query parameter. */
 export function workflowStreamUrl(runId: string): string {
-  return `${base}/api/workflow/stream/${encodeURIComponent(runId)}`;
+  return `${base}/api/workflow/stream/${encodeURIComponent(runId)}?access_token=${encodeURIComponent(analystToken)}`;
 }
 
 export async function cancelRun(runId: string): Promise<void> {
-  await fetch(`${base}/api/workflow/${encodeURIComponent(runId)}/cancel`, { method: "POST" });
+  await fetch(`${base}/api/workflow/${encodeURIComponent(runId)}/cancel`, {
+    method: "POST",
+    headers: authHeaders(),
+  });
 }
 
 export async function approveRun(runId: string, counselId: string): Promise<WorkflowSnapshot> {
   const res = await fetch(`${base}/api/workflow/${encodeURIComponent(runId)}/approve`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: jsonHeaders(counselToken),
     body: JSON.stringify({ counselId }),
   });
   if (!res.ok) {
@@ -105,7 +122,7 @@ export async function rejectRun(
 ): Promise<WorkflowSnapshot> {
   const res = await fetch(`${base}/api/workflow/${encodeURIComponent(runId)}/reject`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: jsonHeaders(counselToken),
     body: JSON.stringify({ counselId, reason, comments: reason }),
   });
   if (!res.ok) {
@@ -121,7 +138,7 @@ export async function editAndApproveRun(
 ): Promise<WorkflowSnapshot> {
   const res = await fetch(`${base}/api/workflow/${encodeURIComponent(runId)}/edit-and-approve`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: jsonHeaders(counselToken),
     body: JSON.stringify({ counselId, ...edited }),
   });
   if (!res.ok) {
@@ -137,7 +154,7 @@ export async function askRag(input: {
 }): Promise<RagAnswer> {
   const res = await fetch(`${base}/api/chat`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: jsonHeaders(),
     body: JSON.stringify(input),
   });
   const data = await parseJson<RagAnswer & { error?: string }>(res);

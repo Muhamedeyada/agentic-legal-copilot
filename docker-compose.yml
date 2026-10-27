@@ -20,6 +20,9 @@ services:
       MAX_PROMPT_CHARS: "12000"
       MAX_COMPLETION_CHARS: "8000"
       MAX_UPLOAD_CHARS: "200000"
+      # Demo tokens; override from the shell or .env for anything shared.
+      DEMO_API_TOKEN: ${DEMO_API_TOKEN:-demo-analyst-token}
+      COUNSEL_TOKEN: ${COUNSEL_TOKEN:-demo-counsel-token}
     volumes:
       - ./data/corpus:/app/data/corpus:ro
 
@@ -29,6 +32,8 @@ services:
       dockerfile: client/Dockerfile
       args:
         VITE_API_URL: ""
+        VITE_API_TOKEN: ${DEMO_API_TOKEN:-demo-analyst-token}
+        VITE_COUNSEL_TOKEN: ${COUNSEL_TOKEN:-demo-counsel-token}
     ports:
       - "3000:80"
       - "5173:80"

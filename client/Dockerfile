@@ -8,7 +8,9 @@ COPY client/package.json ./client/
 RUN npm ci
 COPY client ./client
 ARG VITE_API_URL=
-ENV VITE_API_URL=$VITE_API_URL
+ARG VITE_API_TOKEN=
+ARG VITE_COUNSEL_TOKEN=
+ENV VITE_API_URL=$VITE_API_URL     VITE_API_TOKEN=$VITE_API_TOKEN     VITE_COUNSEL_TOKEN=$VITE_COUNSEL_TOKEN
 RUN npm run build -w client
 
 FROM nginx:1.27-alpine AS runtime

@@ -24,13 +24,13 @@
 
 | ID | Category | Relevance to D1T1 | Control in this project |
 | --- | --- | --- | --- |
-| A01 | Broken Access Control | Paralegal vs Counsel; memo export | `LegalWorkflowOrchestrator.draftMemo` throws `ApprovalRequiredError` while `AWAITING_APPROVAL`. HTTP 403. No production auth yet — `DEMO_API_TOKEN` remains a deploy checklist item. |
+| A01 | Broken Access Control | Paralegal vs Counsel; memo export | `LegalWorkflowOrchestrator.draftMemo` throws `ApprovalRequiredError` while `AWAITING_APPROVAL`. `authenticate` middleware (`presentation/http/middleware/auth.ts`) maps bearer tokens to `analyst` / `counsel`; `requireCounsel` returns 403 on approve / reject / edit-and-approve and legacy `/reviews` decision and memo routes. Counsel identity comes from the token, not the body. `x-user-role` can only narrow a role. |
 | A02 | Cryptographic Failures | Secrets in git | `.gitignore` on `.env`; `.env.example` placeholders only. Dummy `OPENAI_API_KEY` values are treated as **missing** (mock adapter). |
 | A03 | Injection | JSON bodies, file text, prompts | JSON body limit 1mb; `maxUploadChars` 413; Zod schemas on agent I/O; untrusted document wrappers; prompt-injection detector. |
 | A04 | Insecure Design | Autopilot memo | HITL is mandatory (`REQUIRE_COUNSEL_APPROVAL`). Side-effect tool `save_draft_memo_tool` is Counsel-gated. |
 | A05 | Security Misconfiguration | CORS, stack traces | `CLIENT_ORIGIN` allow-list; `x-powered-by` disabled. |
 | A06 | Vulnerable Components | npm / future LLM SDKs | Lockfile; SDKs stay in `infrastructure/` only. |
-| A07 | Identification and Authentication Failures | Open API in demo | Rate limit per IP (`RATE_LIMIT_PER_MINUTE`, default 60). Demo token not enforced yet. |
+| A07 | Identification and Authentication Failures | Open API in demo | Static bearer tokens (`DEMO_API_TOKEN`, `COUNSEL_TOKEN`), constant-time compare, required in production. 401 on missing/invalid token. Rate limit per IP (`RATE_LIMIT_PER_MINUTE`, default 60). Demo client embeds both tokens, so this is not real identity. |
 | A08 | Software and Data Integrity Failures | Model/tool supply chain | Pinned workspace lockfile; tool registry allow-list. |
 | A09 | Security Logging Failures | Prompts may contain contracts | Do not log API keys. PII redaction runs before completion. Eval/report files go under `data/runtime/` (gitignored). |
 | A10 | Server-Side Request Forgery | Tooling that fetches URLs | No URL-fetch tools. Retrieval is playbook + local corpus. |
@@ -102,4 +102,5 @@ REQUIRE_COUNSEL_APPROVAL=true
 - [x] Rate limit and token caps active
 - [ ] Logging redaction reviewed before a shared demo
 - [ ] CORS origin is not `*` in any shared deploy
-- [ ] Replace `DEMO_API_TOKEN` with real auth before exposing the API
+- [x] Bearer-token auth and Counsel-only approval routes
+- [ ] Replace static demo tokens with a real identity provider before exposing the API

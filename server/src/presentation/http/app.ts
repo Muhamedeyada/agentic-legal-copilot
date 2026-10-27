@@ -10,6 +10,7 @@ import { healthRouter } from "./routes/health.js";
 import { sseRouter } from "./routes/sse.js";
 import { reviewsRouter } from "./routes/reviews.js";
 import { rateLimitMiddleware } from "./rate-limit.middleware.js";
+import { authenticate } from "./middleware/auth.js";
 import { contractsRouter } from "./routes/contracts.js";
 import { chatRouter } from "./routes/chat.js";
 import { workflowRouter } from "./routes/workflow.js";
@@ -59,12 +60,15 @@ export function createApp(deps: HttpDeps): Express {
 
   app.use("/health", healthRouter(deps.config));
   app.use("/api/health", healthRouter(deps.config));
-  app.use("/events", sseRouter());
-  app.use("/reviews", reviewsRouter(deps.orchestrator, deps.counselGate));
-  app.use("/api/contracts", contractsRouter(deps.catalog));
-  app.use("/api/chat", chatRouter(deps.rag));
+  // Everything except health requires a bearer token; HITL routes additionally require counsel.
+  const auth = authenticate(deps.config);
+  app.use("/events", auth, sseRouter());
+  app.use("/reviews", auth, reviewsRouter(deps.orchestrator, deps.counselGate));
+  app.use("/api/contracts", auth, contractsRouter(deps.catalog));
+  app.use("/api/chat", auth, chatRouter(deps.rag));
   app.use(
     "/api/workflow",
+    auth,
     workflowRouter({
       orchestrator: deps.orchestrator,
       counselGate: deps.counselGate,

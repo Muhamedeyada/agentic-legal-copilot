@@ -80,7 +80,7 @@ Target: multilingual embeddings (or dual encode), `lang` metadata, never silent 
 | G-15 | Golden set | ≥25 Q/A, bilingual | 28 items, `npm run eval`, JSON report | Document-scoped hit-rate ≠ production Recall@5 | Ongoing gold maintenance | **Done** |
 | G-16 | 5-minute demo | Scripted in README | UI + HITL + eval + Docker | README was stale; now matches code | — | **Done** |
 | G-17 | Packaging / CI | Compose + PR checks | `Dockerfile`s, compose, `.github/workflows/ci.yml` | No image scan / SBOM yet | 2–3 d Trivy in CI | **Done** (MVP) |
-| G-18 | Auth / roles | Paralegal vs Counsel | None (`DEMO_API_TOKEN` unused) | Anyone who can hit the API is Counsel | 1–2 w IdP + RBAC | **Open** |
+| G-18 | Auth / roles | Paralegal vs Counsel | Static bearer tokens → `analyst` / `counsel`; approval routes 403 for non-counsel | No IdP, no per-user identity; demo client bundles both tokens | 1–2 w IdP (OIDC) + per-user audit | **Partial** |
 
 ### Cost / effort notes (scale, not this repo)
 
