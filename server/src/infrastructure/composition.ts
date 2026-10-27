@@ -49,6 +49,8 @@ export function createLegalServices(config: AppConfig): LegalServices {
     events,
     requireCounselApproval: config.requireCounselApproval,
     maxRetries: 1,
+    // Room for one completion call plus its single provider retry.
+    stepTimeoutMs: Math.max(30_000, config.llmTimeoutMs * 2 + 5_000),
   });
   return {
     orchestrator,

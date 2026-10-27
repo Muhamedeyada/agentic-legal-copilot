@@ -5,6 +5,7 @@ import type { ExtractedClause, TokenUsage } from "../../domain/entities/workflow
 import type { RiskFinding } from "../../domain/entities/risk.js";
 import type { CompletionPort } from "../../domain/ports/completion.port.js";
 import { MemoDrafterOutputZ, parseContract, toReviewMemo } from "./schemas.js";
+import { parseJsonObject } from "./json.js";
 import type { MemoDrafterOutput } from "./contracts.js";
 import type { ToolRegistry, ToolContext } from "../tools/registry.js";
 import type { RetrievalOutput } from "../tools/retrieval.tool.js";
@@ -145,12 +146,13 @@ export class MemoDrafterAgent {
   async run(
     input: MemoDrafterInput,
     ctx: ToolContext,
-  ): Promise<{ output: MemoDrafterOutput; tokenUsage: TokenUsage; usedLlm: boolean }> {
+  ): Promise<{ output: MemoDrafterOutput; tokenUsage: TokenUsage; usedLlm: boolean; provider: string }> {
     const fallback = draftBodies(input);
     let bodyEn = sanitizeModelText(fallback.bodyEn);
     let bodyAr = sanitizeModelText(fallback.bodyAr);
     let usedLlm = false;
     let tokenUsage: TokenUsage = { promptTokens: 0, completionTokens: 0 };
+    let provider = "deterministic";
 
     try {
       const result = await this.completion.complete({
@@ -163,11 +165,12 @@ export class MemoDrafterAgent {
           draft: fallback,
         }),
       });
-      const parsed = parseContract(MemoDrafterOutputZ, "MemoDrafterOutput", JSON.parse(result.text) as unknown);
+      tokenUsage = result.usage ?? tokenUsage;
+      provider = result.providerId;
+      const parsed = parseContract(MemoDrafterOutputZ, "MemoDrafterOutput", parseJsonObject(result.text));
       bodyEn = sanitizeModelText(parsed.memo.bodyEn ?? bodyEn);
       bodyAr = sanitizeModelText(parsed.memo.bodyAr ?? bodyAr);
       usedLlm = true;
-      tokenUsage = result.usage ?? tokenUsage;
     } catch {
       usedLlm = false;
     }
@@ -207,6 +210,6 @@ export class MemoDrafterAgent {
       ctx,
     );
 
-    return { output, tokenUsage, usedLlm };
+    return { output, tokenUsage, usedLlm, provider };
   }
 }

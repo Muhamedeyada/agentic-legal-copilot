@@ -246,7 +246,7 @@ export class LegalWorkflowOrchestrator {
           step: "EXTRACTING",
         });
         await this.step(run, "EXTRACTING", "clause_extractor", signal, async () => {
-          const { output, tokenUsage, usedLlm } = await this.extractor.run(
+          const { output, tokenUsage, usedLlm, provider } = await this.extractor.run(
             { contractId: run.contractId, text: run.contractText },
             { runId: run.runId, agentId: "clause_extractor", state: "EXTRACTING" },
           );
@@ -260,7 +260,7 @@ export class LegalWorkflowOrchestrator {
               clause,
             });
           }
-          return { clauses: output.clauses.length, usedLlm };
+          return { summary: { clauses: output.clauses.length, usedLlm, provider }, tokenUsage };
         });
 
         this.throwIfAborted(run, signal);
@@ -273,7 +273,7 @@ export class LegalWorkflowOrchestrator {
           step: "ASSESSING",
         });
         await this.step(run, "ASSESSING", "risk_assessor", signal, async () => {
-          const { output, tokenUsage } = await this.assessor.run(
+          const { output, tokenUsage, provider } = await this.assessor.run(
             { contractId: run.contractId, language: run.language, clauses: run.clauses },
             { runId: run.runId, agentId: "risk_assessor", state: "ASSESSING" },
           );
@@ -288,8 +288,12 @@ export class LegalWorkflowOrchestrator {
             });
           }
           return {
-            findings: output.findings.length,
-            omissions: output.findings.filter((f) => f.omitted).map((f) => f.category),
+            summary: {
+              findings: output.findings.length,
+              omissions: output.findings.filter((f) => f.omitted).map((f) => f.category),
+              provider,
+            },
+            tokenUsage,
           };
         });
 
@@ -303,7 +307,7 @@ export class LegalWorkflowOrchestrator {
           step: "DRAFTING",
         });
         await this.step(run, "DRAFTING", "memo_drafter", signal, async () => {
-          const { output, tokenUsage, usedLlm } = await this.drafter.run(
+          const { output, tokenUsage, usedLlm, provider } = await this.drafter.run(
             {
               runId: run.runId,
               contractId: run.contractId,
@@ -315,7 +319,15 @@ export class LegalWorkflowOrchestrator {
           );
           run.memo = output.memo;
           run.tokenUsage = addUsage(run.tokenUsage, tokenUsage);
-          return { memoId: output.memo.id, usedLlm, citations: output.memo.citations.map((c) => c.id) };
+          return {
+            summary: {
+              memoId: output.memo.id,
+              usedLlm,
+              provider,
+              citations: output.memo.citations.map((c) => c.id),
+            },
+            tokenUsage,
+          };
         });
 
         this.throwIfAborted(run, signal);
@@ -396,23 +408,28 @@ export class LegalWorkflowOrchestrator {
     step: WorkflowState,
     agentId: "clause_extractor" | "risk_assessor" | "memo_drafter",
     signal: AbortSignal | undefined,
-    fn: () => Promise<unknown>,
+    fn: () => Promise<{ summary: unknown; tokenUsage: TokenUsage }>,
   ): Promise<void> {
     this.throwIfAborted(run, signal);
     const started = Date.now();
     const input = { state: step, iteration: run.iteration };
     try {
-      const output = await withBackoff(
+      const { summary, tokenUsage } = await withBackoff(
         () => withTimeout(step, this.stepTimeoutMs, fn),
         { retries: this.maxRetries, baseDelayMs: 50 },
       );
-      this.trace(run, {
-        at: new Date().toISOString(),
-        step,
+      const at = new Date().toISOString();
+      const latencyMs = Date.now() - started;
+      this.trace(run, { at, step, agentId, latencyMs, input, output: summary, tokenUsage });
+      this.emit({
+        type: "AGENT_DONE",
+        runId: run.runId,
+        at,
         agentId,
-        latencyMs: Date.now() - started,
-        input,
-        output,
+        step,
+        latencyMs,
+        tokenUsage,
+        totalTokenUsage: run.tokenUsage,
       });
     } catch (err) {
       this.trace(run, {

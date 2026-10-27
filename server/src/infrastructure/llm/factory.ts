@@ -16,11 +16,15 @@ function looksLikePlaceholderKey(key: string): boolean {
 }
 
 export function createCompletionAdapter(config: AppConfig): CompletionPort {
+  // Keep generated output inside the completion cap (~4 chars per token).
+  const maxTokens = Math.ceil(config.maxCompletionChars / 4);
   let inner: CompletionPort;
   if (config.llmProvider === "local") {
     inner = new LocalCompletionAdapter({
       baseUrl: config.localLlmBaseUrl,
       model: config.localLlmModel,
+      timeoutMs: config.llmTimeoutMs,
+      maxTokens,
     });
   } else if (looksLikePlaceholderKey(config.openaiApiKey)) {
     inner = new MockCompletionAdapter();
@@ -29,6 +33,8 @@ export function createCompletionAdapter(config: AppConfig): CompletionPort {
       apiKey: config.openaiApiKey,
       baseUrl: config.openaiBaseUrl,
       model: config.openaiChatModel,
+      timeoutMs: config.llmTimeoutMs,
+      maxTokens,
     });
   }
   return new CappedCompletionAdapter(inner, {

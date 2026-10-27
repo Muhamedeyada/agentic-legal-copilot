@@ -38,7 +38,7 @@ export default function App() {
   const [rag, setRag] = useState<RagAnswer | null>(null);
   const [memoDraft, setMemoDraft] = useState("");
   const [draftPulse, setDraftPulse] = useState(0);
-  const { snapshot, setSnapshot, clauses, findings, progress, lastEvent } = useWorkflowStream(runId);
+  const { snapshot, setSnapshot, clauses, findings, progress, lastEvent, liveTokens } = useWorkflowStream(runId);
 
   const liveClauses = snapshot?.clauses.length ? snapshot.clauses : clauses;
   const liveFindings = snapshot?.findings.length ? snapshot.findings : findings;
@@ -248,7 +248,7 @@ export default function App() {
           </div>
         </main>
 
-        <TraceDrawer t={t} snapshot={snapshot} />
+        <TraceDrawer t={t} snapshot={snapshot} liveTokens={liveTokens} />
       </div>
       </PlaybookInspectorHost>
     </CitationFocusProvider>

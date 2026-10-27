@@ -1,7 +1,16 @@
 import type { CompletionPort, CompletionRequest, CompletionResult } from "../../domain/ports/completion.port.js";
-import { clipPrompt, type TokenBudget } from "../../application/security/token-budget.js";
+import {
+  estimateTokens,
+  TokenBudgetExceededError,
+  type TokenBudget,
+} from "../../application/security/token-budget.js";
 
-/** Caps prompt size before any provider call (LLM10). */
+/**
+ * Enforces the prompt/completion budget around any provider (LLM10).
+ * Oversize prompts are refused before the network call: clipping would corrupt the JSON payloads
+ * agents send, and the agents already fall back to deterministic rules on any error.
+ * Always reports usage, estimating it when the provider does not.
+ */
 export class CappedCompletionAdapter implements CompletionPort {
   constructor(
     private readonly inner: CompletionPort,
@@ -9,13 +18,11 @@ export class CappedCompletionAdapter implements CompletionPort {
   ) {}
 
   async complete(input: CompletionRequest): Promise<CompletionResult> {
-    const system = clipPrompt(input.system, Math.floor(this.budget.maxPromptChars * 0.25));
-    const user = clipPrompt(input.user, Math.floor(this.budget.maxPromptChars * 0.75));
-    const result = await this.inner.complete({
-      system,
-      user,
-      ...(input.jsonSchemaName ? { jsonSchemaName: input.jsonSchemaName } : {}),
-    });
+    const promptChars = input.system.length + input.user.length;
+    if (promptChars > this.budget.maxPromptChars) {
+      throw new TokenBudgetExceededError(promptChars, this.budget.maxPromptChars);
+    }
+    const result = await this.inner.complete(input);
     const text =
       result.text.length > this.budget.maxCompletionChars
         ? result.text.slice(0, this.budget.maxCompletionChars)
@@ -24,7 +31,10 @@ export class CappedCompletionAdapter implements CompletionPort {
       text,
       providerId: result.providerId,
       model: result.model,
-      ...(result.usage ? { usage: result.usage } : {}),
+      usage: result.usage ?? {
+        promptTokens: estimateTokens(input.system + input.user),
+        completionTokens: estimateTokens(result.text),
+      },
     };
   }
 }

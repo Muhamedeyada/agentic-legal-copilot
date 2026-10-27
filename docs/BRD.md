@@ -64,7 +64,7 @@ This product is a **governed copilot**, not an autonomous lawyer. It extracts, r
 | BR-07 | Draft review memo in AR, EN, or both | Must | Memo Drafter; sanitized bodies |
 | BR-08 | Require Counsel approval before issuing the memo | Must | HITL; HTTP 403 until approved |
 | BR-09 | Cite contract spans and corpus chunks; refuse uncited legal claims | Must | RAG min-score + eval groundedness |
-| BR-10 | Swap LLM/embedding providers without changing domain logic | Must | Ports + factory; hosted HTTP still stubbed |
+| BR-10 | Swap LLM/embedding providers without changing domain logic | Must | Ports + factory; hosted and local OpenAI-compatible HTTP adapters |
 | BR-11 | Local / offline fallback when hosted provider is unavailable | Should | Empty key → mock; agents use rules |
 | BR-12 | Audit log of agent I/O and approval events | Must | **Partial:** in-memory `run.traces` + SSE + Trace UI; no durable store |
 | BR-13 | Evaluation harness against ≥25 bilingual Q/A pairs | Must | 28-item gold set; EN/AR/XL sliced |
@@ -96,7 +96,7 @@ This product is a **governed copilot**, not an autonomous lawyer. It extracts, r
 | BR-07 | Bilingual memo | G-12 | Memo Drafter | LLM05 sanitize | HITL G-20 | **Complete** |
 | BR-08 | Counsel HITL | G-04 | ADR-0003 | LLM06 / A04 | G-20 | **Complete** |
 | BR-09 | Citations / refuse | G-10 | DirectRag / CorpusRag | LLM09 | Groundedness + G-21…G-24 | **Complete** |
-| BR-10 | Provider ports | G-13 | ADR-0002 | LLM03 | Eval uses mock | **Complete** (adapters stubbed) |
+| BR-10 | Provider ports | G-13 | ADR-0002 | LLM03 | Eval uses mock | **Complete** |
 | BR-11 | Offline fallback | G-13 | Factory → mock | — | `npm run eval` | **Complete** |
 | BR-12 | Audit / traces | G-14 | `run.traces`, SSE | A09 | Trace UI | **Partial** (in-memory) |
 | BR-13 | Golden eval | G-15 | `run_eval.ts` | LLM09 | `EVALUATION.md` | **Complete** |

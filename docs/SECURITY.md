@@ -52,7 +52,7 @@ IDs follow the OWASP LLM Top 10 (2025 numbering used in the course template).
 | LLM07 | System Prompt Leakage | “Reveal the system prompt” | Injection queries refuse. System string is not returned on HTTP. Mock completions throw rather than invent a leak. |
 | LLM08 | Vector / embedding weaknesses | Index poisoning, cross-lingual leakage | Eval RAG is local files + clause chunks. Metadata `language` comes from filename/detector, not the user. Open-corpus questions below score threshold → `not_enough_information`. |
 | LLM09 | Misinformation | Hallucinated law / clauses | Citation validator (ids must exist). RAG refuses below `MIN_SCORE`. Golden set checks groundedness and invented-statute refusal (G-24). Risk scores come from `risk_calculator_tool`, not the LLM. |
-| LLM10 | Unbounded consumption | Huge PDFs, loops, tokens | `CappedCompletionAdapter` (`MAX_PROMPT_CHARS`, `MAX_COMPLETION_CHARS`). Orchestrator max iterations + step timeout. Express JSON 1mb. `RATE_LIMIT_PER_MINUTE`. Upload character cap → 413. |
+| LLM10 | Unbounded consumption | Huge PDFs, loops, tokens | `CappedCompletionAdapter` refuses prompts over `MAX_PROMPT_CHARS` before any call and clips output to `MAX_COMPLETION_CHARS`; adapters send `max_tokens` and a `LLM_TIMEOUT_MS` timeout. Per-step token usage is traced and streamed (`AGENT_DONE`). Orchestrator max iterations + step timeout. Express JSON 1mb. `RATE_LIMIT_PER_MINUTE`. Upload character cap → 413. |
 
 ---
 
@@ -74,8 +74,9 @@ Environment (see `.env.example`):
 
 ```
 RATE_LIMIT_PER_MINUTE=60
-MAX_PROMPT_CHARS=12000
-MAX_COMPLETION_CHARS=8000
+MAX_PROMPT_CHARS=48000
+MAX_COMPLETION_CHARS=32000
+LLM_TIMEOUT_MS=20000
 MAX_UPLOAD_CHARS=200000
 REQUIRE_COUNSEL_APPROVAL=true
 ```

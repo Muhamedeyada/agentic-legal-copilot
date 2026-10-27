@@ -22,6 +22,7 @@ export function useWorkflowStream(runId: string | null) {
   const [findings, setFindings] = useState<RiskFinding[]>([]);
   const [progress, setProgress] = useState<LiveProgress>(idleProgress);
   const [lastEvent, setLastEvent] = useState<string | null>(null);
+  const [liveTokens, setLiveTokens] = useState(0);
   const [streamError, setStreamError] = useState<string | null>(null);
   const sourceRef = useRef<EventSource | null>(null);
 
@@ -32,8 +33,10 @@ export function useWorkflowStream(runId: string | null) {
       setFindings([]);
       setProgress(idleProgress);
       setLastEvent(null);
+      setLiveTokens(0);
       return;
     }
+    setLiveTokens(0);
 
     const apply = (event: StreamEvent): void => {
       setLastEvent(event.type);
@@ -45,6 +48,9 @@ export function useWorkflowStream(runId: string | null) {
       }
       if (event.type === "AGENT_START" && event.agentId === "memo_drafter") {
         setProgress((p) => ({ ...p, risk: "done", memo: "active" }));
+      }
+      if (event.type === "AGENT_DONE" && event.totalTokenUsage) {
+        setLiveTokens(event.totalTokenUsage.promptTokens + event.totalTokenUsage.completionTokens);
       }
       if (event.type === "CLAUSE_EXTRACTED" && event.clause) {
         const clause = event.clause;
@@ -71,6 +77,7 @@ export function useWorkflowStream(runId: string | null) {
     sourceRef.current = source;
     const types: StreamEvent["type"][] = [
       "AGENT_START",
+      "AGENT_DONE",
       "TOOL_EXEC",
       "CLAUSE_EXTRACTED",
       "RISK_FOUND",
@@ -98,5 +105,5 @@ export function useWorkflowStream(runId: string | null) {
     };
   }, [runId]);
 
-  return { snapshot, setSnapshot, clauses, findings, progress, lastEvent, streamError };
+  return { snapshot, setSnapshot, clauses, findings, progress, lastEvent, streamError, liveTokens };
 }

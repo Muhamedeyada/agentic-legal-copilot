@@ -11,6 +11,18 @@ export type WorkflowStreamEvent =
       readonly step: WorkflowState;
     }
   | {
+      readonly type: "AGENT_DONE";
+      readonly runId: string;
+      readonly at: string;
+      readonly agentId: AgentId;
+      readonly step: WorkflowState;
+      readonly latencyMs: number;
+      /** Tokens for this agent step. */
+      readonly tokenUsage: TokenUsage;
+      /** Running total for the run after this step. */
+      readonly totalTokenUsage: TokenUsage;
+    }
+  | {
       readonly type: "TOOL_EXEC";
       readonly runId: string;
       readonly at: string;

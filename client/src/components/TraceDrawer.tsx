@@ -4,12 +4,23 @@ import type { copy, UiLocale } from "../copy";
 
 type T = (typeof copy)[UiLocale];
 
-export function TraceDrawer({ t, snapshot }: { t: T; snapshot: WorkflowSnapshot | null }) {
+export function TraceDrawer({
+  t,
+  snapshot,
+  liveTokens = 0,
+}: {
+  t: T;
+  snapshot: WorkflowSnapshot | null;
+  /** Running total from AGENT_DONE events, shown until the snapshot arrives. */
+  liveTokens?: number;
+}) {
   const [open, setOpen] = useState(false);
   const traces = snapshot?.traces ?? [];
   const tools = traces.filter((tr) => tr.toolName);
   const latency = traces.reduce((sum, tr) => sum + tr.latencyMs, 0);
-  const tokens = (snapshot?.tokenUsage.promptTokens ?? 0) + (snapshot?.tokenUsage.completionTokens ?? 0);
+  const tokens = snapshot
+    ? snapshot.tokenUsage.promptTokens + snapshot.tokenUsage.completionTokens
+    : liveTokens;
 
   return (
     <footer className="z-20 shrink-0 border-t border-slate-200 bg-white/95 shadow-[0_-8px_24px_-16px_rgba(15,23,42,0.25)] backdrop-blur">
@@ -46,6 +57,9 @@ export function TraceDrawer({ t, snapshot }: { t: T; snapshot: WorkflowSnapshot 
                   {tr.at} · {tr.step}
                   {tr.agentId ? ` · ${tr.agentId}` : ""}
                   {tr.toolName ? ` · ${tr.toolName}` : ""} · {tr.latencyMs}ms
+                  {tr.tokenUsage
+                    ? ` · ${tr.tokenUsage.promptTokens}+${tr.tokenUsage.completionTokens} ${t.tokens}`
+                    : ""}
                   {tr.error ? ` · ${tr.error}` : ""}
                 </li>
               ))

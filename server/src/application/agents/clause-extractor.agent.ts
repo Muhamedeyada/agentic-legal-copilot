@@ -6,7 +6,7 @@ import { ClauseExtractorOutputZ, parseContract } from "./schemas.js";
 import type { ClauseExtractorOutput } from "./contracts.js";
 import { classifyClause } from "./classify.js";
 import { TRUSTED_SYSTEM_PREFIX, wrapUntrustedDocument } from "../security/prompt-isolation.js";
-import { clipPrompt } from "../security/token-budget.js";
+import { parseJsonObject } from "./json.js";
 import type { ToolRegistry } from "../tools/registry.js";
 import type { ToolContext } from "../tools/registry.js";
 
@@ -15,7 +15,8 @@ export interface ClauseExtractorInput {
   readonly text: string;
 }
 
-function extractDeterministic(input: ClauseExtractorInput): ExtractedClause[] {
+/** Rules-only extraction. Used as the fallback and by the deterministic mock completion. */
+export function extractDeterministic(input: ClauseExtractorInput): ExtractedClause[] {
   return splitClauses(input.text).map((part, index) => {
     const { category, standard } = classifyClause(part.heading, part.text);
     return {
@@ -33,17 +34,6 @@ function extractDeterministic(input: ClauseExtractorInput): ExtractedClause[] {
   });
 }
 
-function parseJsonObject(text: string): unknown {
-  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
-  const raw = fenced?.[1] ?? text;
-  const start = raw.indexOf("{");
-  const end = raw.lastIndexOf("}");
-  if (start < 0 || end <= start) {
-    throw new Error("No JSON object in completion.");
-  }
-  return JSON.parse(raw.slice(start, end + 1)) as unknown;
-}
-
 export class ClauseExtractorAgent {
   constructor(
     private readonly completion: CompletionPort,
@@ -53,9 +43,13 @@ export class ClauseExtractorAgent {
   async run(
     input: ClauseExtractorInput,
     ctx: ToolContext,
-  ): Promise<{ output: ClauseExtractorOutput; tokenUsage: TokenUsage; usedLlm: boolean }> {
+  ): Promise<{ output: ClauseExtractorOutput; tokenUsage: TokenUsage; usedLlm: boolean; provider: string }> {
     const fallback = extractDeterministic(input);
+    let tokenUsage: TokenUsage = { promptTokens: 0, completionTokens: 0 };
+    let provider = "deterministic";
     try {
+      // The full contract goes in; CappedCompletionAdapter refuses oversize prompts instead of
+      // truncating them, because a clipped contract would make every later clause look "omitted".
       const result = await this.completion.complete({
         jsonSchemaName: "clause_extractor_output",
         system: `${TRUSTED_SYSTEM_PREFIX} Extract contract clauses. Return JSON only matching {clauses: ExtractedClause[]}. Categories: liability, indemnity, ip, payment, termination, jurisdiction, confidentiality, other. Support Arabic and English headings.`,
@@ -63,25 +57,20 @@ export class ClauseExtractorAgent {
           input.contractId,
           JSON.stringify({
             contractId: input.contractId,
-            text: clipPrompt(input.text, 12_000),
+            text: input.text,
             hint: fallback.map((c) => ({ id: c.id, heading: c.heading, category: c.category })),
           }),
         ),
       });
+      // Tokens are spent once the provider answers, even if the answer fails validation.
+      tokenUsage = result.usage ?? tokenUsage;
+      provider = result.providerId;
       const parsed = parseContract(ClauseExtractorOutputZ, "ClauseExtractorOutput", parseJsonObject(result.text));
-      return {
-        output: parsed,
-        tokenUsage: result.usage ?? { promptTokens: 0, completionTokens: 0 },
-        usedLlm: true,
-      };
+      return { output: parsed, tokenUsage, usedLlm: true, provider };
     } catch {
       void this.tools;
       void ctx;
-      return {
-        output: { clauses: fallback },
-        tokenUsage: { promptTokens: 0, completionTokens: 0 },
-        usedLlm: false,
-      };
+      return { output: { clauses: fallback }, tokenUsage, usedLlm: false, provider };
     }
   }
 }

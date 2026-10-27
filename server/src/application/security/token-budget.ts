@@ -4,8 +4,8 @@ export interface TokenBudget {
 }
 
 export const DEFAULT_TOKEN_BUDGET: TokenBudget = {
-  maxPromptChars: 12_000,
-  maxCompletionChars: 8_000,
+  maxPromptChars: 48_000,
+  maxCompletionChars: 32_000,
 };
 
 export function estimateTokens(text: string): number {

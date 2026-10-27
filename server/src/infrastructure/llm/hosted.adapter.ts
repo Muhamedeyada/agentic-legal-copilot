@@ -1,13 +1,27 @@
 import type { CompletionPort, CompletionRequest, CompletionResult } from "../../domain/ports/completion.port.js";
+import { chatComplete, type ChatEndpoint } from "./openai-compatible.js";
 
-/** Hosted completions. SDK belongs here, not in domain or application. */
+export interface HostedCompletionOptions {
+  readonly apiKey: string;
+  readonly baseUrl: string;
+  readonly model: string;
+  readonly timeoutMs: number;
+  readonly maxTokens?: number;
+  readonly fetchImpl?: typeof fetch;
+}
+
+/** Hosted completions over the OpenAI-compatible HTTP API (no SDK dependency). */
 export class HostedCompletionAdapter implements CompletionPort {
-  constructor(
-    private readonly opts: { apiKey: string; baseUrl: string; model: string },
-  ) {}
+  private readonly endpoint: ChatEndpoint;
 
-  async complete(_input: CompletionRequest): Promise<CompletionResult> {
-    void this.opts;
-    throw new Error("HostedCompletionAdapter is not connected.");
+  constructor(opts: HostedCompletionOptions) {
+    if (opts.apiKey.trim().length === 0) {
+      throw new Error("HostedCompletionAdapter requires an API key.");
+    }
+    this.endpoint = { providerId: "openai", retries: 1, ...opts };
+  }
+
+  complete(input: CompletionRequest): Promise<CompletionResult> {
+    return chatComplete(this.endpoint, input);
   }
 }
