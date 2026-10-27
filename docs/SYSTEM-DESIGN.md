@@ -46,7 +46,7 @@ Contract (AR|EN) → Clause Extractor → Risk Assessor ─┐
 
 Target: multilingual embeddings (or dual encode), `lang` metadata, never silent translation.
 
-**Shipped substitute:** lexical query coverage + `expandBilingualQuery` + Arabic stemming. Good enough for the golden set when `contract_id` is scoped; weaker for open-corpus Recall@5.
+**Shipped substitute:** BM25 + 256-dim hashed embeddings, fused with RRF (k=60), gated by lexical query coverage, + `expandBilingualQuery` + Arabic stemming. Good enough for the golden set when `contract_id` is scoped; weaker for open-corpus Recall@5.
 
 ### A.5 Failure and fallback
 
@@ -72,7 +72,7 @@ Target: multilingual embeddings (or dual encode), `lang` metadata, never silent 
 | G-07 | Language detection | Per doc / clause | Script-count + filename `-AR-`/`-EN-` | Weak on mixed legal French/AR | 3–5 d detector port + CLD3 | **Partial** |
 | G-08 | Clause Extractor | Typed schema | Agent + Zod + heading fallback | LLM path unused without a live adapter | 2–3 d wire hosted JSON mode | **Done** |
 | G-09 | Vector index | Multilingual embed | Port + in-memory stub **throws** | Lexical catalog instead. Trade-off: no ANN recall | 1–2 w local embeddings + persist | **Open** |
-| G-10 | Cross-lingual retrieve | EN↔AR dense | Lexical + glossary + stemming; eval XL 100% scoped | Open-corpus XL still brittle | 2–3 w hybrid RRF (branch exists) | **Partial** |
+| G-10 | Cross-lingual retrieve | EN↔AR dense | BM25 + hashed dense + RRF, glossary + stemming; eval XL 100% scoped | Hashed vectors share no EN↔AR space; open-corpus XL still brittle | 1–2 w multilingual embedding adapter | **Partial** |
 | G-11 | Risk Assessor | Severity + citations | Matrix tool + omission Critical | Flags are keyword/`detectRiskFlags`, not NLU | 1–2 w richer feature extractors | **Done** |
 | G-12 | Memo Drafter | Bilingual, RTL-safe | Template + optional LLM; sanitize | Quality depends on findings, not prose model | 1 w counsel-editable templates | **Done** |
 | G-13 | Provider swap | Hosted / local | Factory + cap; hosted/local OpenAI-compatible fetch (JSON mode, provider usage); deterministic mock with estimated tokens | JSON mode, not strict JSON-schema outputs; Zod still validates | 1–2 d strict structured outputs | **Done** |
@@ -98,6 +98,6 @@ Target: multilingual embeddings (or dual encode), `lang` metadata, never silent 
 
 ## Suggested next vertical (after assessment)
 
-1. Merge or reimplement hybrid ingest from `feat/ingestion-and-hybrid-retrieval` with **local** embeddings by default.
+1. Port the ingest pipeline and persistent vector store from `feat/ingestion-and-hybrid-retrieval` (the retrieval math is already on `main`).
 2. Persist runs and approvals.
 3. Enforce `DEMO_API_TOKEN` (then replace it).

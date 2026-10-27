@@ -5,6 +5,8 @@ import { detectPromptInjection, stripInjectionPhrases } from "../../domain/secur
 import { redactPii } from "../../domain/security/pii-redact.js";
 import { sanitizeModelText } from "../security/output-sanitize.js";
 import type { PlaybookPort } from "../../domain/ports/playbook.port.js";
+import type { EmbeddingPort } from "../../domain/ports/embedding.port.js";
+import { HybridRanker, MIN_FUSED_SCORE, type HybridCandidate } from "../retrieval/hybrid-rank.js";
 
 export interface IndexedChunk {
   readonly chunkId: string;
@@ -40,13 +42,21 @@ export interface CorpusRagInput {
   readonly language?: "ar" | "en";
 }
 
-const MIN_SCORE = 0.22;
+/** Lexical floor: query-token coverage (plus heading boost) a chunk needs to be ranked at all. */
+const MIN_LEXICAL = 0.22;
+/** Dense floor: cosine similarity a chunk needs to enter the dense list. */
+const MIN_DENSE = 0.2;
 
 export class CorpusRagUseCase {
+  private readonly ranker: HybridRanker;
+
   constructor(
     private readonly chunks: readonly IndexedChunk[],
     private readonly playbook?: PlaybookPort,
-  ) {}
+    embeddings?: EmbeddingPort,
+  ) {
+    this.ranker = new HybridRanker(embeddings);
+  }
 
   async ask(input: CorpusRagInput): Promise<RagAnswer> {
     const injectionDetected = detectPromptInjection(input.query);
@@ -66,44 +76,52 @@ export class CorpusRagUseCase {
       ? this.chunks.filter((c) => c.documentId === input.documentId)
       : this.chunks;
 
-    const scored: RagCitation[] = [];
+    const candidates: Array<HybridCandidate & { citation: Omit<RagCitation, "score"> }> = [];
     for (const chunk of pool) {
       const blob = `${chunk.locator} ${chunk.text} ${chunk.documentId}`;
-      const lexical = Math.max(queryCoverage(query, blob), queryCoverage(expanded, blob));
+      const coverage = Math.max(queryCoverage(query, blob), queryCoverage(expanded, blob));
       const headingBoost = 0.35 * Math.max(queryCoverage(query, chunk.locator), queryCoverage(expanded, chunk.locator));
-      const score = lexical + headingBoost;
-      if (score <= 0) {
-        continue;
-      }
-      scored.push(toCitation(chunk, score));
+      candidates.push({
+        id: chunk.chunkId,
+        text: `${chunk.locator} ${chunk.text}`,
+        lexicalRelevance: coverage + headingBoost,
+        citation: toCitation(chunk),
+      });
     }
 
     if (this.playbook && !input.documentId) {
       const pb = await this.playbook.list();
       for (const clause of pb) {
-        const score = Math.max(
-          queryCoverage(query, `${clause.title} ${clause.text}`),
-          queryCoverage(expanded, `${clause.title} ${clause.text}`),
-        );
-        if (score <= 0) {
-          continue;
-        }
-        scored.push({
-          chunkId: clause.id,
-          documentId: clause.id,
-          source: "playbook",
-          locator: clause.title,
-          excerpt: sanitizeModelText(clause.text.slice(0, 800)),
-          language: clause.language,
-          score,
+        const blob = `${clause.title} ${clause.text}`;
+        candidates.push({
+          id: clause.id,
+          text: blob,
+          lexicalRelevance: Math.max(queryCoverage(query, blob), queryCoverage(expanded, blob)),
+          citation: {
+            chunkId: clause.id,
+            documentId: clause.id,
+            source: "playbook",
+            locator: clause.title,
+            excerpt: sanitizeModelText(clause.text.slice(0, 800)),
+            language: clause.language,
+          },
         });
       }
     }
 
     const topK = input.topK ?? 5;
-    const ranked = [...scored].sort((a, b) => b.score - a.score).slice(0, topK);
+    const byId = new Map(candidates.map((c) => [c.id, c.citation]));
+    const hits = await this.ranker.rank(candidates, {
+      query: expanded,
+      minLexicalRelevance: MIN_LEXICAL,
+      minDenseSimilarity: MIN_DENSE,
+    });
+    const ranked: RagCitation[] = hits.slice(0, topK).flatMap((hit) => {
+      const citation = byId.get(hit.id);
+      return citation ? [{ ...citation, score: hit.score }] : [];
+    });
     const best = ranked[0];
-    if (!best || best.score < MIN_SCORE) {
+    if (!best || best.score < MIN_FUSED_SCORE) {
       return {
         answer: "",
         refused: true,
@@ -127,15 +145,14 @@ export class CorpusRagUseCase {
   }
 }
 
-function toCitation(chunk: IndexedChunk, score: number): RagCitation {
+function toCitation(chunk: IndexedChunk): Omit<RagCitation, "score"> {
   return {
     chunkId: chunk.chunkId,
     documentId: chunk.documentId,
     source: chunk.source,
     locator: chunk.locator,
-        excerpt: sanitizeModelText(chunk.text.slice(0, 800)),
+    excerpt: sanitizeModelText(chunk.text.slice(0, 800)),
     language: chunk.language,
-    score,
   };
 }
 

@@ -18,7 +18,7 @@ The harness:
 
 1. Loads `data/evaluation_golden_set.json`.
 2. Indexes `data/corpus/*.md` with the same clause splitter used in production.
-3. Answers each item with `CorpusRagUseCase` (lexical query coverage + bilingual expansion). No embeddings, no chat completions.
+3. Answers each item with `CorpusRagUseCase`: BM25 and 256-dim hashed embeddings, fused with RRF (k=60), after bilingual expansion. A query-coverage floor (0.22) decides which chunks may be ranked; no chat completions.
 4. Runs **G-20** against `LegalWorkflowOrchestrator` + `MockCompletionAdapter` to assert `APPROVAL_REQUIRED`.
 5. Writes `data/runtime/eval-report.json` and prints a console summary.
 
@@ -81,9 +81,9 @@ Draft targets from the original template: Recall@5 ≥ 0.70 overall, XL ≥ 0.60
 
 ---
 
-## 4. Baseline results (lexical RAG, no paid API)
+## 4. Baseline results (hybrid RAG, no paid API)
 
-Measured **2026-08-22** on this branch (`npm run eval`):
+Measured **2026-10-27** on this branch (`npm run eval`), unchanged from the lexical-only baseline of 2026-08-22:
 
 ```
 Items: 28  Schema: 100.0%
@@ -95,6 +95,8 @@ Failures: none
 ```
 
 **How to read this.** Most retrieve items pass `contract_id`, so the search pool is one document (document-filtered RAG). That is the Counsel “this contract” workflow. It is **not** an open-corpus Recall@5 number. Open-corpus OOD items (G-21, G-22, G-23, G-24, G-27) are the check that we still refuse when nothing in the 32-file index is relevant.
+
+**Hybrid vs BM25 alone.** The hashed dense list changes the top-1 chunk on 1 of 22 answerable items and the top-5 order on 3. A first version let dense-only hits through: off-topic queries reach cosine 0.22–0.31, as high as real ones (0.13–0.33), so all five OOD refusals failed and groundedness fell to 82%. Dense now re-ranks only lexically admitted chunks.
 
 When a hosted chat model is wired, re-run `npm run eval` and replace this block. Do not treat these figures as LLM answer quality.
 

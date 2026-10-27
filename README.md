@@ -47,7 +47,7 @@ client (Vite :5173 / Docker nginx :3000)
     ← infrastructure/  mock/hosted/local completion, file catalog, in-memory stores
 ```
 
-**Honest limits:** hosted and local completions call any OpenAI-compatible `/chat/completions` endpoint (JSON mode, real `usage` tokens); without a key the mock adapter returns deterministic schema-valid JSON with estimated tokens (~4 chars/token). The vector adapter is still a stub that throws. Live retrieval is **lexical** (token overlap + bilingual expansion), not hybrid dense+BM25. Uploads are **plain text** (the UI reads `file.text()`). Auth is **static bearer tokens** (analyst / counsel); the demo client ships both tokens in its bundle, so it is not real identity.
+**Honest limits:** hosted and local completions call any OpenAI-compatible `/chat/completions` endpoint (JSON mode, real `usage` tokens); without a key the mock adapter returns deterministic schema-valid JSON with estimated tokens (~4 chars/token). Retrieval is **hybrid**: BM25 + 256-dim hashed embeddings, fused with RRF (k=60), over in-memory candidate pools; the hashed embedding is a deterministic stand-in, not a semantic model, so the lexical floor decides refusals. There is no persistent vector index (the `VectorStorePort` adapter is still a stub). Uploads are **plain text** (the UI reads `file.text()`). Auth is **static bearer tokens** (analyst / counsel); the demo client ships both tokens in its bundle, so it is not real identity.
 
 ---
 
@@ -121,7 +121,7 @@ Leave `OPENAI_API_KEY` unset in compose — mock mode.
 | `npm run corpus:generate` | Regenerate synthetic `data/corpus/` |
 | `npm run build` / `start` | Compile; `node server/dist/main.js` |
 
-There is **no** `npm run ingest` on this tree. Hybrid index work lives on `feat/ingestion-and-hybrid-retrieval` and is not merged.
+There is **no** `npm run ingest` on this tree. The retrieval math (BM25, RRF, hashed embeddings) is ported from `feat/ingestion-and-hybrid-retrieval`; its ingest pipeline, file vector store and PDF parsing are not.
 
 ---
 
@@ -164,7 +164,7 @@ All routes except health need `Authorization: Bearer <token>` (401 otherwise). A
 | `GET` | `/api/contracts` | Corpus + uploads |
 | `GET` | `/api/contracts/:id` | Full text |
 | `POST` | `/api/contracts/upload` | JSON `{ title, language, text }` |
-| `POST` | `/api/chat` | Lexical RAG; 404 if refuse |
+| `POST` | `/api/chat` | Hybrid RAG (BM25 + dense, RRF); 404 if refuse |
 | `POST` | `/api/workflow/run` | `{ runId }` immediately |
 | `GET` | `/api/workflow/stream/:runId` | SSE agent events |
 | `POST` | `/api/workflow/:runId/approve\|reject\|edit-and-approve\|cancel` | HITL |

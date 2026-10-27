@@ -59,7 +59,7 @@ This product is a **governed copilot**, not an autonomous lawyer. It extracts, r
 | BR-02 | Detect and tag language per document and per clause (`ar` / `en` / `mixed`) | Must | Heading splitter + script-count detector |
 | BR-03 | Extract clauses into a versioned typed schema | Must | Clause Extractor + Zod; deterministic fallback |
 | BR-04 | Classify contractual risk with severity and rationale | Must | Risk Assessor + `risk_calculator_tool` |
-| BR-05 | Retrieve comparable / policy snippets in AR and EN (cross-lingual) | Must | Lexical RAG + bilingual expand; dense hybrid deferred |
+| BR-05 | Retrieve comparable / policy snippets in AR and EN (cross-lingual) | Must | Hybrid BM25 + hashed dense, RRF k=60; bilingual expand. Semantic multilingual embeddings deferred |
 | BR-06 | Render Arabic UI and reports RTL | Must | `locale.tsx` sets `html[dir]` |
 | BR-07 | Draft review memo in AR, EN, or both | Must | Memo Drafter; sanitized bodies |
 | BR-08 | Require Counsel approval before issuing the memo | Must | HITL; HTTP 403 until approved |
@@ -91,7 +91,7 @@ This product is a **governed copilot**, not an autonomous lawyer. It extracts, r
 | BR-02 | Language tagging | G-07 | `splitClauses` + `Locale` | — | Lang on chunks | **Complete** (heuristic) |
 | BR-03 | Clause extraction | G-08 | ADR-0003; Zod schemas | LLM05 schema | Schema fixture in eval | **Complete** |
 | BR-04 | Risk assessment | G-11 | `risk_calculator_tool` | LLM09 not LLM-scored | G-18, G-19 | **Complete** |
-| BR-05 | Cross-lingual retrieve | G-10 | ADR-0004; lexical | LLM09 refuse | G-13…G-17, EN/AR/XL | **Complete** (lexical) |
+| BR-05 | Cross-lingual retrieve | G-10 | ADR-0004; lexical | LLM09 refuse | G-13…G-17, EN/AR/XL | **Complete** (hybrid, hashed embeddings) |
 | BR-06 | RTL | G-05 | Client locale | Homoglyph note | G-12 intent / UI | **Complete** |
 | BR-07 | Bilingual memo | G-12 | Memo Drafter | LLM05 sanitize | HITL G-20 | **Complete** |
 | BR-08 | Counsel HITL | G-04 | ADR-0003 | LLM06 / A04 | G-20 | **Complete** |
@@ -108,7 +108,7 @@ This product is a **governed copilot**, not an autonomous lawyer. It extracts, r
 | Item | Why deferred | Next increment |
 | --- | --- | --- |
 | PDF/DOCX ingest | Assessment corpus is markdown; parsers add supply-chain surface | MIME allow-list + `pdf-parse` / mammoth behind infra |
-| Hybrid dense+BM25+RRF | Exists on `feat/ingestion-and-hybrid-retrieval`, not on `main` | Merge after local embedding adapter is default |
+| Semantic dense retrieval | BM25 + RRF ship with a hashed embedding that mostly echoes lexical signal | Plug a multilingual `EmbeddingPort` adapter and calibrate a dense floor |
 | Hosted completion HTTP | Classroom must not require a key | Wire SDK only in `infrastructure/llm/hosted.adapter.ts` |
 | Production auth / roles | Demo is local; `DEMO_API_TOKEN` unused | Token middleware + Counsel vs Paralegal |
 | Durable audit / OTel | In-memory traces suffice for the 5-minute demo | SQLite audit table + redacted export |

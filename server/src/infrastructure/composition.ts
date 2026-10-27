@@ -6,6 +6,7 @@ import { InMemoryApprovalAdapter } from "./approval/in-memory.adapter.js";
 import { InMemoryPlaybookAdapter } from "./playbook/in-memory.adapter.js";
 import { InMemoryRunStoreAdapter } from "./runs/in-memory.adapter.js";
 import { FileContractCatalogAdapter } from "./corpus/file-catalog.adapter.js";
+import { LocalDeterministicEmbeddingAdapter } from "./embeddings/local-deterministic.adapter.js";
 import { LegalWorkflowOrchestrator } from "../application/orchestrator.js";
 import { CounselApprovalUseCase } from "../application/hitl/counsel-approval.js";
 import { RunEventBus } from "../application/orchestration/event-bus.js";
@@ -41,12 +42,15 @@ export function createLegalServices(config: AppConfig): LegalServices {
   const playbook = new InMemoryPlaybookAdapter();
   const events = new RunEventBus();
   const catalog = new FileContractCatalogAdapter(resolveCorpusDir(config));
+  // Offline 256-dim hashed embeddings; a hosted embedding adapter can replace this behind EmbeddingPort.
+  const embeddings = new LocalDeterministicEmbeddingAdapter();
   const orchestrator = new LegalWorkflowOrchestrator({
     completion: createCompletionAdapter(config),
     playbook,
     approval,
     runs,
     events,
+    embeddings,
     requireCounselApproval: config.requireCounselApproval,
     maxRetries: 1,
     // Room for one completion call plus its single provider retry.
@@ -57,6 +61,6 @@ export function createLegalServices(config: AppConfig): LegalServices {
     counselGate: new CounselApprovalUseCase(approval, runs, events),
     events,
     catalog,
-    rag: new DirectRagUseCase(catalog, playbook),
+    rag: new DirectRagUseCase(catalog, playbook, embeddings),
   };
 }
