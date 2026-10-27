@@ -54,8 +54,6 @@ function sentences(text: string): string[] {
     .filter((s) => s.length > 0);
 }
 
-// --- Liability -------------------------------------------------------------------------------
-
 /** A sentence that excludes indirect / consequential loss, and is not itself disapplied. */
 export function excludesConsequentialLoss(text: string): boolean {
   return sentences(text).some((s) => {
@@ -83,8 +81,6 @@ function explainLiability(text: string): string {
   return "Liability terms deviate from the playbook cap; confirm the aggregate maximum.";
 }
 
-// --- Indemnity -------------------------------------------------------------------------------
-
 function explainIndemnity(text: string): string {
   const s = normalizeArabic(text);
   const grossNegligenceCarveOut = /gross(?:ly)? negligen|اهمال جسيم|الاهمال الجسيم/.test(s);
@@ -100,8 +96,6 @@ function explainIndemnity(text: string): string {
   }
   return "Indemnity terms deviate from the cited playbook clause.";
 }
-
-// --- Termination -----------------------------------------------------------------------------
 
 const EN_NUMBER_WORDS: Readonly<Record<string, number>> = {
   one: 1,
@@ -215,8 +209,6 @@ function explainTermination(text: string, policyText: string): string {
   return "Termination terms deviate from the cited playbook clause.";
 }
 
-// --- Jurisdiction ----------------------------------------------------------------------------
-
 const EN_LAW =
   /\b(?:governed\s+by|construed\s+(?:in\s+accordance\s+with|under))\s+(?:and\s+(?:construed|interpreted)\s+(?:in\s+accordance\s+with|under)\s+)?(?:the\s+)?(?:(?:substantive\s+)?laws?\s+(?:in\s+force\s+in|of)\s+)?(?:the\s+)?([^,.;\n]+)/gi;
 const EN_LAW_SHALL_GOVERN = /\blaws?\s+of\s+(?:the\s+)?([^,.;\n]+?)\s+(?:shall|will)\s+govern\b/i;
@@ -275,8 +267,6 @@ function explainJurisdiction(text: string, policyText: string): string {
     ? `Governing law matches the playbook (${standard}); the remaining wording differs from the cited playbook clause.`
     : `Governing law: ${law}.`;
 }
-
-// --- Confidentiality -------------------------------------------------------------------------
 
 const SURVIVAL_SENTENCE =
   /surviv|continue[sd]?\s+(?:in\s+(?:force|effect)|to\s+apply)|remain\s+in\s+(?:force|effect)|تسري|تظل|تبقي|تستمر|يستمر|يظل/;

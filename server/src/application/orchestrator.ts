@@ -178,7 +178,7 @@ export class LegalWorkflowOrchestrator {
     return run;
   }
 
-  /** Legacy extract entry — used by older routes. */
+  /** @deprecated No route calls this; use `start` or `enqueue`. */
   async extractClauses(input: ExtractClausesInput): Promise<ClauseExtractorOutput> {
     const run = await this.start({
       contractId: input.contractId,
@@ -447,5 +447,5 @@ export class LegalWorkflowOrchestrator {
   }
 }
 
-/** Back-compat name used by presentation until routes are fully switched. */
+/** @deprecated Alias of `LegalWorkflowOrchestrator`; only re-exported from `application/index.ts`. */
 export { LegalWorkflowOrchestrator as ReviewOrchestrator };

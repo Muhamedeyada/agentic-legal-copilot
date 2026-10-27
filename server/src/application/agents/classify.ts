@@ -133,8 +133,8 @@ function isBoilerplateHeading(heading: string): boolean {
 
 /**
  * The heading decides when it names a family ("Confidentiality", "Interpretation and Governing
- * Law"); body cues are the fallback. Body-first matching filed confidentiality clauses under
- * termination because they mention "termination", and so compared them with the wrong playbook clause.
+ * Law"); body cues are the fallback, so a confidentiality clause that mentions termination is
+ * still compared with the confidentiality standard.
  */
 export function classifyClause(heading: string, text: string): {
   category: ClauseCategory;

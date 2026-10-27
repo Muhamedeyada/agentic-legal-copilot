@@ -11,8 +11,9 @@ const MAX_CACHED_EMBEDDINGS = 5_000;
 
 /**
  * Refuse when the best fused score is below this (scores are normalised to 0..1, where 1 means
- * rank 1 in every list). RRF only sees rank order, so out-of-corpus detection comes from the
- * lexical floor: an off-topic query admits no candidates and nothing reaches this bar.
+ * rank 1 in every list). With CANDIDATE_K = 20 an admitted chunk never scores below ~0.38, so in
+ * practice this bar does not filter: out-of-corpus refusal comes from the lexical floor, which
+ * admits nothing for an off-topic query. It guards against future changes to the list sizes.
  */
 export const MIN_FUSED_SCORE = 0.25;
 

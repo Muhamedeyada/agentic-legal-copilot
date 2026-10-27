@@ -1,6 +1,6 @@
 import { Router } from "express";
 
-/** SSE heartbeat. Agent progress events will use the same endpoint. */
+/** Legacy heartbeat-only stream. Run progress is served by `/api/workflow/stream/:runId`. */
 export function sseRouter(): Router {
   const router = Router();
 
