@@ -17,8 +17,8 @@ services:
       OPENAI_API_KEY: ""
       REQUIRE_COUNSEL_APPROVAL: "true"
       RATE_LIMIT_PER_MINUTE: "60"
-      MAX_PROMPT_CHARS: "12000"
-      MAX_COMPLETION_CHARS: "8000"
+      MAX_PROMPT_CHARS: "48000"
+      MAX_COMPLETION_CHARS: "32000"
       MAX_UPLOAD_CHARS: "200000"
       # Demo tokens; override from the shell or .env for anything shared.
       DEMO_API_TOKEN: ${DEMO_API_TOKEN:-demo-analyst-token}

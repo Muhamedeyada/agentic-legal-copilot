@@ -72,8 +72,8 @@ Classroom check: `npm run lint` (`scripts/check-boundaries.mjs`).
 
 `createCompletionAdapter`:
 
-- Empty or placeholder `OPENAI_API_KEY` → `MockCompletionAdapter` (agents fall back to rules).
-- Real key → hosted adapter (HTTP still stubbed until an SDK is wired).
+- Empty or placeholder `OPENAI_API_KEY` → `MockCompletionAdapter` (deterministic schema-valid JSON, estimated tokens).
+- Real key → hosted adapter (`POST /chat/completions`, JSON mode, provider `usage`). Any error → agents fall back to rules.
 - `LLM_PROVIDER=local` → local OpenAI-compatible URL.
 - Always wrapped in `CappedCompletionAdapter` (token / char caps).
 

@@ -10,6 +10,7 @@ import type { ToolRegistry, ToolContext } from "../tools/registry.js";
 import type { RetrievalOutput } from "../tools/retrieval.tool.js";
 import type { ClauseComparisonOutput } from "../tools/clause-comparison.tool.js";
 import type { RiskCalculatorOutput } from "../tools/risk-calculator.tool.js";
+import { estimateTokens } from "../security/token-budget.js";
 
 export interface RiskAssessorInput {
   readonly contractId: string;
@@ -26,8 +27,10 @@ export class RiskAssessorAgent {
   async run(
     input: RiskAssessorInput,
     ctx: ToolContext,
-  ): Promise<{ output: RiskAssessorOutput; tokenUsage: TokenUsage }> {
+  ): Promise<{ output: RiskAssessorOutput; tokenUsage: TokenUsage; provider: string }> {
     const findings: RiskFinding[] = [];
+    // No model call here: usage is an estimate of the payload this agent inspects.
+    let inspectedTokens = 0;
     const present = new Set(input.clauses.map((c) => c.category));
     const lang = input.language === "both" ? undefined : input.language;
 
@@ -45,6 +48,7 @@ export class RiskAssessorAgent {
         },
         ctx,
       );
+      inspectedTokens += retrieval.hits.reduce((sum, h) => sum + estimateTokens(h.text), 0);
       const scored = await this.tools.invoke<unknown, RiskCalculatorOutput>(
         "risk_calculator_tool",
         {
@@ -86,6 +90,7 @@ export class RiskAssessorAgent {
         ctx,
       );
       const policy = retrieval.hits[0]?.text ?? (await this.policyText(clause.category, lang));
+      inspectedTokens += estimateTokens(clause.text) + estimateTokens(policy);
       const comparison =
         policy.trim().length > 0
           ? await this.tools.invoke<unknown, ClauseComparisonOutput>(
@@ -117,7 +122,14 @@ export class RiskAssessorAgent {
     }
 
     const output = parseContract(RiskAssessorOutputZ, "RiskAssessorOutput", { findings });
-    return { output, tokenUsage: { promptTokens: 0, completionTokens: 0 } };
+    return {
+      output,
+      tokenUsage: {
+        promptTokens: inspectedTokens,
+        completionTokens: estimateTokens(JSON.stringify(output.findings)),
+      },
+      provider: "deterministic-estimate",
+    };
   }
 
   private async policyText(category: ClauseCategory, language: "ar" | "en" | undefined): Promise<string> {

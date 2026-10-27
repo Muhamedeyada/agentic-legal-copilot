@@ -1,11 +1,24 @@
 import type { CompletionPort, CompletionRequest, CompletionResult } from "../../domain/ports/completion.port.js";
+import { chatComplete, type ChatEndpoint } from "./openai-compatible.js";
 
-/** Local completions (OpenAI-compatible base URL, e.g. Ollama). */
+export interface LocalCompletionOptions {
+  readonly baseUrl: string;
+  readonly model: string;
+  readonly timeoutMs: number;
+  readonly apiKey?: string;
+  readonly maxTokens?: number;
+  readonly fetchImpl?: typeof fetch;
+}
+
+/** Local completions (OpenAI-compatible base URL, e.g. Ollama `/v1`). No key required. */
 export class LocalCompletionAdapter implements CompletionPort {
-  constructor(private readonly opts: { baseUrl: string; model: string }) {}
+  private readonly endpoint: ChatEndpoint;
 
-  async complete(_input: CompletionRequest): Promise<CompletionResult> {
-    void this.opts;
-    throw new Error("LocalCompletionAdapter is not connected.");
+  constructor(opts: LocalCompletionOptions) {
+    this.endpoint = { providerId: "local", retries: 1, ...opts };
+  }
+
+  complete(input: CompletionRequest): Promise<CompletionResult> {
+    return chatComplete(this.endpoint, input);
   }
 }

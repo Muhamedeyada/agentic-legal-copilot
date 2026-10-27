@@ -75,7 +75,7 @@ Target: multilingual embeddings (or dual encode), `lang` metadata, never silent 
 | G-10 | Cross-lingual retrieve | EN↔AR dense | Lexical + glossary + stemming; eval XL 100% scoped | Open-corpus XL still brittle | 2–3 w hybrid RRF (branch exists) | **Partial** |
 | G-11 | Risk Assessor | Severity + citations | Matrix tool + omission Critical | Flags are keyword/`detectRiskFlags`, not NLU | 1–2 w richer feature extractors | **Done** |
 | G-12 | Memo Drafter | Bilingual, RTL-safe | Template + optional LLM; sanitize | Quality depends on findings, not prose model | 1 w counsel-editable templates | **Done** |
-| G-13 | Provider swap | Hosted / local | Factory + mock + cap; hosted/local **throw** if used | Classroom works; production chat does not | 2–4 d OpenAI-compatible fetch | **Partial** |
+| G-13 | Provider swap | Hosted / local | Factory + cap; hosted/local OpenAI-compatible fetch (JSON mode, provider usage); deterministic mock with estimated tokens | JSON mode, not strict JSON-schema outputs; Zod still validates | 1–2 d strict structured outputs | **Done** |
 | G-14 | Audit log | Redacted durable log | `run.traces` + SSE + Trace drawer | Lost on restart; not redacted for every field | 1 w SQLite + redaction policy | **Partial** |
 | G-15 | Golden set | ≥25 Q/A, bilingual | 28 items, `npm run eval`, JSON report | Document-scoped hit-rate ≠ production Recall@5 | Ongoing gold maintenance | **Done** |
 | G-16 | 5-minute demo | Scripted in README | UI + HITL + eval + Docker | README was stale; now matches code | — | **Done** |
@@ -86,7 +86,7 @@ Target: multilingual embeddings (or dual encode), `lang` metadata, never silent 
 
 | Increment | People-weeks (indicative) | Recurring cost |
 | --- | --- | --- |
-| Wire hosted chat + embeddings | 1–2 | Token spend; cap already in config |
+| Wire hosted embeddings | 1–2 | Token spend; cap already in config |
 | Hybrid retrieve in prod (Qdrant + BM25) | 3–5 | Vector hosting + re-index jobs |
 | PDF/DOCX + OCR | 2–4 | CPU; malware scanning |
 | Durable audit + SSO | 3–6 | IdP contract |

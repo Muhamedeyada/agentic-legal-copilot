@@ -47,7 +47,7 @@ client (Vite :5173 / Docker nginx :3000)
     ← infrastructure/  mock/hosted/local completion, file catalog, in-memory stores
 ```
 
-**Honest limits:** hosted completion and vector adapters are ports with stubs (they throw if selected). Live retrieval is **lexical** (token overlap + bilingual expansion), not hybrid dense+BM25. Uploads are **plain text** (the UI reads `file.text()`). Auth is **static bearer tokens** (analyst / counsel); the demo client ships both tokens in its bundle, so it is not real identity.
+**Honest limits:** hosted and local completions call any OpenAI-compatible `/chat/completions` endpoint (JSON mode, real `usage` tokens); without a key the mock adapter returns deterministic schema-valid JSON with estimated tokens (~4 chars/token). The vector adapter is still a stub that throws. Live retrieval is **lexical** (token overlap + bilingual expansion), not hybrid dense+BM25. Uploads are **plain text** (the UI reads `file.text()`). Auth is **static bearer tokens** (analyst / counsel); the demo client ships both tokens in its bundle, so it is not real identity.
 
 ---
 
@@ -135,13 +135,14 @@ From `server/src/infrastructure/config.ts` and the Vite client:
 | `CLIENT_ORIGIN` | CORS; comma-separated (`http://localhost:5173,http://localhost:3000`) |
 | `LLM_PROVIDER` | `openai` (default) or `local` |
 | `OPENAI_API_KEY` | Empty / `sk-your-…` → mock adapter |
-| `OPENAI_BASE_URL` / `OPENAI_CHAT_MODEL` | Hosted (adapter not wired to HTTP yet) |
+| `OPENAI_BASE_URL` / `OPENAI_CHAT_MODEL` | Hosted OpenAI-compatible endpoint and model |
+| `LLM_TIMEOUT_MS` | Per-request completion timeout (default 20000; one retry on 429/5xx) |
 | `LOCAL_LLM_BASE_URL` / `LOCAL_LLM_MODEL` | Local provider |
 | `REQUIRE_COUNSEL_APPROVAL` | Default `true` |
 | `DEFAULT_LOCALE` | `en` \| `ar` |
 | `CORPUS_DIR` | Override corpus path |
 | `RATE_LIMIT_PER_MINUTE` | HTTP 429 |
-| `MAX_PROMPT_CHARS` / `MAX_COMPLETION_CHARS` | Completion caps |
+| `MAX_PROMPT_CHARS` / `MAX_COMPLETION_CHARS` | Completion caps (48000 / 32000). Oversize prompts are refused, not truncated |
 | `MAX_UPLOAD_CHARS` | HTTP 413 |
 | `DEMO_API_TOKEN` | Analyst bearer token (default `demo-analyst-token` outside production) |
 | `COUNSEL_TOKEN` | Counsel bearer token for approve / reject / edit (default `demo-counsel-token` outside production) |

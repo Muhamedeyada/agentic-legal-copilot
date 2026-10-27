@@ -124,6 +124,7 @@ export interface RagAnswer {
 
 export type StreamEventType =
   | "AGENT_START"
+  | "AGENT_DONE"
   | "TOOL_EXEC"
   | "CLAUSE_EXTRACTED"
   | "RISK_FOUND"
@@ -144,6 +145,7 @@ export interface StreamEvent {
   clause?: ExtractedClause;
   finding?: RiskFinding;
   tokenUsage?: { promptTokens: number; completionTokens: number };
+  totalTokenUsage?: { promptTokens: number; completionTokens: number };
   message?: string;
   decision?: "approved" | "rejected" | "edited";
 }

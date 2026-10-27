@@ -15,6 +15,8 @@ export interface AppConfig {
   readonly rateLimitPerMinute: number;
   readonly maxPromptChars: number;
   readonly maxCompletionChars: number;
+  /** Per-request timeout for hosted / local completion calls. */
+  readonly llmTimeoutMs: number;
   readonly maxUploadChars: number;
   /** Bearer token for the analyst role (`DEMO_API_TOKEN`). */
   readonly analystToken: string;
@@ -64,8 +66,11 @@ export function loadConfig(): AppConfig {
     defaultLocale: env("DEFAULT_LOCALE", "en") === "ar" ? "ar" : "en",
     corpusDir: env("CORPUS_DIR", ""),
     rateLimitPerMinute: Number(env("RATE_LIMIT_PER_MINUTE", "60")),
-    maxPromptChars: Number(env("MAX_PROMPT_CHARS", "12000")),
-    maxCompletionChars: Number(env("MAX_COMPLETION_CHARS", "8000")),
+    // ~12k tokens: fits every corpus contract plus the extractor's JSON envelope.
+    maxPromptChars: Number(env("MAX_PROMPT_CHARS", "48000")),
+    // ~8k tokens: the extractor echoes every clause body, ~10k chars for a corpus contract.
+    maxCompletionChars: Number(env("MAX_COMPLETION_CHARS", "32000")),
+    llmTimeoutMs: Number(env("LLM_TIMEOUT_MS", "20000")),
     maxUploadChars: Number(env("MAX_UPLOAD_CHARS", "200000")),
     analystToken,
     counselToken,
