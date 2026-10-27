@@ -64,6 +64,41 @@
   --inverse-fg: var(--color-slate-900);
 }
 
+/* Base layer, not unlayered CSS: Tailwind utilities live in a layer, and unlayered rules would override them. */
+@layer base {
+  button,
+  [role="button"],
+  select,
+  summary,
+  a[href],
+  label:has(> input[type="file"]) {
+    cursor: pointer;
+  }
+
+  :is(button, input, select, textarea, fieldset):disabled,
+  [aria-disabled="true"] {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+
+  :is(button, a[href], select, input, textarea, summary, [role="button"]) {
+    transition-property: color, background-color, border-color, box-shadow, transform, opacity, fill, stroke;
+    transition-duration: 150ms;
+    transition-timing-function: ease;
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--line-strong) transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :is(button, a[href], select, input, textarea, summary, [role="button"]) {
+    transition-duration: 0.01ms;
+  }
+}
+
 html,
 body,
 #root {
@@ -139,6 +174,10 @@ html[dir="rtl"] .contract-body {
   color: var(--ink);
   cursor: pointer;
   transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+}
+
+.citation-badge:active {
+  transform: scale(0.97);
 }
 
 .citation-badge:hover,
@@ -244,7 +283,12 @@ html[dir="rtl"] .contract-body {
   font-weight: 600;
   color: var(--body);
   cursor: pointer;
-  transition: border-color 150ms ease, background 150ms ease;
+  user-select: none;
+  transition: border-color 150ms ease, background 150ms ease, transform 150ms ease;
+}
+
+.copy-btn:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 .copy-btn:disabled {
@@ -271,7 +315,17 @@ html[dir="rtl"] .contract-body {
   font-weight: 600;
   color: var(--body);
   cursor: pointer;
-  transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
+  user-select: none;
+  transition: background 150ms ease, border-color 150ms ease, color 150ms ease, transform 150ms ease;
+}
+
+.filter-chip:active {
+  transform: scale(0.97);
+}
+
+.filter-chip:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--color-indigo-500) 70%, transparent);
+  outline-offset: 2px;
 }
 
 .filter-chip:hover {
@@ -350,6 +404,8 @@ html[dir="rtl"] .skeleton-bar-fill {
   inset: 0;
   border: 0;
   background: rgb(15 23 42 / 0.42);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
   cursor: pointer;
 }
 

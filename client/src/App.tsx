@@ -26,6 +26,7 @@ import { TraceDrawer } from "./components/TraceDrawer";
 import { RagChat } from "./components/RagChat";
 import { PlaybookInspectorHost } from "./components/PlaybookInspectorHost";
 import { ThemeToggle } from "./components/ThemeToggle";
+import { pressable } from "./components/ui";
 
 export default function App() {
   const { locale, setLocale } = useLocale();
@@ -143,8 +144,8 @@ export default function App() {
             <div className="flex rounded-full bg-slate-800 p-0.5 text-[11px] font-medium">
               <button
                 type="button"
-                className={`rounded-full px-2.5 py-1 transition duration-150 ${
-                  locale === "en" ? "bg-white text-slate-900" : "text-slate-300 hover:text-white"
+                className={`rounded-full px-2.5 py-1 ${pressable} ${
+                  locale === "en" ? "bg-white text-slate-900" : "text-slate-300 hover:bg-slate-700 hover:text-white"
                 }`}
                 onClick={() => setLocale("en")}
               >
@@ -152,8 +153,8 @@ export default function App() {
               </button>
               <button
                 type="button"
-                className={`rounded-full px-2.5 py-1 transition duration-150 ${
-                  locale === "ar" ? "bg-white text-slate-900" : "text-slate-300 hover:text-white"
+                className={`rounded-full px-2.5 py-1 ${pressable} ${
+                  locale === "ar" ? "bg-white text-slate-900" : "text-slate-300 hover:bg-slate-700 hover:text-white"
                 }`}
                 onClick={() => setLocale("ar")}
               >
@@ -164,7 +165,7 @@ export default function App() {
             <button
               type="button"
               disabled={!selected || busy}
-              className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-slate-900 transition duration-150 hover:bg-slate-100 disabled:opacity-40"
+              className={`rounded-lg bg-white px-4 py-2 text-sm font-semibold text-slate-900 enabled:hover:bg-slate-200 disabled:opacity-40 ${pressable}`}
               onClick={() => void handleRun()}
             >
               {busy ? t.running : t.runReview}
@@ -172,7 +173,7 @@ export default function App() {
             {runId ? (
               <button
                 type="button"
-                className="rounded-lg border border-white/20 px-3 py-2 text-sm text-slate-200 transition duration-150 hover:bg-white/10"
+                className={`rounded-lg border border-white/20 px-3 py-2 text-sm text-slate-200 hover:border-white/40 hover:bg-white/10 ${pressable}`}
                 onClick={() => {
                   void cancelRun(runId);
                 }}

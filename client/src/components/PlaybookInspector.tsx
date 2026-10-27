@@ -6,7 +6,7 @@ import { highlightPlaybookPhrases, highlightRiskPhrases, type HighlightSpan } fr
 import { buildPlaybookInsert } from "../lib/playbook-insert";
 import { playbookGuidance, playbookText, playbookTitle } from "../lib/playbook";
 import { similarityPercent } from "../lib/token-overlap";
-import { primaryBtn, severityBadge, tone } from "./ui";
+import { iconBtn, pressable, primaryBtn, severityBadge, tone } from "./ui";
 
 type T = (typeof copy)[UiLocale];
 
@@ -97,7 +97,7 @@ export function PlaybookInspector({
 
   return createPortal(
     <div className="inspector-layer print:hidden" dir={dir}>
-      <button type="button" className="inspector-backdrop" aria-label={t.closeInspector} onClick={onClose} />
+      <button type="button" tabIndex={-1} className="inspector-backdrop" aria-label={t.closeInspector} onClick={onClose} />
       <aside
         ref={panelRef}
         role="dialog"
@@ -116,7 +116,7 @@ export function PlaybookInspector({
               </h2>
               <p className="mt-0.5 text-xs text-muted">{playbookTitle(finding.category, locale)}</p>
             </div>
-            <button ref={closeRef} type="button" className={ghostIcon} onClick={onClose} aria-label={t.closeInspector}>
+            <button ref={closeRef} type="button" className={iconBtn} onClick={onClose} aria-label={t.closeInspector}>
               ×
             </button>
           </div>
@@ -173,7 +173,7 @@ export function PlaybookInspector({
         <footer className="flex flex-wrap items-center justify-end gap-2 border-t border-line px-5 py-3">
           <button
             type="button"
-            className="rounded-lg border border-line bg-surface px-3.5 py-2 text-sm font-semibold text-body transition duration-150 hover:border-line-strong hover:bg-surface-muted"
+            className={`rounded-lg border border-line bg-surface px-3.5 py-2 text-sm font-semibold text-body enabled:hover:border-line-strong enabled:hover:bg-surface-sunken ${pressable}`}
             onClick={() => void onCopy(golden)}
           >
             {t.copyReference}
@@ -244,5 +244,3 @@ function focusable(root: HTMLElement): HTMLElement[] {
   );
 }
 
-const ghostIcon =
-  "grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-line text-lg leading-none text-muted transition duration-150 hover:border-line-strong hover:bg-surface-muted";

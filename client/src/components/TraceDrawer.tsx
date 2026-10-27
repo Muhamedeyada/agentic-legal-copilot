@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { focusRing } from "./ui";
 import type { WorkflowSnapshot } from "../api/types";
 import type { copy, UiLocale } from "../copy";
 
@@ -26,7 +27,7 @@ export function TraceDrawer({
     <footer className="z-20 shrink-0 border-t border-line bg-surface/95 shadow-[0_-8px_24px_-16px_rgba(15,23,42,0.25)] backdrop-blur">
       <button
         type="button"
-        className="flex w-full items-center justify-between gap-3 px-4 py-2.5 text-start"
+        className={`flex w-full items-center justify-between gap-3 px-4 py-2.5 text-start select-none hover:bg-surface-muted focus-visible:ring-inset ${focusRing}`}
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
       >
