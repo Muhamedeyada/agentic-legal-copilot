@@ -14,7 +14,7 @@ By the end of this session you can:
 1. Explain why a **single chat agent** is the wrong control plane for legal review.
 2. Draw the D1T1 hexagonal layers and name what each layer may import.
 3. Trace Clause Extractor → Risk Assessor → Memo Drafter → Counsel gate on a live run.
-4. Distinguish **lexical bilingual RAG** (what ships) from hybrid dense+BM25 (deferred).
+4. Explain **hybrid RRF retrieval** and why a lexical floor, not a fused score, decides refusal.
 5. Run `npm run eval` and interpret EN / AR / XL / refusal scores separately.
 
 ---
@@ -98,11 +98,11 @@ What does **not** ship: PDF/DOCX parsers, `npm run ingest` into Chroma. Do not d
 
 Live path: `DirectRagUseCase` / `CorpusRagUseCase`.
 
-- Token overlap after Arabic folding + bilingual query expansion.
-- Citations required; below `MIN_SCORE` → `not_enough_information` (HTTP 404 on chat).
+- BM25 + hashed dense vectors, fused with RRF (k=60), after Arabic folding + bilingual query expansion.
+- RRF only sees ranks: a lexical floor admits chunks; nothing admitted → `not_enough_information` (HTTP 404 on chat).
 - Document-scoped search is the Counsel “this contract” workflow.
 
-Deferred: dense embeddings + BM25 + RRF (`feat/ingestion-and-hybrid-retrieval`).
+Deferred: semantic multilingual embeddings and a persistent vector index.
 
 **Rule:** no cite → no legal claim.
 
@@ -209,7 +209,7 @@ Honest caveat: retrieve items are mostly **document-scoped**. Open-corpus items 
 
 ## 17. What is deferred (honest) (3 min)
 
-- PDF/DOCX ingest, hybrid dense+BM25 index.
+- PDF/DOCX ingest, persistent vector index, semantic embeddings.
 - Hosted completion HTTP (factory is ready; adapter throws).
 - Production auth / roles (`DEMO_API_TOKEN` is unused).
 - Persistent audit store / OpenTelemetry.

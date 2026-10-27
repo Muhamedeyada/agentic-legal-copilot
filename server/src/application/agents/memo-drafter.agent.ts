@@ -4,6 +4,8 @@ import type { Citation, ReviewMemo } from "../../domain/entities/memo.js";
 import type { ExtractedClause, TokenUsage } from "../../domain/entities/workflow.js";
 import type { RiskFinding } from "../../domain/entities/risk.js";
 import type { CompletionPort } from "../../domain/ports/completion.port.js";
+import type { PlaybookPort } from "../../domain/ports/playbook.port.js";
+import type { PlaybookClause } from "../../domain/entities/playbook.js";
 import { MemoDrafterOutputZ, parseContract, toReviewMemo } from "./schemas.js";
 import { parseJsonObject } from "./json.js";
 import type { MemoDrafterOutput } from "./contracts.js";
@@ -68,26 +70,35 @@ function redlineFor(finding: RiskFinding): { en: string; ar: string } {
   };
 }
 
-function citationsFrom(findings: readonly RiskFinding[], language: "ar" | "en"): Citation[] {
+const EXCERPT_CHARS = 280;
+
+/** Quote the playbook clause each finding was compared against; unknown ids are dropped, never invented. */
+function citationsFrom(findings: readonly RiskFinding[], playbook: ReadonlyMap<string, PlaybookClause>): Citation[] {
   const seen = new Set<string>();
   const out: Citation[] = [];
   for (const finding of findings) {
     for (const id of finding.citationIds) {
-      if (seen.has(id)) {
+      const clause = playbook.get(id);
+      if (!clause || seen.has(id)) {
         continue;
       }
       seen.add(id);
       out.push({
         id,
         source: "corpus",
-        locator: id,
-        language,
-        excerpt: `Playbook/precedent chunk ${id} linked from ${finding.id}`,
+        locator: clause.title,
+        language: clause.language,
+        excerpt: sanitizeModelText(clause.text.slice(0, EXCERPT_CHARS)),
         isTranslation: false,
       });
     }
   }
   return out;
+}
+
+function dedupeById(citations: readonly Citation[]): Citation[] {
+  const seen = new Set<string>();
+  return citations.filter((c) => !seen.has(c.id) && seen.add(c.id));
 }
 
 function draftBodies(input: MemoDrafterInput): { bodyEn: string; bodyAr: string } {
@@ -141,6 +152,7 @@ export class MemoDrafterAgent {
   constructor(
     private readonly completion: CompletionPort,
     private readonly tools: ToolRegistry,
+    private readonly playbook: PlaybookPort,
   ) {}
 
   async run(
@@ -175,7 +187,7 @@ export class MemoDrafterAgent {
       usedLlm = false;
     }
 
-    const citationLang = input.language === "ar" ? "ar" : "en";
+    const playbook = new Map((await this.playbook.list()).map((c) => [c.id, c]));
     const extra = await this.tools.invoke<unknown, RetrievalOutput>(
       "retrieval_tool",
       { query: "mandatory liability termination governing law indemnity", topK: 4 },
@@ -186,17 +198,17 @@ export class MemoDrafterAgent {
       id: `${input.runId}:memo`,
       contractId: input.contractId,
       language: input.language,
-      citations: [
-        ...citationsFrom(input.findings, citationLang),
+      citations: dedupeById([
+        ...citationsFrom(input.findings, playbook),
         ...extra.hits.map((h) => ({
           id: h.chunkId,
           source: "corpus" as const,
-          locator: h.chunkId,
+          locator: playbook.get(h.chunkId)?.title ?? h.chunkId,
           language: h.language,
-          excerpt: h.text.slice(0, 180),
+          excerpt: sanitizeModelText(h.text.slice(0, EXCERPT_CHARS)),
           isTranslation: false,
         })),
-      ],
+      ]),
       approvedByCounsel: false,
       ...(input.language !== "ar" ? { bodyEn } : {}),
       ...(input.language !== "en" ? { bodyAr } : {}),

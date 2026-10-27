@@ -167,7 +167,7 @@ npm run eval
 
 - Command: `npm run eval` → `server/src/evaluation/run_eval.ts`.
 - Gold file: `data/evaluation_golden_set.json` (28 items, k=5).
-- Baseline on lexical document-scoped RAG: 100% hit / P@k / grounded / refusal (see `docs/EVALUATION.md`). These are **not** LLM-quality scores.
+- Baseline on hybrid (BM25 + hashed dense, RRF) document-scoped RAG: 100% hit / P@k / grounded / refusal (see `docs/EVALUATION.md`). These are **not** LLM-quality scores.
 - Without bilingual expansion, XL hit-rate historically dropped to ~20%.
 
 ### Stretch

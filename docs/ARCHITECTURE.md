@@ -193,8 +193,8 @@ Keep ADRs short: context, decision, consequences. Four records are required for 
 | --- | --- |
 | Status | Accepted |
 | Context | Twist T1. Monolingual RAG fails Counsel who work in both languages. |
-| Decision | Tag every chunk and clause with `language`. **MVP retrieve is lexical** (Arabic fold + bilingual expand). A multilingual embedding space remains the target (ADR increment). The React app sets `dir="rtl"` for `ar`. Translations are labeled, never silently substituted for source text. |
-| Consequences | Golden set reports EN/AR/XL separately; dense index is a later adapter swap, not a domain rewrite. |
+| Decision | Tag every chunk and clause with `language`. **Retrieve is hybrid:** BM25 + 256-dim hashed embeddings, fused with RRF (k=60), after Arabic folding and bilingual expansion. A lexical relevance floor gates both lists, because the hashed embedding cannot tell off-topic queries apart. A multilingual embedding space remains the target (ADR increment). The React app sets `dir="rtl"` for `ar`. Translations are labeled, never silently substituted for source text. |
+| Consequences | Golden set reports EN/AR/XL separately; a semantic embedding is an `EmbeddingPort` swap, not a domain rewrite. |
 
 ---
 

@@ -11,7 +11,6 @@ import type { CompletionPort } from "../domain/ports/completion.port.js";
 import type { PlaybookPort } from "../domain/ports/playbook.port.js";
 import type { RunStorePort } from "../domain/ports/run-store.port.js";
 import type { ApprovalPort } from "../domain/ports/approval.port.js";
-import type { VectorStorePort } from "../domain/ports/vector-store.port.js";
 import type { EmbeddingPort } from "../domain/ports/embedding.port.js";
 import type { RunTraceEvent, TokenUsage, WorkflowRun, WorkflowState } from "../domain/entities/workflow.js";
 import { assertTransition } from "../domain/workflow/transitions.js";
@@ -34,7 +33,6 @@ export interface OrchestratorPorts {
   readonly approval: ApprovalPort;
   readonly runs: RunStorePort;
   readonly events?: RunEventBus;
-  readonly vectors?: VectorStorePort;
   readonly embeddings?: EmbeddingPort;
   readonly requireCounselApproval: boolean;
   readonly maxIterations?: number;
@@ -114,7 +112,6 @@ export class LegalWorkflowOrchestrator {
     this.tools.register(
       createRetrievalTool({
         playbook: ports.playbook,
-        ...(ports.vectors ? { vectors: ports.vectors } : {}),
         ...(ports.embeddings ? { embeddings: ports.embeddings } : {}),
       }),
     );
@@ -124,7 +121,7 @@ export class LegalWorkflowOrchestrator {
 
     this.extractor = new ClauseExtractorAgent(ports.completion, this.tools);
     this.assessor = new RiskAssessorAgent(this.tools, ports.playbook);
-    this.drafter = new MemoDrafterAgent(ports.completion, this.tools);
+    this.drafter = new MemoDrafterAgent(ports.completion, this.tools, ports.playbook);
   }
 
   /** Create the run and execute in-process (tests / blocking API). */

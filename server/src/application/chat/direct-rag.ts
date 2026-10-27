@@ -2,6 +2,8 @@ import { splitClauses } from "../../domain/chunking/split-clauses.js";
 import { tokenOverlap } from "../../domain/retrieval/arabic-normalize.js";
 import type { ContractCatalogPort } from "../../domain/ports/contract-catalog.port.js";
 import type { PlaybookPort } from "../../domain/ports/playbook.port.js";
+import type { EmbeddingPort } from "../../domain/ports/embedding.port.js";
+import { HybridRanker, MIN_FUSED_SCORE, type HybridCandidate } from "../retrieval/hybrid-rank.js";
 
 export interface RagCitation {
   readonly chunkId: string;
@@ -27,17 +29,23 @@ export interface DirectRagInput {
   readonly topK?: number;
 }
 
-const MIN_SCORE = 0.08;
+/** Lexical floor (token overlap) a chunk needs before it can be ranked or cited. */
+const MIN_LEXICAL = 0.08;
 
 /**
- * Direct RAG over the selected contract + playbook (keyword/overlap).
+ * Direct RAG over the selected contract + playbook: BM25 + dense, fused with RRF.
  * Application layer only — no vector SDK.
  */
 export class DirectRagUseCase {
+  private readonly ranker: HybridRanker;
+
   constructor(
     private readonly catalog: ContractCatalogPort,
     private readonly playbook: PlaybookPort,
-  ) {}
+    embeddings?: EmbeddingPort,
+  ) {
+    this.ranker = new HybridRanker(embeddings);
+  }
 
   async ask(input: DirectRagInput): Promise<RagAnswer> {
     const query = input.query.trim();
@@ -50,24 +58,25 @@ export class DirectRagUseCase {
       };
     }
 
-    const hits: RagCitation[] = [];
+    const candidates: Array<HybridCandidate & { citation: Omit<RagCitation, "score"> }> = [];
     const playbook = await this.playbook.list();
     for (const clause of playbook) {
       if (input.language && clause.language !== input.language) {
         continue;
       }
-      const score = tokenOverlap(query, `${clause.title} ${clause.text}`);
-      if (score <= 0) {
-        continue;
-      }
-      hits.push({
-        chunkId: clause.id,
-        documentId: clause.id,
-        source: "playbook",
-        locator: clause.title,
-        excerpt: clause.text.slice(0, 280),
-        language: clause.language,
-        score,
+      const blob = `${clause.title} ${clause.text}`;
+      candidates.push({
+        id: clause.id,
+        text: blob,
+        lexicalRelevance: tokenOverlap(query, blob),
+        citation: {
+          chunkId: clause.id,
+          documentId: clause.id,
+          source: "playbook",
+          locator: clause.title,
+          excerpt: clause.text.slice(0, 280),
+          language: clause.language,
+        },
       });
     }
 
@@ -75,28 +84,38 @@ export class DirectRagUseCase {
       const doc = await this.catalog.get(input.documentId);
       if (doc) {
         for (const [index, part] of splitClauses(doc.text).entries()) {
-          const score = tokenOverlap(query, `${part.heading} ${part.text}`);
-          if (score <= 0) {
-            continue;
-          }
-          const language = part.language === "ar" ? "ar" : "en";
-          hits.push({
-            chunkId: `${doc.id}:clause:${index + 1}`,
-            documentId: doc.id,
-            source: "contract",
-            locator: part.heading || part.title,
-            excerpt: part.text.slice(0, 280),
-            language,
-            score,
+          const blob = `${part.heading} ${part.text}`;
+          const chunkId = `${doc.id}:clause:${index + 1}`;
+          candidates.push({
+            id: chunkId,
+            text: blob,
+            lexicalRelevance: tokenOverlap(query, blob),
+            citation: {
+              chunkId,
+              documentId: doc.id,
+              source: "contract",
+              locator: part.heading || part.title,
+              excerpt: part.text.slice(0, 280),
+              language: part.language === "ar" ? "ar" : "en",
+            },
           });
         }
       }
     }
 
     const topK = input.topK ?? 6;
-    const ranked = [...hits].sort((a, b) => b.score - a.score).slice(0, topK);
+    const byId = new Map(candidates.map((c) => [c.id, c.citation]));
+    const hits = await this.ranker.rank(candidates, {
+      query,
+      minLexicalRelevance: MIN_LEXICAL,
+      minDenseSimilarity: 0,
+    });
+    const ranked: RagCitation[] = hits.slice(0, topK).flatMap((hit) => {
+      const citation = byId.get(hit.id);
+      return citation ? [{ ...citation, score: hit.score }] : [];
+    });
     const best = ranked[0];
-    if (!best || best.score < MIN_SCORE) {
+    if (!best || best.score < MIN_FUSED_SCORE) {
       return {
         answer: "",
         refused: true,

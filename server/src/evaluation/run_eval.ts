@@ -6,6 +6,7 @@ import { ClauseExtractorOutputZ, parseContract } from "../application/agents/sch
 import { CorpusRagUseCase } from "../application/chat/corpus-rag.js";
 import { LegalWorkflowOrchestrator } from "../application/orchestrator.js";
 import { MockCompletionAdapter } from "../infrastructure/llm/mock.adapter.js";
+import { LocalDeterministicEmbeddingAdapter } from "../infrastructure/embeddings/local-deterministic.adapter.js";
 import { InMemoryApprovalAdapter } from "../infrastructure/approval/in-memory.adapter.js";
 import { InMemoryPlaybookAdapter } from "../infrastructure/playbook/in-memory.adapter.js";
 import { InMemoryRunStoreAdapter } from "../infrastructure/runs/in-memory.adapter.js";
@@ -82,7 +83,7 @@ export async function runEvaluation(): Promise<{
   const k = golden.k ?? 5;
   const chunks = await loadCorpusChunks(corpusDir(root));
   const knownDocs = new Set(chunks.map((c) => c.documentId));
-  const rag = new CorpusRagUseCase(chunks, new InMemoryPlaybookAdapter());
+  const rag = new CorpusRagUseCase(chunks, new InMemoryPlaybookAdapter(), new LocalDeterministicEmbeddingAdapter());
 
   const items: ItemResult[] = [];
 
@@ -147,7 +148,7 @@ export async function runEvaluation(): Promise<{
 
   const summary = {
     provider: "deterministic-local",
-    model: "none (CorpusRagUseCase + MockCompletion for HITL)",
+    model: "none (CorpusRagUseCase: BM25 + hashed embeddings, RRF k=60; MockCompletion for HITL)",
     n: items.length,
     schemaValidity: schemaOk ? 1 : 0,
     overall: {
