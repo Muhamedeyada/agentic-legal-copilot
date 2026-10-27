@@ -199,3 +199,9 @@ Do not demo on real client agreements.
 | [docs/AI-USAGE-LOG.md](docs/AI-USAGE-LOG.md) | Where a coding assistant was used |
 
 Teaching pack: [`teaching/`](teaching/) — [slides](teaching/SLIDES.md), [lab](teaching/LAB-SHEET.md), [mistakes](teaching/TRAINEE-MISTAKES.md).
+
+---
+
+## License
+
+[MIT](LICENSE) © 2026 Mohamed Ahmed Eyada
