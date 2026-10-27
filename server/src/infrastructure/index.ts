@@ -1,8 +1,3 @@
-/**
- * Infrastructure layer — adapters for LLM providers, embeddings, vector stores, I/O.
- * Implements domain ports. Swap hosted APIs for local fallbacks without changing inner layers.
- */
-
 export { loadConfig, type AppConfig } from "./config.js";
 export { HostedCompletionAdapter } from "./llm/hosted.adapter.js";
 export { LocalCompletionAdapter } from "./llm/local.adapter.js";

@@ -42,7 +42,6 @@ export function createLegalServices(config: AppConfig): LegalServices {
   const playbook = new InMemoryPlaybookAdapter();
   const events = new RunEventBus();
   const catalog = new FileContractCatalogAdapter(resolveCorpusDir(config));
-  // Offline 256-dim hashed embeddings; a hosted embedding adapter can replace this behind EmbeddingPort.
   const embeddings = new LocalDeterministicEmbeddingAdapter();
   const orchestrator = new LegalWorkflowOrchestrator({
     completion: createCompletionAdapter(config),
@@ -53,7 +52,6 @@ export function createLegalServices(config: AppConfig): LegalServices {
     embeddings,
     requireCounselApproval: config.requireCounselApproval,
     maxRetries: 1,
-    // Room for one completion call plus its single provider retry.
     stepTimeoutMs: Math.max(30_000, config.llmTimeoutMs * 2 + 5_000),
   });
   return {

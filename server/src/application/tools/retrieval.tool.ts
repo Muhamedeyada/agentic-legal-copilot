@@ -12,7 +12,6 @@ import { z } from "zod";
 export type RetrievalInput = z.infer<typeof RetrievalToolInputZ>;
 export type RetrievalOutput = z.infer<typeof RetrievalToolOutputZ>;
 
-/** Playbook retrieval: BM25 + dense over policy clauses, fused with RRF (k = 60). */
 export function createRetrievalTool(deps: {
   playbook: PlaybookPort;
   embeddings?: EmbeddingPort;

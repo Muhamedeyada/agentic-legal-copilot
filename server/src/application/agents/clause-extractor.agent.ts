@@ -15,7 +15,6 @@ export interface ClauseExtractorInput {
   readonly text: string;
 }
 
-/** Rules-only extraction. Used as the fallback and by the deterministic mock completion. */
 export function extractDeterministic(input: ClauseExtractorInput): ExtractedClause[] {
   return splitClauses(input.text).map((part, index) => {
     const { category, standard } = classifyClause(part.heading, part.text);
@@ -48,8 +47,6 @@ export class ClauseExtractorAgent {
     let tokenUsage: TokenUsage = { promptTokens: 0, completionTokens: 0 };
     let provider = "deterministic";
     try {
-      // The full contract goes in; CappedCompletionAdapter refuses oversize prompts instead of
-      // truncating them, because a clipped contract would make every later clause look "omitted".
       const result = await this.completion.complete({
         jsonSchemaName: "clause_extractor_output",
         system: `${TRUSTED_SYSTEM_PREFIX} Extract contract clauses. Return JSON only matching {clauses: ExtractedClause[]}. Categories: liability, indemnity, ip, payment, termination, jurisdiction, confidentiality, other. Support Arabic and English headings.`,

@@ -115,7 +115,6 @@ export const RiskCalculatorInputZ = z.object({
   omitted: z.boolean(),
   similarityToPlaybook: z.number().min(0).max(1),
   flags: RiskFlagsZ,
-  /** Category-specific explanation used when the clause deviates from the playbook. */
   deviationNote: z.string().min(1).optional(),
 });
 
@@ -142,7 +141,6 @@ export function parseContract<T>(schema: z.ZodType<T>, schemaName: string, value
   return result.data;
 }
 
-/** Drop explicit `undefined` optionals so domain types with exactOptionalPropertyTypes accept the memo. */
 export function toReviewMemo(raw: z.infer<typeof ReviewMemoZ>): ReviewMemo {
   return {
     id: raw.id,

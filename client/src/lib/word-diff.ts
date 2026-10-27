@@ -5,7 +5,6 @@ export type DiffToken = {
 
 const BLOCK_RATIO = 0.28;
 
-/** Word-level LCS diff so Counsel can see playbook additions vs contract deletions. */
 export function diffWords(from: string, to: string): DiffToken[] {
   const a = tokenize(from);
   const b = tokenize(to);

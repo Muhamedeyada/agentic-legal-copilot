@@ -10,7 +10,6 @@ export interface HostedCompletionOptions {
   readonly fetchImpl?: typeof fetch;
 }
 
-/** Hosted completions over the OpenAI-compatible HTTP API (no SDK dependency). */
 export class HostedCompletionAdapter implements CompletionPort {
   private readonly endpoint: ChatEndpoint;
 

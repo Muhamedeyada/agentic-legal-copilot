@@ -2,7 +2,6 @@ import type { WorkflowEventListener, WorkflowStreamEvent } from "./events.js";
 
 const HISTORY_CAP = 500;
 
-/** In-process pub/sub for run progress. Presentation maps this onto SSE. */
 export class RunEventBus {
   private readonly listeners = new Map<string, Set<WorkflowEventListener>>();
   private readonly history = new Map<string, WorkflowStreamEvent[]>();

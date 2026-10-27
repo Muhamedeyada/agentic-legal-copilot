@@ -1,4 +1,3 @@
-/** Bilingual query expansion so EN questions can hit AR clauses (T1) and vice versa. */
 const PAIRS: ReadonlyArray<readonly [string, string]> = [
   ["termination", "إنهاء"],
   ["terminate", "إنهاء"],

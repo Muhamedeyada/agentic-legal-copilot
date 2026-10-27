@@ -16,7 +16,6 @@ function looksLikePlaceholderKey(key: string): boolean {
 }
 
 export function createCompletionAdapter(config: AppConfig): CompletionPort {
-  // Keep generated output inside the completion cap (~4 chars per token).
   const maxTokens = Math.ceil(config.maxCompletionChars / 4);
   let inner: CompletionPort;
   if (config.llmProvider === "local") {

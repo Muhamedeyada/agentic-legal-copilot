@@ -1,5 +1,3 @@
-/** Client-side bilingual token overlap. Mirrors the assessor metric without importing server code. */
-
 function fold(text: string): string {
   return text
     .normalize("NFKC")

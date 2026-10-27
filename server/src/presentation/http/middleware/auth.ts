@@ -88,7 +88,6 @@ export function counselId(req: Request): string {
   return req.user?.userId ?? "anonymous";
 }
 
-/** HITL decisions and memo finalization are Counsel-only. */
 export const requireCounsel: RequestHandler = (req, res, next) => {
   if (req.user?.role !== "counsel") {
     res.status(403).json(COUNSEL_FORBIDDEN);

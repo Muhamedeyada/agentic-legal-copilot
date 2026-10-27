@@ -91,7 +91,6 @@ export async function getRun(runId: string): Promise<WorkflowSnapshot> {
   return parseJson<WorkflowSnapshot>(res);
 }
 
-/** EventSource cannot send headers, so the stream takes the token as a query parameter. */
 export function workflowStreamUrl(runId: string): string {
   return `${base}/api/workflow/stream/${encodeURIComponent(runId)}?access_token=${encodeURIComponent(analystToken)}`;
 }

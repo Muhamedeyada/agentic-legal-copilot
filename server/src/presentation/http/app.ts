@@ -24,7 +24,6 @@ export interface HttpDeps {
   readonly rag: DirectRagUseCase;
 }
 
-/** Comma-separated CLIENT_ORIGIN values (local Vite + Docker nginx). */
 export function parseOrigins(raw: string): string | string[] {
   const parts = raw
     .split(",")
@@ -60,7 +59,6 @@ export function createApp(deps: HttpDeps): Express {
 
   app.use("/health", healthRouter(deps.config));
   app.use("/api/health", healthRouter(deps.config));
-  // Everything except health requires a bearer token; HITL routes additionally require counsel.
   const auth = authenticate(deps.config);
   app.use("/events", auth, sseRouter());
   app.use("/reviews", auth, reviewsRouter(deps.orchestrator, deps.counselGate));

@@ -3,10 +3,6 @@ export interface RankedItem {
   readonly rank: number;
 }
 
-/**
- * Reciprocal Rank Fusion. Rank is 1-based.
- * score(d) = Σ 1 / (k + rank_i(d))
- */
 export function reciprocalRankFusion(
   lists: readonly (readonly RankedItem[])[],
   k = 60,

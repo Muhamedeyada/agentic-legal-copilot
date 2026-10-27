@@ -10,7 +10,6 @@ export interface LocalCompletionOptions {
   readonly fetchImpl?: typeof fetch;
 }
 
-/** Local completions (OpenAI-compatible base URL, e.g. Ollama `/v1`). No key required. */
 export class LocalCompletionAdapter implements CompletionPort {
   private readonly endpoint: ChatEndpoint;
 

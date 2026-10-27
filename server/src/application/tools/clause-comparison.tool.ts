@@ -9,10 +9,6 @@ export type ClauseComparisonOutput = z.infer<typeof ClauseComparisonOutputZ>;
 const SIMILAR_THRESHOLD = 0.45;
 const DEVIATION_THRESHOLD = 0.3;
 
-/**
- * Deterministic clause/policy comparison. No LLM.
- * Uses bilingual token overlap after Arabic folding.
- */
 export function compareClauses(contractClause: string, policyClause: string): ClauseComparisonOutput {
   const overlap = tokenOverlap(contractClause, policyClause);
   return {

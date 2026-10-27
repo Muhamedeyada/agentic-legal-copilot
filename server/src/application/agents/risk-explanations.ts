@@ -4,21 +4,12 @@ import { detectRiskFlags } from "./classify.js";
 
 export interface DeviationInput {
   readonly category: ClauseCategory;
-  /** Contract clause (heading + body). */
   readonly clauseText: string;
-  /** Playbook clause it was compared against; empty when the playbook has no standard. */
   readonly policyText: string;
 }
 
-/** Used only when the playbook clause states no notice period of its own. */
 const DEFAULT_MIN_NOTICE_DAYS = 30;
 
-/**
- * Category-specific wording for a playbook deviation. A specific defect is named only when a
- * deterministic EN + AR pattern check finds it in the clause; otherwise the note says what is
- * known. The checks are keyword heuristics, not legal parsing: unusual drafting can still slip
- * past them, so the note is a pointer for Counsel, not a conclusion.
- */
 export function explainDeviation(input: DeviationInput): string {
   const text = input.clauseText;
   const hasPolicy = input.policyText.trim().length > 0;
@@ -46,7 +37,6 @@ function noStandard(what: string): string {
   return `The playbook has no standard for ${what}; review manually.`;
 }
 
-/** Sentences of the folded text (lower-case, Arabic letters and digits folded). */
 function sentences(text: string): string[] {
   return normalizeArabic(text)
     .split(/(?<=[.!?؟;])\s+|\n+/u)
@@ -54,7 +44,6 @@ function sentences(text: string): string[] {
     .filter((s) => s.length > 0);
 }
 
-/** A sentence that excludes indirect / consequential loss, and is not itself disapplied. */
 export function excludesConsequentialLoss(text: string): boolean {
   return sentences(text).some((s) => {
     const mentionsLoss = /indirect|consequential|غير المباشر|التبعي/.test(s);
@@ -84,7 +73,6 @@ function explainLiability(text: string): string {
 function explainIndemnity(text: string): string {
   const s = normalizeArabic(text);
   const grossNegligenceCarveOut = /gross(?:ly)? negligen|اهمال جسيم|الاهمال الجسيم/.test(s);
-  // "shall not be subject to any monetary cap" mentions a cap without imposing one.
   const flags = detectRiskFlags(text);
   const capped = /\bcap(?:ped)?\b|limited to|سقف|بحد اقصي/.test(s);
   const broad = flags.uncappedIndemnity || flags.unlimitedLiability || !capped;
@@ -113,11 +101,6 @@ const EN_NUMBER_WORDS: Readonly<Record<string, number>> = {
 const EN_COUNT = `(?:\\(?(\\d{1,3})\\)?|(${Object.keys(EN_NUMBER_WORDS).join("|")})(?:\\s*\\(\\d{1,3}\\))?)`;
 const EN_DAYS = `(?:calendar\\s+|business\\s+|working\\s+)?days?`;
 
-/**
- * Days attached to the notice itself: "30 days' prior written notice", "one (1) calendar day's
- * notice", "notice of thirty (30) days". Cure and delivery periods ("cure within 10 days",
- * "30 days after written notice", "deemed received 2 days after posting") do not match.
- */
 const EN_NOTICE_PERIOD: readonly RegExp[] = [
   new RegExp(`${EN_COUNT}\\s*${EN_DAYS}(?:['’]s?)?\\s+(?:prior\\s+|advance\\s+)?(?:written\\s+)?notice\\b`, "g"),
   new RegExp(
@@ -126,14 +109,9 @@ const EN_NOTICE_PERIOD: readonly RegExp[] = [
   ),
 ];
 
-/**
- * "بإخطار كتابي سابق مدته 15 يوماً", "بإشعار لا يقل عن ثلاثين (30) يوماً". The notice word must come
- * first, so the cure period "بعد ثلاثين (30) يوماً من الإخطار" does not match.
- */
 const AR_NOTICE_PERIOD = /(?:اخطار|اشعار)(?:\s+(?!(?:من|بعد|خلال)(?=\s|$))\S+){0,4}?\s+\(?(\d{1,3})\)?\s*(?:يوم|ايام)/g;
 const AR_ONE_DAY_NOTICE = /(?:اخطار|اشعار)(?:\s+\S+){0,3}?\s+(?:مدته\s+)?يوم(?:\s+(?:تقويمي|عمل))?(?:\s+واحد)?(?=[\s.،(]|$)/;
 
-/** Shortest termination notice period in days, or undefined when the clause states none. */
 export function shortestNoticeDays(text: string): number | undefined {
   const days: number[] = [];
   for (const s of sentences(text)) {
@@ -163,7 +141,6 @@ const AR_GRANT = /(?:يجوز|يحق)\s+(ل\S+(?:\s+\S+){0,3}?)\s+(?:انهاء|
 // JS `\b` is ASCII-only, so Arabic word ends use a lookahead.
 const AR_MUTUAL = /^(?:لاي|لكل|للطرفين|لكلا)(?=\s|$)|\s(?:او\s+|و)ل/;
 
-/** Named parties holding their own termination right (mutual grants are left out). */
 function singlePartyGrants(text: string): Set<string> {
   const parties = new Set<string>();
   for (const s of sentences(text)) {
@@ -184,10 +161,6 @@ function singlePartyGrants(text: string): Set<string> {
   return parties;
 }
 
-/**
- * A termination right held by exactly one named party. "Either party", "the Client or the
- * Provider", or two parties granted the right in separate sentences are all mutual.
- */
 export function isOneSidedTermination(text: string): boolean {
   return singlePartyGrants(text).size === 1;
 }
@@ -212,15 +185,12 @@ function explainTermination(text: string, policyText: string): string {
 const EN_LAW =
   /\b(?:governed\s+by|construed\s+(?:in\s+accordance\s+with|under))\s+(?:and\s+(?:construed|interpreted)\s+(?:in\s+accordance\s+with|under)\s+)?(?:the\s+)?(?:(?:substantive\s+)?laws?\s+(?:in\s+force\s+in|of)\s+)?(?:the\s+)?([^,.;\n]+)/gi;
 const EN_LAW_SHALL_GOVERN = /\blaws?\s+of\s+(?:the\s+)?([^,.;\n]+?)\s+(?:shall|will)\s+govern\b/i;
-/** Where the law's name ends: "England and Wales without regard to …" → "England and Wales". */
 const EN_LAW_TAIL =
   /\s+(?:and\s+(?:construed|interpreted)|without\s+(?:regard|reference)|excluding|exclusive\s+of|save\s+that|and\s+(?:the|each|any)\s)[\s\S]*$/i;
-/** Captures that are cross-references, not laws: "governed by Clause 12", "governed by this Agreement". */
 const NOT_A_LAW = /^(?:clause|section|article|paragraph|schedule|annex|exhibit|appendix|this|these|that|such|its|their|the\s+(?:terms|provisions|order))\b|^\d/i;
 const AR_LAW =
   /(?:يخضع|تخضع)\s+(?:هذا|هذه)\s+(?:العقد|الاتفاق|الاتفاقية)(?:\s+و(?:يفسر|تفسر))?(?:\s+وفقا)?\s+(?:لـ\s*|ل)([^.،\n]+?)(?=\s+دون|[.،\n]|$)/u;
 
-/** The governing law named in the clause, e.g. "State of Delaware" or "قوانين جمهورية مصر العربية". */
 export function governingLaw(text: string): string | undefined {
   const plain = text.replace(/[ً-ٰٟ]/g, "");
   for (const m of plain.matchAll(EN_LAW)) {
@@ -245,7 +215,6 @@ function lawKey(law: string): string {
     .trim();
 }
 
-/** "England" and "England and Wales", or "laws of the UAE" and "UAE", name the same law. */
 function sameLaw(a: string, b: string): boolean {
   const x = lawKey(a);
   const y = lawKey(b);
@@ -281,7 +250,6 @@ function survivalYears(sentence: string): number | undefined {
 }
 
 function explainConfidentiality(text: string, hasPolicy: boolean): string {
-  // Only survival sentences count: "a three (3) year licence" elsewhere is not the survival term.
   const survival = sentences(text).filter(
     (s) => SURVIVAL_SENTENCE.test(s) || (INDEFINITE.test(s) && /obligation|dut(?:y|ies)|confidential|التزام|السريه/.test(s)),
   );

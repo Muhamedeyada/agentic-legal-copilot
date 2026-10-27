@@ -1,6 +1,5 @@
 import { Router } from "express";
 
-/** Legacy heartbeat-only stream. Run progress is served by `/api/workflow/stream/:runId`. */
 export function sseRouter(): Router {
   const router = Router();
 

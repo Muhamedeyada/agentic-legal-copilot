@@ -17,9 +17,7 @@ export type WorkflowStreamEvent =
       readonly agentId: AgentId;
       readonly step: WorkflowState;
       readonly latencyMs: number;
-      /** Tokens for this agent step. */
       readonly tokenUsage: TokenUsage;
-      /** Running total for the run after this step. */
       readonly totalTokenUsage: TokenUsage;
     }
   | {

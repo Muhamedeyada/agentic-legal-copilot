@@ -42,9 +42,7 @@ export interface CorpusRagInput {
   readonly language?: "ar" | "en";
 }
 
-/** Lexical floor: query-token coverage (plus heading boost) a chunk needs to be ranked at all. */
 const MIN_LEXICAL = 0.22;
-/** Dense floor: cosine similarity a chunk needs to enter the dense list. */
 const MIN_DENSE = 0.2;
 
 export class CorpusRagUseCase {

@@ -3,7 +3,6 @@ import { tokenize } from "../../domain/retrieval/arabic-normalize.js";
 
 const DIMENSIONS = 256;
 
-/** Offline / test embeddings: hashed bag-of-tokens, L2-normalised. */
 export class LocalDeterministicEmbeddingAdapter implements EmbeddingPort {
   readonly model = "local-deterministic-hash-v1";
   readonly dimensions = DIMENSIONS;

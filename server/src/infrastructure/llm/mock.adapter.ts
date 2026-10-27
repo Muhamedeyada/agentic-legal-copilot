@@ -20,7 +20,6 @@ function stringField(record: Record<string, unknown>, key: string): string {
   return value;
 }
 
-/** Same rules the extractor falls back to, returned as a model would: `{ clauses }`. */
 function clauseExtraction(input: CompletionRequest): string {
   const body = unwrapUntrustedDocument(input.user);
   if (body === undefined) {
@@ -34,7 +33,6 @@ function clauseExtraction(input: CompletionRequest): string {
   return JSON.stringify({ clauses });
 }
 
-/** Returns the drafter's own deterministic draft as `{ memo }`. */
 function memoDraft(input: CompletionRequest): string {
   const payload = asRecord(JSON.parse(input.user), "memo payload");
   const draft = asRecord(payload.draft, "draft");
@@ -58,11 +56,6 @@ const FIXTURES: Record<string, (input: CompletionRequest) => string> = {
   memo_drafter_output: memoDraft,
 };
 
-/**
- * Offline completion adapter. Never calls a network LLM.
- * Answers each known schema with deterministic, schema-valid JSON and reports estimated usage
- * (~4 chars per token) so traces and the token meter behave as they would with a real provider.
- */
 export class MockCompletionAdapter implements CompletionPort {
   constructor(private readonly impl?: Responder) {}
 

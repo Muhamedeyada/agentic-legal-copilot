@@ -14,7 +14,6 @@ export function detectPromptInjection(text: string): boolean {
   return INJECTION_PATTERNS.some((re) => re.test(text));
 }
 
-/** Remove injection phrases so retrieval can still run on the legal question. */
 export function stripInjectionPhrases(text: string): string {
   let out = text;
   for (const re of INJECTION_PATTERNS) {

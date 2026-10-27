@@ -63,10 +63,6 @@ function addUsage(into: TokenUsage, extra: TokenUsage): TokenUsage {
 
 const runAls = new AsyncLocalStorage<WorkflowRun>();
 
-/**
- * Coordinates Clause Extractor → Risk Assessor → Memo Drafter → Counsel gate.
- * Agents talk through Zod-validated schemas. Risk scores come only from risk_calculator_tool.
- */
 export class LegalWorkflowOrchestrator {
   private readonly extractor: ClauseExtractorAgent;
   private readonly assessor: RiskAssessorAgent;
@@ -124,7 +120,6 @@ export class LegalWorkflowOrchestrator {
     this.drafter = new MemoDrafterAgent(ports.completion, this.tools, ports.playbook);
   }
 
-  /** Create the run and execute in-process (tests / blocking API). */
   async start(input: StartReviewInput, control: RunControl = {}): Promise<WorkflowRun> {
     const run = this.newRun(input);
     await this.ports.runs.save(run);
@@ -132,7 +127,6 @@ export class LegalWorkflowOrchestrator {
     return (await this.ports.runs.get(run.runId)) ?? run;
   }
 
-  /** HTTP path: return runId immediately, execute on the next tick. */
   async enqueue(input: StartReviewInput): Promise<{ runId: string }> {
     const run = this.newRun(input);
     await this.ports.runs.save(run);

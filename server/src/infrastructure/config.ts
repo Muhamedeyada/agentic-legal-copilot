@@ -15,16 +15,12 @@ export interface AppConfig {
   readonly rateLimitPerMinute: number;
   readonly maxPromptChars: number;
   readonly maxCompletionChars: number;
-  /** Per-request timeout for hosted / local completion calls. */
   readonly llmTimeoutMs: number;
   readonly maxUploadChars: number;
-  /** Bearer token for the analyst role (`DEMO_API_TOKEN`). */
   readonly analystToken: string;
-  /** Bearer token for the counsel role (`COUNSEL_TOKEN`). Required for HITL decisions. */
   readonly counselToken: string;
 }
 
-/** Known demo tokens. Accepted outside production only; the client uses the same defaults. */
 export const DEMO_ANALYST_TOKEN = "demo-analyst-token";
 export const DEMO_COUNSEL_TOKEN = "demo-counsel-token";
 
