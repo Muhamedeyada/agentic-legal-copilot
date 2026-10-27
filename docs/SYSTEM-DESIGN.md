@@ -64,16 +64,16 @@ Target: multilingual embeddings (or dual encode), `lang` metadata, never silent 
 | ID | Capability | Target | Current MVP | Gap / trade-off | Effort to close at scale | Phase |
 | --- | --- | --- | --- | --- | --- | --- |
 | G-01 | Hexagonal packages | Four layers + ports | Domain, application, infra, presentation; `npm run lint` | None for assessment | — | **Done** |
-| G-02 | Express + health | Locale-aware `/health` | `/health` and `/api/health` | Auth later | 1–2 d token middleware | **Done** |
+| G-02 | Express + health | Locale-aware `/health` | `/health` and `/api/health` (unauthenticated) | — | — | **Done** |
 | G-03 | SSE agent events | Typed progress | `/api/workflow/stream/:runId` + event bus | Legacy `/events` is heartbeat only | — | **Done** |
 | G-04 | Counsel memo gate | 403 until approval | Orchestrator + UI CounselGate + G-20 | In-memory approvals die on process restart | 3–5 d persist `ApprovalPort` | **Done** (process lifetime) |
 | G-05 | React RTL workstation | AR/EN, `dir`, review UX | Full workstation (stepper, risk, chat, traces) | No mobile-first polish | 1–2 w design QA | **Done** |
 | G-06 | Document ingest | PDF/DOCX/TXT, MIME | Markdown corpus + JSON text upload + char cap | No PDF/DOCX. Trade-off: smaller supply chain for the demo | 1–2 w parsers + malware scanning | **Partial** |
 | G-07 | Language detection | Per doc / clause | Script-count + filename `-AR-`/`-EN-` | Weak on mixed legal French/AR | 3–5 d detector port + CLD3 | **Partial** |
-| G-08 | Clause Extractor | Typed schema | Agent + Zod + heading fallback | LLM path unused without a live adapter | 2–3 d wire hosted JSON mode | **Done** |
-| G-09 | Vector index | Multilingual embed | Port + in-memory stub **throws** | Lexical catalog instead. Trade-off: no ANN recall | 1–2 w local embeddings + persist | **Open** |
+| G-08 | Clause Extractor | Typed schema | Agent + Zod + heading fallback; headings decide the category before body cues | Heading-less clauses still rely on keyword cues | 2–3 d strict structured outputs | **Done** |
+| G-09 | Vector index | Multilingual embed | Port + in-memory stub **throws**; retrieval ranks in-memory pools with hashed embeddings | No persistent index or ANN recall | 1–2 w persist + ingest pipeline | **Open** |
 | G-10 | Cross-lingual retrieve | EN↔AR dense | BM25 + hashed dense + RRF, glossary + stemming; eval XL 100% scoped | Hashed vectors share no EN↔AR space; open-corpus XL still brittle | 1–2 w multilingual embedding adapter | **Partial** |
-| G-11 | Risk Assessor | Severity + citations | Matrix tool + omission Critical | Flags are keyword/`detectRiskFlags`, not NLU | 1–2 w richer feature extractors | **Done** |
+| G-11 | Risk Assessor | Severity + citations | Matrix tool + omission Critical (a family named in any heading counts as present); category-specific deviation notes | Flags and notes are keyword checks, not NLU; rationales are English only; no confidentiality playbook clause | 1–2 w richer feature extractors | **Done** |
 | G-12 | Memo Drafter | Bilingual, RTL-safe | Template + optional LLM; sanitize | Quality depends on findings, not prose model | 1 w counsel-editable templates | **Done** |
 | G-13 | Provider swap | Hosted / local | Factory + cap; hosted/local OpenAI-compatible fetch (JSON mode, provider usage); deterministic mock with estimated tokens | JSON mode, not strict JSON-schema outputs; Zod still validates | 1–2 d strict structured outputs | **Done** |
 | G-14 | Audit log | Redacted durable log | `run.traces` + SSE + Trace drawer | Lost on restart; not redacted for every field | 1 w SQLite + redaction policy | **Partial** |
@@ -81,6 +81,7 @@ Target: multilingual embeddings (or dual encode), `lang` metadata, never silent 
 | G-16 | 5-minute demo | Scripted in README | UI + HITL + eval + Docker | README was stale; now matches code | — | **Done** |
 | G-17 | Packaging / CI | Compose + PR checks | `Dockerfile`s, compose, `.github/workflows/ci.yml` | No image scan / SBOM yet | 2–3 d Trivy in CI | **Done** (MVP) |
 | G-18 | Auth / roles | Paralegal vs Counsel | Static bearer tokens → `analyst` / `counsel`; approval routes 403 for non-counsel | No IdP, no per-user identity; demo client bundles both tokens | 1–2 w IdP (OIDC) + per-user audit | **Partial** |
+| G-19 | API contract | Machine-readable spec | `docs/openapi.yaml` (OpenAPI 3.0, Redocly-valid) + test that every documented operation exists | Response bodies are not schema-validated in tests | 2–3 d response-schema contract tests | **Done** |
 
 ### Cost / effort notes (scale, not this repo)
 

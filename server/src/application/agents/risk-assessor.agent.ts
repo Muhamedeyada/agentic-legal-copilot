@@ -5,7 +5,8 @@ import type { RiskFinding } from "../../domain/entities/risk.js";
 import type { PlaybookPort } from "../../domain/ports/playbook.port.js";
 import { RiskAssessorOutputZ, parseContract } from "./schemas.js";
 import type { RiskAssessorOutput } from "./contracts.js";
-import { detectRiskFlags } from "./classify.js";
+import { detectRiskFlags, headingFamilies } from "./classify.js";
+import { explainDeviation } from "./risk-explanations.js";
 import type { ToolRegistry, ToolContext } from "../tools/registry.js";
 import type { RetrievalOutput } from "../tools/retrieval.tool.js";
 import type { ClauseComparisonOutput } from "../tools/clause-comparison.tool.js";
@@ -31,7 +32,12 @@ export class RiskAssessorAgent {
     const findings: RiskFinding[] = [];
     // No model call here: usage is an estimate of the payload this agent inspects.
     let inspectedTokens = 0;
-    const present = new Set(input.clauses.map((c) => c.category));
+    // A family counts as present when a clause is filed under it or its heading names it:
+    // "Liability and Indemnification" is filed as indemnity but must not make liability "omitted".
+    const present = new Set([
+      ...input.clauses.map((c) => c.category),
+      ...input.clauses.flatMap((c) => headingFamilies(c.heading)),
+    ]);
     const lang = input.language === "both" ? undefined : input.language;
 
     for (const category of MANDATORY_CLAUSE_CATEGORIES) {
@@ -99,7 +105,8 @@ export class RiskAssessorAgent {
               ctx,
             )
           : { tokenOverlap: 0, similar: false, deviation: true };
-      const flags = detectRiskFlags(`${clause.heading}\n${clause.text}`);
+      const clauseText = `${clause.heading}\n${clause.text}`;
+      const flags = detectRiskFlags(clauseText);
       const scored = await this.tools.invoke<unknown, RiskCalculatorOutput>(
         "risk_calculator_tool",
         {
@@ -107,6 +114,7 @@ export class RiskAssessorAgent {
           omitted: false,
           similarityToPlaybook: comparison.tokenOverlap,
           flags,
+          deviationNote: explainDeviation({ category: clause.category, clauseText, policyText: policy }),
         },
         ctx,
       );
