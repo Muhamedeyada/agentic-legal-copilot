@@ -3,7 +3,7 @@ import type { RagAnswer } from "../api/types";
 import type { copy, UiLocale } from "../copy";
 import { CitationBadge } from "./CitationBadge";
 import { Skeleton } from "./Skeleton";
-import { Card, PaneTitle, fieldClass } from "./ui";
+import { Card, PaneTitle, fieldClass, primaryBtn } from "./ui";
 
 type T = (typeof copy)[UiLocale];
 
@@ -30,7 +30,7 @@ export function RagChat({
         <PaneTitle hint={documentId}>{t.rag}</PaneTitle>
         <button
           type="button"
-          className="text-[11px] font-semibold text-slate-500 hover:text-slate-900"
+          className="text-[11px] font-semibold text-muted hover:text-ink"
           onClick={() => setOpen((v) => !v)}
         >
           {open ? t.ragCollapse : t.ragExpand}
@@ -38,7 +38,7 @@ export function RagChat({
       </div>
       {open ? (
         <>
-          <p className="mt-1 text-xs leading-relaxed text-slate-500">{t.ragHint}</p>
+          <p className="mt-1 text-xs leading-relaxed text-muted">{t.ragHint}</p>
           <form
             className="mt-3 flex flex-col gap-2 sm:flex-row"
             onSubmit={(e) => {
@@ -58,7 +58,7 @@ export function RagChat({
             <button
               type="submit"
               disabled={busy || query.trim().length === 0}
-              className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition duration-150 hover:bg-indigo-950 disabled:opacity-40"
+              className={`${primaryBtn} px-4`}
             >
               {t.ask}
             </button>
@@ -69,10 +69,10 @@ export function RagChat({
               <Skeleton className="h-4 w-5/6" />
             </div>
           ) : null}
-          {result?.refused ? <p className="mt-3 text-sm text-rose-700">{t.refused}</p> : null}
+          {result?.refused ? <p className="mt-3 text-sm text-rose-700 dark:text-rose-300">{t.refused}</p> : null}
           {result && !result.refused && !busy ? (
             <>
-              <pre className="mt-3 max-h-48 overflow-y-auto whitespace-pre-wrap font-sans text-sm leading-relaxed text-slate-800">
+              <pre className="mt-3 max-h-48 overflow-y-auto whitespace-pre-wrap font-sans text-sm leading-relaxed text-ink">
                 {result.answer}
               </pre>
               {result.citations.length > 0 ? (

@@ -25,6 +25,7 @@ import { CitationsPanel } from "./components/CitationsPanel";
 import { TraceDrawer } from "./components/TraceDrawer";
 import { RagChat } from "./components/RagChat";
 import { PlaybookInspectorHost } from "./components/PlaybookInspectorHost";
+import { ThemeToggle } from "./components/ThemeToggle";
 
 export default function App() {
   const { locale, setLocale } = useLocale();
@@ -114,7 +115,7 @@ export default function App() {
   return (
     <CitationFocusProvider clauses={liveClauses}>
       <PlaybookInspectorHost t={t} locale={locale} clauses={liveClauses} onApplyToMemo={applyPlaybookToMemo}>
-      <div className="app-shell flex h-dvh flex-col overflow-hidden bg-slate-50 print:hidden">
+      <div className="app-shell flex h-dvh flex-col overflow-hidden bg-canvas print:hidden">
         <header className="z-20 flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-slate-800 bg-slate-900 px-4 py-2.5 text-white">
           <div className="flex min-w-0 items-center gap-3">
             <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-white/10 text-[11px] font-semibold tracking-wide">
@@ -159,6 +160,7 @@ export default function App() {
                 {t.langAr}
               </button>
             </div>
+            <ThemeToggle toDarkLabel={t.themeToDark} toLightLabel={t.themeToLight} />
             <button
               type="button"
               disabled={!selected || busy}

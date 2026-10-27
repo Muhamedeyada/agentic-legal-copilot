@@ -5,18 +5,11 @@ import { useCitationFocus } from "../citation-focus";
 import { CopyButton } from "./CopyButton";
 import { ExpandableText } from "./ExpandableText";
 import { FindingSkeleton } from "./Skeleton";
-import { Card, PaneTitle } from "./ui";
+import { Card, PaneTitle, linkBtn, severityBadge, tone } from "./ui";
 import { usePlaybookInspector } from "./PlaybookInspectorHost";
 
 type T = (typeof copy)[UiLocale];
 type RiskFilter = "all" | "critical" | "high" | "medium" | "omitted";
-
-const badge: Record<RiskFinding["severity"], string> = {
-  critical: "bg-rose-600 text-white",
-  high: "bg-rose-100 text-rose-800",
-  medium: "bg-amber-100 text-amber-800",
-  low: "bg-emerald-100 text-emerald-800",
-};
 
 export function RiskPanel({
   t,
@@ -87,9 +80,9 @@ export function RiskPanel({
         />
       </div>
       {counts.omitted > 0 && filter !== "omitted" ? (
-        <div className="mt-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2.5" role="alert">
-          <p className="text-sm font-semibold text-rose-800">{t.omission}</p>
-          <p className="mt-1 text-xs text-rose-700">{t.omissionHint}</p>
+        <div className={`mt-3 rounded-lg px-3 py-2.5 ${tone.danger.box}`} role="alert">
+          <p className={`text-sm font-semibold ${tone.danger.text}`}>{t.omission}</p>
+          <p className={`mt-1 text-xs ${tone.danger.text}`}>{t.omissionHint}</p>
         </div>
       ) : null}
       {loading && findings.length === 0 ? (
@@ -97,14 +90,14 @@ export function RiskPanel({
       ) : (
         <ul className="mt-3 max-h-[28rem] space-y-2 overflow-y-auto">
           {ranked.length === 0 ? (
-            <li className="text-sm text-slate-500">
+            <li className="text-sm text-muted">
               {findings.length === 0 ? t.emptyRisks : t.noFilterMatches}
             </li>
           ) : (
             ranked.map((f) => (
               <li
                 key={f.id}
-                className="flex cursor-pointer flex-col gap-2 rounded-lg border border-slate-200 p-3 transition duration-150 hover:border-indigo-300 hover:bg-slate-50/80 sm:flex-row sm:items-start sm:justify-between"
+                className="flex cursor-pointer flex-col gap-2 rounded-lg border border-line p-3 transition duration-150 hover:border-indigo-300 hover:bg-surface-muted dark:hover:border-indigo-700 sm:flex-row sm:items-start sm:justify-between"
                 onClick={(event) => {
                   if ((event.target as HTMLElement).closest("button")) {
                     return;
@@ -114,7 +107,7 @@ export function RiskPanel({
               >
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <p className="text-sm font-semibold text-slate-900">{t.category[f.category]}</p>
+                    <p className="text-sm font-semibold text-ink">{t.category[f.category]}</p>
                     <CopyButton
                       text={`${t.category[f.category]}\n${t.severity[f.severity]}\n${f.rationale}`}
                       label={t.copy}
@@ -126,13 +119,13 @@ export function RiskPanel({
                       text={f.rationale}
                       more={t.expand}
                       less={t.collapse}
-                      className="text-sm leading-relaxed text-slate-600"
+                      className="text-sm leading-relaxed text-body"
                     />
                   </div>
                   <div className="mt-2 flex flex-wrap gap-3">
                     <button
                       type="button"
-                      className="text-[11px] font-semibold text-indigo-900 underline-offset-2 hover:underline"
+                      className={linkBtn}
                       onClick={() => inspectFinding(f)}
                     >
                       {t.inspectPlaybook}
@@ -140,7 +133,7 @@ export function RiskPanel({
                     {!f.omitted ? (
                       <button
                         type="button"
-                        className="text-[11px] font-semibold text-indigo-900 underline-offset-2 hover:underline"
+                        className={linkBtn}
                         onClick={() => focusClauseId(f.clauseId)}
                       >
                         {t.jumpToClause}
@@ -149,7 +142,7 @@ export function RiskPanel({
                   </div>
                 </div>
                 <span
-                  className={`inline-flex h-fit shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${badge[f.severity]}`}
+                  className={`inline-flex h-fit shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${severityBadge[f.severity]}`}
                 >
                   {t.severity[f.severity]}
                 </span>

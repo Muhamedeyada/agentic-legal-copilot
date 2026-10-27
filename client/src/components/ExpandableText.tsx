@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { linkBtn } from "./ui";
 
 const PREVIEW = 220;
 
@@ -32,7 +33,7 @@ export function ExpandableText({
       {long ? (
         <button
           type="button"
-          className="mt-1 text-[11px] font-semibold text-indigo-900 underline-offset-2 hover:underline"
+          className={`mt-1 ${linkBtn}`}
           aria-expanded={open}
           onClick={() => setOpen((v) => !v)}
         >
