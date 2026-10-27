@@ -3,7 +3,7 @@ import type { RagAnswer } from "../api/types";
 import type { copy, UiLocale } from "../copy";
 import { CitationBadge } from "./CitationBadge";
 import { Skeleton } from "./Skeleton";
-import { Card, PaneTitle, fieldClass, focusRing, primaryBtn } from "./ui";
+import { Card, PaneTitle, fieldClass, focusRing, primaryTone } from "./ui";
 
 type T = (typeof copy)[UiLocale];
 
@@ -58,7 +58,7 @@ export function RagChat({
             <button
               type="submit"
               disabled={busy || query.trim().length === 0}
-              className={`${primaryBtn} px-4`}
+              className={`${primaryTone} px-4 py-2 text-sm`}
             >
               {t.ask}
             </button>

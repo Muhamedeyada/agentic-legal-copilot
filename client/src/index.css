@@ -784,8 +784,7 @@ html[dir="rtl"] .inspector-sheet {
   user-select: none;
   background: none;
   border-top: none;
-  border-left: none;
-  border-right: none;
+  border-inline: none;
 }
 
 .pane-tab:hover { color: var(--ink); }
@@ -818,8 +817,7 @@ html[dir="rtl"] .inspector-sheet {
   user-select: none;
   background: none;
   border-top: none;
-  border-left: none;
-  border-right: none;
+  border-inline: none;
 }
 
 .copilot-tab:hover {
@@ -941,7 +939,7 @@ html[dir="rtl"] .inspector-sheet {
   border-radius: 0.75rem;
   box-shadow: 0 1px 3px rgb(0 0 0 / 0.06);
   padding: 2rem 2.5rem;
-  margin: 0.75rem;
+  margin: 0.75rem auto;
 }
 
 .dark .doc-canvas { box-shadow: 0 1px 4px rgb(0 0 0 / 0.3); }

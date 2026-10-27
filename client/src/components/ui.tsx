@@ -44,12 +44,19 @@ export const pressable = `select-none transition duration-150 enabled:active:sca
 
 export const ghostBtn = `rounded-lg border border-line bg-surface px-3 py-1.5 text-xs font-medium text-body enabled:hover:border-line-strong enabled:hover:bg-surface-sunken disabled:opacity-40 ${pressable}`;
 
-export const primaryBtn = `rounded-lg bg-slate-900 px-3.5 py-2 text-sm font-semibold text-white enabled:hover:bg-indigo-950 disabled:opacity-40 dark:bg-slate-100 dark:text-slate-900 dark:enabled:hover:bg-white ${pressable}`;
+const btnMd = "px-3.5 py-2 text-sm";
+export const btnSm = "px-2 py-1.5 text-xs";
+
+export const primaryTone = `rounded-lg bg-slate-900 font-semibold text-white enabled:hover:bg-indigo-950 disabled:opacity-40 dark:bg-slate-100 dark:text-slate-900 dark:enabled:hover:bg-white ${pressable}`;
 
 /** -700 fills: white text on emerald-600 / rose-600 is below (or barely at) WCAG AA 4.5:1. */
-export const approveBtn = `rounded-lg bg-emerald-700 px-3.5 py-2 text-sm font-semibold text-white enabled:hover:bg-emerald-800 disabled:opacity-40 ${pressable}`;
+export const approveTone = `rounded-lg bg-emerald-700 font-semibold text-white enabled:hover:bg-emerald-800 disabled:opacity-40 ${pressable}`;
 
-export const rejectBtn = `rounded-lg bg-rose-700 px-3.5 py-2 text-sm font-semibold text-white enabled:hover:bg-rose-800 disabled:opacity-40 ${pressable}`;
+export const rejectTone = `rounded-lg bg-rose-700 font-semibold text-white enabled:hover:bg-rose-800 disabled:opacity-40 ${pressable}`;
+
+export const primaryBtn = `${primaryTone} ${btnMd}`;
+export const approveBtn = `${approveTone} ${btnMd}`;
+export const rejectBtn = `${rejectTone} ${btnMd}`;
 
 export const linkBtn = `rounded-sm text-[11px] font-semibold text-accent underline-offset-2 select-none hover:underline active:opacity-70 ${focusRing}`;
 

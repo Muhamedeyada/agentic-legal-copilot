@@ -7,8 +7,6 @@ import type {
 
 const base = (import.meta.env.VITE_API_URL ?? "").trim().replace(/\/+$/, "");
 
-// Demo tokens match the server's non-production defaults. Anything in a Vite bundle is
-// visible to every user of the page, so these are not secrets: replace with real login before a shared deploy.
 const analystToken = import.meta.env.VITE_API_TOKEN || "demo-analyst-token";
 const counselToken = import.meta.env.VITE_COUNSEL_TOKEN || "demo-counsel-token";
 

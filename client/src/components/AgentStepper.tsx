@@ -62,27 +62,39 @@ function CheckIcon() {
   );
 }
 
-export function AgentStepper({ t, progress, lastEvent }: { t: T; progress: LiveProgress; lastEvent: string | null }) {
+export function AgentStepper({
+  t,
+  progress,
+  lastEvent,
+  tokens = 0,
+}: {
+  t: T;
+  progress: LiveProgress;
+  lastEvent: string | null;
+  tokens?: number;
+}) {
   const streaming = progress.extract === "active" || progress.risk === "active" || progress.memo === "active";
 
   return (
     <div className="p-3" aria-live="polite" aria-busy={streaming}>
-      {/* Section label + live event hint */}
       <div className="flex items-center justify-between gap-2 mb-2.5">
         <h2 className="text-[11px] font-bold uppercase tracking-widest text-muted">{t.pipeline}</h2>
-        {lastEvent ? (
-          <span className="max-w-[12rem] truncate text-[10px] text-muted">{lastEvent}</span>
-        ) : null}
+        <span className="flex min-w-0 items-center gap-2">
+          {lastEvent ? <span className="max-w-[9rem] truncate text-[10px] text-muted">{lastEvent}</span> : null}
+          {tokens > 0 ? (
+            <span className="token-pill tabular-nums" title={t.tokens}>
+              {tokens.toLocaleString()} {t.tokens}
+            </span>
+          ) : null}
+        </span>
       </div>
 
-      {/* Streaming progress bar */}
       {streaming ? (
         <div className="skeleton-bar mb-3" aria-hidden="true">
           <span className="skeleton-bar-fill" />
         </div>
       ) : null}
 
-      {/* Step breadcrumb */}
       <ol className="flex items-start gap-0.5">
         {steps.map((step, index) => {
           const status = progress[step.field];

@@ -9,7 +9,7 @@ import { CopyButton } from "./CopyButton";
 import { PrintMemo } from "./PrintMemo";
 import { CitationBadge } from "./CitationBadge";
 import { Skeleton } from "./Skeleton";
-import { Card, PaneTitle, approveBtn, fieldClass, ghostBtn, primaryBtn, rejectBtn, tone } from "./ui";
+import { Card, PaneTitle, fieldClass, ghostBtn, tone } from "./ui";
 
 type T = (typeof copy)[UiLocale];
 
@@ -19,14 +19,12 @@ interface Props {
   snapshot: WorkflowSnapshot | null;
   contractTitle: string;
   findings: RiskFinding[];
-  busy: boolean;
   drafting: boolean;
   draft: string;
   onDraftChange: Dispatch<SetStateAction<string>>;
   draftPulse: number;
-  onApprove: (counselId: string) => void;
-  onReject: (counselId: string, reason: string) => void;
-  onEditApprove: (counselId: string, body: string) => void;
+  counselId: string;
+  onCounselIdChange: (value: string) => void;
 }
 
 export function CounselGate({
@@ -35,17 +33,13 @@ export function CounselGate({
   snapshot,
   contractTitle,
   findings,
-  busy,
   drafting,
   draft,
   onDraftChange,
   draftPulse,
-  onApprove,
-  onReject,
-  onEditApprove,
+  counselId,
+  onCounselIdChange,
 }: Props) {
-  const [counselId, setCounselId] = useState("counsel-1");
-  const [reason, setReason] = useState("");
   const [draftFlash, setDraftFlash] = useState(false);
   const awaiting = snapshot?.state === "AWAITING_APPROVAL";
   const memo = snapshot?.memo;
@@ -134,42 +128,10 @@ export function CounselGate({
           placeholder={memo?.bodyEn ?? memo?.bodyAr ?? ""}
         />
       </label>
-      <div className="mt-3 grid gap-2 sm:grid-cols-2">
-        <label className="text-[11px] font-semibold text-body">
-          {t.counselId}
-          <input className={fieldClass} value={counselId} onChange={(e) => setCounselId(e.target.value)} />
-        </label>
-        <label className="text-[11px] font-semibold text-body">
-          {t.rejectReason}
-          <input className={fieldClass} value={reason} onChange={(e) => setReason(e.target.value)} />
-        </label>
-      </div>
-      <div className="mt-3 flex flex-wrap gap-2">
-        <button
-          type="button"
-          disabled={!awaiting || busy}
-          className={approveBtn}
-          onClick={() => onApprove(counselId)}
-        >
-          {t.approve}
-        </button>
-        <button
-          type="button"
-          disabled={!awaiting || busy || reason.trim().length === 0}
-          className={rejectBtn}
-          onClick={() => onReject(counselId, reason)}
-        >
-          {t.reject}
-        </button>
-        <button
-          type="button"
-          disabled={!awaiting || busy || draft.trim().length === 0}
-          className={primaryBtn}
-          onClick={() => onEditApprove(counselId, draft)}
-        >
-          {t.editApprove}
-        </button>
-      </div>
+      <label className="mt-3 block text-[11px] font-semibold text-body">
+        {t.counselId}
+        <input className={fieldClass} value={counselId} onChange={(e) => onCounselIdChange(e.target.value)} />
+      </label>
     </Card>
     {typeof document !== "undefined"
       ? createPortal(
