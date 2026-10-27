@@ -24,7 +24,6 @@ function detectLanguage(text: string): Locale {
   return "en";
 }
 
-/** Split on numbered Article / بند headings (AR + EN). Falls back to whole document. */
 export function splitClauses(text: string): SplitClause[] {
   const matches = [...text.matchAll(HEADING)];
   if (matches.length === 0) {

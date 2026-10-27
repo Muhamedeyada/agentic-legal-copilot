@@ -9,6 +9,5 @@ export interface RiskFinding {
   readonly severity: RiskSeverity;
   readonly rationale: string;
   readonly citationIds: readonly string[];
-  /** True when a mandatory family is absent from the contract (silent omission). */
   readonly omitted: boolean;
 }

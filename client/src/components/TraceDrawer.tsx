@@ -11,7 +11,6 @@ export function TraceDrawer({
 }: {
   t: T;
   snapshot: WorkflowSnapshot | null;
-  /** Running total from AGENT_DONE events, shown until the snapshot arrives. */
   liveTokens?: number;
 }) {
   const [open, setOpen] = useState(false);

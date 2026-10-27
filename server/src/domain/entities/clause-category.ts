@@ -1,4 +1,3 @@
-/** Clause families the extractor must classify (D1 + bilingual headings). */
 export type ClauseCategory =
   | "liability"
   | "indemnity"

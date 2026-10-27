@@ -7,9 +7,7 @@ export interface ChatEndpoint {
   readonly model: string;
   readonly apiKey?: string;
   readonly timeoutMs: number;
-  /** Upper bound on generated tokens; keeps spend predictable. */
   readonly maxTokens?: number;
-  /** Extra attempts after a 429 / 5xx / network error. */
   readonly retries?: number;
   readonly fetchImpl?: typeof fetch;
 }
@@ -36,10 +34,6 @@ function retryAfterMs(header: string | null): number | undefined {
   return Number.isFinite(seconds) && seconds >= 0 ? Math.min(seconds * 1000, MAX_RETRY_DELAY_MS) : undefined;
 }
 
-/**
- * POST {baseUrl}/chat/completions (OpenAI wire format, also served by Ollama, vLLM, LM Studio).
- * JSON mode is requested whenever the caller names a schema; Zod validation stays in the agents.
- */
 export async function chatComplete(endpoint: ChatEndpoint, input: CompletionRequest): Promise<CompletionResult> {
   const doFetch = endpoint.fetchImpl ?? fetch;
   const url = `${endpoint.baseUrl.replace(/\/+$/, "")}/chat/completions`;
@@ -88,7 +82,6 @@ export async function chatComplete(endpoint: ChatEndpoint, input: CompletionRequ
     }
 
     if (!res.ok) {
-      // Provider error bodies never contain our key; still keep them short in logs and traces.
       const detail = (await res.text().catch(() => "")).slice(0, 300);
       const message = `${endpoint.providerId}: HTTP ${res.status}${detail ? ` — ${detail}` : ""}`;
       if (res.status === 429 || res.status >= 500) {

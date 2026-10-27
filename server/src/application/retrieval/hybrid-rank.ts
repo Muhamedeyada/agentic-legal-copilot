@@ -4,39 +4,25 @@ import { cosineSimilarity } from "../../domain/retrieval/cosine.js";
 import { rankedFromOrder, reciprocalRankFusion } from "../../domain/retrieval/rrf.js";
 
 export const RRF_K = 60;
-/** Candidates kept per list before fusion. */
 const CANDIDATE_K = 20;
-/** Bound the embedding cache; uploads keep adding new texts. */
 const MAX_CACHED_EMBEDDINGS = 5_000;
 
-/**
- * Refuse when the best fused score is below this (scores are normalised to 0..1, where 1 means
- * rank 1 in every list). RRF only sees rank order, so out-of-corpus detection comes from the
- * lexical floor: an off-topic query admits no candidates and nothing reaches this bar.
- */
 export const MIN_FUSED_SCORE = 0.25;
 
 export interface HybridCandidate {
   readonly id: string;
-  /** Text that BM25 and the embedding both see. */
   readonly text: string;
-  /**
-   * Absolute lexical relevance in 0..1 (e.g. query-token coverage). BM25 scores are unbounded and
-   * corpus-relative, so this is what decides whether a candidate may enter the lexical list at all.
-   */
   readonly lexicalRelevance: number;
 }
 
 export interface HybridHit {
   readonly id: string;
-  /** Normalised RRF score, 0..1. */
   readonly score: number;
   readonly lexicalRank?: number;
   readonly denseRank?: number;
 }
 
 export interface HybridRankOptions {
-  /** Query as BM25 and the embedding see it (already expanded / cleaned by the caller). */
   readonly query: string;
   readonly minLexicalRelevance: number;
   readonly minDenseSimilarity: number;
@@ -64,7 +50,6 @@ export class HybridRanker {
     const admitted = new Set(
       candidates.filter((c) => c.lexicalRelevance >= opts.minLexicalRelevance).map((c) => c.id),
     );
-    // IDF statistics come from the whole pool; the floor only decides who may be ranked.
     const lexical = bm25Rank(opts.query, candidates)
       .filter((row) => admitted.has(row.id))
       .slice(0, CANDIDATE_K)

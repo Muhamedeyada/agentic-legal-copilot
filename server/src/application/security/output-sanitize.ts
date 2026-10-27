@@ -1,4 +1,3 @@
-/** Strip HTML/script payloads from model text before any UI or export (LLM05). */
 export function sanitizeModelText(input: string): string {
   return input
     .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, "")

@@ -92,17 +92,10 @@ const NAMING_CUES: readonly Cue[] = [
   },
 ];
 
-/** In a body, the governing-law sentence itself is the evidence that the family exists. */
 const BODY_EVIDENCE: Partial<Record<ClauseCategory, RegExp>> = {
   jurisdiction: /\bgoverned\s+by\b|يخضع\s+هذ[اه]/,
 };
 
-/**
- * Headings that name no risk family of their own. A clause under one of them is filed as "other",
- * and its body cannot make a mandatory family "present": a Notices clause that mentions
- * "termination notices" is not a termination clause. A heading that also names a family
- * ("Interpretation and Governing Law") is classified by that family instead.
- */
 const BOILERPLATE_HEADING =
   /\b(?:definitions?|interpretation|background|recitals|notices?|general|miscellaneous|entire\s+agreement|counterparts|signatures?|execution|insurance|force\s+majeure|schedules?|annex(?:es)?)\b|التعاريف|تعريفات|التفسير|التمهيد|الاخطارات|الاشعارات|احكام\s+عامه|التوقيع|القوه\s+القاهره|التامين|الملاحق/;
 
@@ -115,7 +108,6 @@ function matchCue(text: string): ClauseCategory | undefined {
   return matchingCues(text)[0]?.category;
 }
 
-/** Families named in a heading, in the order they appear: "Liability and Indemnification" → liability, indemnity. */
 export function headingFamilies(heading: string): ClauseCategory[] {
   const folded = normalizeArabic(heading);
   return NAMING_CUES.map((cue) => {
@@ -131,11 +123,6 @@ function isBoilerplateHeading(heading: string): boolean {
   return BOILERPLATE_HEADING.test(normalizeArabic(heading));
 }
 
-/**
- * The heading decides when it names a family ("Confidentiality", "Interpretation and Governing
- * Law"); body cues are the fallback. Body-first matching filed confidentiality clauses under
- * termination because they mention "termination", and so compared them with the wrong playbook clause.
- */
 export function classifyClause(heading: string, text: string): {
   category: ClauseCategory;
   standard: boolean;
@@ -147,19 +134,12 @@ export function classifyClause(heading: string, text: string): {
   if (isBoilerplateHeading(heading)) {
     return { category: "other", standard: false };
   }
-  // Routing only: a looser heading word ("Licence Grant" → ip) still beats body keywords.
   const category = matchCue(heading) ?? matchCue(`${heading}\n${text}`);
   return category
     ? { category, standard: STANDARD_HEADING.test(heading) }
     : { category: "other", standard: false };
 }
 
-/**
- * Families a clause establishes as present, for the silent-omission check. A heading that names a
- * family decides. Otherwise the body counts only under a substantive heading, and only when it
- * names the clause's own family: "Liquidated Damages" is routed to liability because of
- * "damages", but it does not stand in for a limitation-of-liability clause.
- */
 export function evidencedFamilies(heading: string, text: string): ClauseCategory[] {
   const named = headingFamilies(heading);
   if (named.length > 0) {
@@ -185,11 +165,6 @@ const CARVE_OUT_SCOPE =
 const UNLIMITED =
   /\bunlimited\b|\buncapped\b|without\s+(?:any\s+)?(?:monetary\s+)?(?:cap|limit)\b|not\s+(?:be\s+)?subject\s+to\s+any\s+(?:monetary\s+)?(?:cap|limit)\b|بلا\s+سقف|دون\s+سقف|دون\s+حد\s+اقصي|غير\s+محدود/;
 
-/**
- * "Unlimited" scoped to a standard carve-out: "capped at fees, but unlimited for fraud",
- * "liability for wilful misconduct is uncapped", "غير محدودة في حالات الاحتيال". Broadening wording
- * such as "unlimited, including for fraud" is not a carve-out.
- */
 const CARVE_OUT: readonly RegExp[] = [
   new RegExp(
     `(?:unlimited|uncapped|not\\s+(?:be\\s+)?(?:capped|limited))\\s+(?:in\\s+(?:respect|the\\s+case)\\s+of|in\\s+cases?\\s+of|for|where)\\s+(?:\\S+\\s+){0,3}?${CARVE_OUT_SCOPE}`,
@@ -207,7 +182,6 @@ function foldedSentences(text: string): string[] {
     .filter((s) => s.trim().length > 0);
 }
 
-/** The sentence removes the cap in general, not only for a standard carve-out. */
 function removesCap(sentence: string): boolean {
   return UNLIMITED.test(sentence) && !CARVE_OUT.some((re) => re.test(sentence));
 }

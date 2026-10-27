@@ -24,10 +24,6 @@ const PATTERNS: ReadonlyArray<{ kind: string; re: RegExp; token: string }> = [
   { kind: "national_id", re: /\b(?:NIN|SSN|National ID)[:\s-]*[A-Z0-9-]{6,}\b/gi, token: "[REDACTED_ID]" },
 ];
 
-/**
- * Strip common personal identifiers from contract text before any LLM call.
- * Synthetic corpus is already PII-free; this guards uploads and eval fixtures.
- */
 export function redactPii(input: string): RedactionResult {
   let text = input;
   const hits: RedactionHit[] = [];

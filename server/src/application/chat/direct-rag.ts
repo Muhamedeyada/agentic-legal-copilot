@@ -29,13 +29,8 @@ export interface DirectRagInput {
   readonly topK?: number;
 }
 
-/** Lexical floor (token overlap) a chunk needs before it can be ranked or cited. */
 const MIN_LEXICAL = 0.08;
 
-/**
- * Direct RAG over the selected contract + playbook: BM25 + dense, fused with RRF.
- * Application layer only — no vector SDK.
- */
 export class DirectRagUseCase {
   private readonly ranker: HybridRanker;
 

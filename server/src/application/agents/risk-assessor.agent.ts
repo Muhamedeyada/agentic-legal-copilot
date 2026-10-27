@@ -30,10 +30,7 @@ export class RiskAssessorAgent {
     ctx: ToolContext,
   ): Promise<{ output: RiskAssessorOutput; tokenUsage: TokenUsage; provider: string }> {
     const findings: RiskFinding[] = [];
-    // No model call here: usage is an estimate of the payload this agent inspects.
     let inspectedTokens = 0;
-    // Presence needs naming evidence, not the routing category: "Liability and Indemnification"
-    // makes both families present, while "Liquidated Damages" or "Notices" makes neither.
     const present = new Set(input.clauses.flatMap((c) => evidencedFamilies(c.heading, c.text)));
     const lang = input.language === "both" ? undefined : input.language;
 

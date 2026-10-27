@@ -14,9 +14,7 @@ function initialLocale(): UiLocale {
     if (stored === "ar" || stored === "en") {
       return stored;
     }
-  } catch {
-    /* ignore */
-  }
+  } catch {}
   const fromEnv = import.meta.env.VITE_DEFAULT_LOCALE;
   return fromEnv === "ar" ? "ar" : "en";
 }
@@ -32,9 +30,7 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
     const timer = window.setTimeout(() => root.classList.remove("locale-switching"), 320);
     try {
       localStorage.setItem("alc-locale", locale);
-    } catch {
-      /* ignore */
-    }
+    } catch {}
     return () => window.clearTimeout(timer);
   }, [locale]);
 
