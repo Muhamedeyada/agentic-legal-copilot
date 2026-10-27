@@ -10,8 +10,15 @@ const COUNSEL = "openapi-counsel-token";
 const SPEC = new URL("../../../docs/openapi.yaml", import.meta.url);
 
 /** `paths:` → [method, path] pairs, read from the YAML indentation (no YAML dependency). */
-function documentedOperations(yaml: string): Array<[string, string]> {
-  const section = yaml.slice(yaml.indexOf("\npaths:\n"), yaml.indexOf("\ncomponents:\n"));
+function documentedOperations(raw: string): Array<[string, string]> {
+  // Windows checkouts (core.autocrlf=true) turn the spec's line endings into CRLF.
+  const yaml = raw.replace(/\r\n?/g, "\n");
+  const start = yaml.indexOf("\npaths:\n");
+  const end = yaml.indexOf("\ncomponents:\n");
+  if (start < 0 || end <= start) {
+    throw new Error("docs/openapi.yaml: could not find the top-level `paths:` and `components:` sections.");
+  }
+  const section = yaml.slice(start, end);
   const ops: Array<[string, string]> = [];
   let path = "";
   for (const line of section.split("\n")) {
@@ -46,6 +53,13 @@ afterAll(async () => {
 });
 
 describe("docs/openapi.yaml", () => {
+  it("parses the spec the same with LF and CRLF line endings", async () => {
+    const lf = (await readFile(SPEC, "utf8")).replace(/\r\n/g, "\n");
+    const crlf = lf.replace(/\n/g, "\r\n");
+    expect(documentedOperations(crlf)).toEqual(documentedOperations(lf));
+    expect(documentedOperations(lf).length).toBeGreaterThan(15);
+  });
+
   it("documents the core endpoints", () => {
     const paths = new Set(operations.map(([, p]) => p));
     for (const p of [

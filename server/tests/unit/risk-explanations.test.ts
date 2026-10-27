@@ -100,8 +100,9 @@ describe("explainDeviation — termination", () => {
   });
 
   it("does not flag a mutual 30-day notice as short or one-sided", async () => {
+    // "30 days after written notice" is a cure period, not a notice period.
     const text = "Either party may terminate for material breach uncured thirty (30) days after written notice.";
-    expect(shortestNoticeDays(text)).toBe(30);
+    expect(shortestNoticeDays(text)).toBeUndefined();
     expect(isOneSidedTermination(text)).toBe(false);
     expect(isOneSidedTermination("ويجوز لأي طرف الإنهاء للإخلال الجوهري بعد ثلاثين (30) يوماً من الإخطار.")).toBe(false);
     expect(
@@ -128,7 +129,9 @@ describe("explainDeviation — jurisdiction", () => {
         clauseText: "This agreement is governed by England and Wales.",
         policyText: await policy("playbook:en:jurisdiction"),
       }),
-    ).toBe("Governing law matches the playbook, but the venue or forum wording deviates.");
+    ).toBe(
+      "Governing law matches the playbook (England and Wales); the remaining wording differs from the cited playbook clause.",
+    );
     expect(governingLaw("يخضع هذا العقد لـ قوانين جمهورية مصر العربية دون قواعد تنازع القوانين.")).toBe(
       "قوانين جمهورية مصر العربية",
     );
@@ -215,7 +218,8 @@ describe("clause classification", () => {
         "يخضع هذا العقد لقوانين إنجلترا وويلز.",
       ].join("\n"),
     });
-    expect(clauses[0]?.category).toBe("indemnity");
+    // Filed under the family the heading names first.
+    expect(clauses[0]?.category).toBe("liability");
     const { output } = await new RiskAssessorAgent(tools, playbook).run(
       { contractId: "combo", language: "ar", clauses },
       { runId: "r", agentId: "risk_assessor", state: "ASSESSING" },
