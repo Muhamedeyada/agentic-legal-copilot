@@ -1,5 +1,7 @@
 # Agentic Legal Copilot
 
+[![Live Demo](https://img.shields.io/badge/Live_Demo-Vercel-000000?logo=vercel&logoColor=white)](https://YOUR-PROJECT.vercel.app)
+
 ITI Instructor Assessment — **D1T1**: legal contract review and research, Arabic and English (RTL and cross-lingual retrieval).
 
 Counsel selects or uploads a contract. The copilot extracts clauses, flags risk against a playbook, retrieves supporting chunks in AR/EN, and drafts a memo. The memo is **not issued** until Counsel approves it.
@@ -196,6 +198,19 @@ Do not demo on real client agreements.
 
 ---
 
+## Live demo (Vercel + container API)
+
+The client deploys to Vercel from `vercel.json` (build `npm run build -w client`, output `client/dist`, SPA fallback). `/api/*` and `/health` are rewritten to the Express API, which runs as one container from `server/Dockerfile` on Render, Railway or Fly. It can't run as Vercel Functions as-is, because a review run is held in process memory across requests.
+
+1. Deploy the API container and set `DEMO_API_TOKEN`, `COUNSEL_TOKEN` and `RATE_LIMIT_PER_MINUTE=600`.
+2. Replace `YOUR-API-HOST.onrender.com` in `vercel.json` with the API origin and commit.
+3. Vercel → **Add New → Project** → import this repository, set `VITE_API_TOKEN` / `VITE_COUNSEL_TOKEN` to the same values, deploy. Each push to `main` then deploys production and each PR gets a preview.
+4. Replace `YOUR-PROJECT.vercel.app` in the badge above.
+
+Full steps, verification and the direct-to-API fallback: [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
+
+---
+
 ## Docs
 
 | File | |
@@ -207,6 +222,7 @@ Do not demo on real client agreements.
 | [docs/EVALUATION.md](docs/EVALUATION.md) | Golden set and bilingual metrics |
 | [docs/AGENTIC-WORKFLOW.md](docs/AGENTIC-WORKFLOW.md) | Agents and repo rules |
 | [docs/openapi.yaml](docs/openapi.yaml) | HTTP API contract (OpenAPI 3.0) |
+| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Live demo on Vercel + container API |
 | [docs/AI-USAGE-LOG.md](docs/AI-USAGE-LOG.md) | Where a coding assistant was used |
 
 Teaching pack: [`teaching/`](teaching/) — [slides](teaching/SLIDES.md), [lab](teaching/LAB-SHEET.md), [mistakes](teaching/TRAINEE-MISTAKES.md).

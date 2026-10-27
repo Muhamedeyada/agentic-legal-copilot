@@ -5,7 +5,7 @@ import type {
   WorkflowSnapshot,
 } from "./types";
 
-const base = import.meta.env.VITE_API_URL ?? "";
+const base = (import.meta.env.VITE_API_URL ?? "").trim().replace(/\/+$/, "");
 
 // Demo tokens match the server's non-production defaults. Anything in a Vite bundle is
 // visible to every user of the page, so these are not secrets: replace with real login before a shared deploy.
