@@ -7,7 +7,7 @@ import { clauseDomId } from "../lib/resolve-citation";
 import { ClauseSkeleton } from "./Skeleton";
 import { CopyButton } from "./CopyButton";
 import { ExpandableText } from "./ExpandableText";
-import { Card, fieldClass } from "./ui";
+import { Card, fieldClass, linkBtn, tone } from "./ui";
 
 type T = (typeof copy)[UiLocale];
 type ClauseFilter = "all" | "critical" | "missing";
@@ -86,11 +86,11 @@ export function ContractPane({
 
   return (
     <Card padded={false} className="flex min-h-[420px] flex-col overflow-hidden lg:min-h-0 lg:h-full">
-      <header className="shrink-0 border-b border-slate-200 px-4 py-3">
+      <header className="shrink-0 border-b border-line px-4 py-3">
         <div className="flex items-center justify-between gap-2">
-          <h2 className="text-[13px] font-semibold tracking-tight text-slate-900">{t.explorer}</h2>
+          <h2 className="text-[13px] font-semibold tracking-tight text-ink">{t.explorer}</h2>
           {selected?.highRisk ? (
-            <span className="rounded-full bg-rose-50 px-2 py-0.5 text-[10px] font-semibold text-rose-700">
+            <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${tone.danger.box} ${tone.danger.text}`}>
               {t.highRisk}
             </span>
           ) : null}
@@ -101,7 +101,7 @@ export function ContractPane({
           <label className="mt-3 block">
             <span className="sr-only">{t.selectContract}</span>
             <select
-              className={`${fieldClass} bg-slate-50`}
+              className={`${fieldClass} bg-surface-muted`}
               value={selected?.id ?? ""}
               onChange={(e) => {
                 if (e.target.value) {
@@ -130,23 +130,23 @@ export function ContractPane({
           </label>
         )}
         <div className="mt-3 flex items-center justify-between gap-2">
-          <div className="flex rounded-lg bg-slate-100 p-0.5 text-[11px] font-medium">
+          <div className="flex rounded-lg bg-surface-sunken p-0.5 text-[11px] font-medium">
             <button
               type="button"
-              className={`rounded-md px-2.5 py-1 transition duration-150 ${tab === "source" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-800"}`}
+              className={`rounded-md px-2.5 py-1 transition duration-150 ${tab === "source" ? "bg-surface text-ink shadow-sm" : "text-body hover:text-ink"}`}
               onClick={() => setTab("source")}
             >
               {t.original}
             </button>
             <button
               type="button"
-              className={`rounded-md px-2.5 py-1 transition duration-150 ${tab === "clauses" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-800"}`}
+              className={`rounded-md px-2.5 py-1 transition duration-150 ${tab === "clauses" ? "bg-surface text-ink shadow-sm" : "text-body hover:text-ink"}`}
               onClick={() => setTab("clauses")}
             >
               {t.clauses}
             </button>
           </div>
-          <label className="cursor-pointer text-[11px] font-semibold text-indigo-900 underline-offset-2 hover:underline">
+          <label className={`cursor-pointer ${linkBtn}`}>
             {t.upload}
             <input
               type="file"
@@ -167,7 +167,7 @@ export function ContractPane({
         <article className="min-h-0 flex-1 overflow-y-auto p-4">
           <pre
             ref={sourceRef}
-            className="contract-body whitespace-pre-wrap text-sm leading-7 text-slate-800"
+            className="contract-body whitespace-pre-wrap text-sm leading-7 text-ink"
             dir={selected?.language === "ar" || locale === "ar" ? "rtl" : "ltr"}
           >
             {selected ? <HighlightedSource text={selected.text} focused={focused ?? null} /> : t.noContract}
@@ -199,20 +199,20 @@ export function ContractPane({
             <ClauseSkeleton />
           ) : filter === "missing" ? (
             omissions.length === 0 ? (
-              <p className="text-sm text-slate-500">{t.noFilterMatches}</p>
+              <p className="text-sm text-muted">{t.noFilterMatches}</p>
             ) : (
               <ul className="space-y-2.5">
                 {omissions.map((f) => (
-                  <li key={f.id} className="rounded-lg border border-rose-200 bg-rose-50 p-3">
-                    <p className="text-[10px] font-semibold tracking-wide text-rose-800 uppercase">{t.omission}</p>
-                    <p className="mt-1 text-sm font-semibold text-slate-900">{t.category[f.category]}</p>
-                    <p className="mt-2 text-sm leading-relaxed text-rose-800">{t.omissionHint}</p>
+                  <li key={f.id} className={`rounded-lg p-3 ${tone.danger.box}`}>
+                    <p className={`text-[10px] font-semibold tracking-wide uppercase ${tone.danger.text}`}>{t.omission}</p>
+                    <p className="mt-1 text-sm font-semibold text-ink">{t.category[f.category]}</p>
+                    <p className={`mt-2 text-sm leading-relaxed ${tone.danger.text}`}>{t.omissionHint}</p>
                   </li>
                 ))}
               </ul>
             )
           ) : loadingClauses ? null : visibleClauses.length === 0 ? (
-            <p className="text-sm text-slate-500">{clauses.length === 0 ? t.noContract : t.noFilterMatches}</p>
+            <p className="text-sm text-muted">{clauses.length === 0 ? t.noContract : t.noFilterMatches}</p>
           ) : (
             <ul className="space-y-2.5">
               {visibleClauses.map((c) => (
@@ -222,22 +222,22 @@ export function ContractPane({
                   data-focused={focusedClauseId === c.id ? "true" : undefined}
                   className={`rounded-lg border p-3 transition duration-150 ${
                     focusedClauseId === c.id
-                      ? "border-indigo-900 bg-indigo-50/60"
-                      : "border-slate-200 hover:border-slate-300"
+                      ? "border-accent bg-indigo-50/60 dark:bg-indigo-950/40"
+                      : "border-line hover:border-line-strong"
                   }`}
                 >
                   <div className="flex flex-wrap items-start justify-between gap-2">
-                    <p className="text-[10px] font-semibold tracking-wide text-indigo-900 uppercase">{c.category}</p>
+                    <p className="text-[10px] font-semibold tracking-wide text-accent uppercase">{c.category}</p>
                     <CopyButton text={c.text} label={t.copyClause} copiedLabel={t.copied} />
                   </div>
-                  <p className="mt-1 text-sm font-semibold text-slate-900">{c.heading || c.title}</p>
+                  <p className="mt-1 text-sm font-semibold text-ink">{c.heading || c.title}</p>
                   <div className="mt-2">
                     <ExpandableText
                       text={c.text}
                       more={t.expand}
                       less={t.collapse}
                       expanded={focusedClauseId === c.id}
-                      className="text-sm leading-relaxed text-slate-600"
+                      className="text-sm leading-relaxed text-body"
                     />
                   </div>
                 </li>

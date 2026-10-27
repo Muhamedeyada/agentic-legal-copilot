@@ -23,15 +23,15 @@ export function TraceDrawer({
     : liveTokens;
 
   return (
-    <footer className="z-20 shrink-0 border-t border-slate-200 bg-white/95 shadow-[0_-8px_24px_-16px_rgba(15,23,42,0.25)] backdrop-blur">
+    <footer className="z-20 shrink-0 border-t border-line bg-surface/95 shadow-[0_-8px_24px_-16px_rgba(15,23,42,0.25)] backdrop-blur">
       <button
         type="button"
         className="flex w-full items-center justify-between gap-3 px-4 py-2.5 text-start"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
       >
-        <span className="text-[12px] font-semibold text-slate-900">{t.trace}</span>
-        <span className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[11px] text-slate-500">
+        <span className="text-[12px] font-semibold text-ink">{t.trace}</span>
+        <span className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[11px] text-muted">
           <span>
             {t.runId}: {snapshot?.runId ?? "—"}
           </span>
@@ -47,13 +47,13 @@ export function TraceDrawer({
         </span>
       </button>
       {open ? (
-        <div className="max-h-52 overflow-y-auto border-t border-slate-200 px-4 py-3 text-sm">
-          <ol className="space-y-2 font-mono text-[11px] text-slate-600">
+        <div className="max-h-52 overflow-y-auto border-t border-line px-4 py-3 text-sm">
+          <ol className="space-y-2 font-mono text-[11px] text-body">
             {traces.length === 0 ? (
               <li>{t.traceHint}</li>
             ) : (
               traces.map((tr, i) => (
-                <li key={`${tr.at}-${i}`} className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2">
+                <li key={`${tr.at}-${i}`} className="rounded-lg border border-line bg-surface-muted px-2.5 py-2">
                   {tr.at} · {tr.step}
                   {tr.agentId ? ` · ${tr.agentId}` : ""}
                   {tr.toolName ? ` · ${tr.toolName}` : ""} · {tr.latencyMs}ms

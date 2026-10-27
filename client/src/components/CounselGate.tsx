@@ -9,7 +9,7 @@ import { CopyButton } from "./CopyButton";
 import { PrintMemo } from "./PrintMemo";
 import { CitationBadge } from "./CitationBadge";
 import { Skeleton } from "./Skeleton";
-import { Card, PaneTitle, fieldClass, ghostBtn } from "./ui";
+import { Card, PaneTitle, approveBtn, fieldClass, ghostBtn, primaryBtn, rejectBtn, tone } from "./ui";
 
 type T = (typeof copy)[UiLocale];
 
@@ -105,11 +105,11 @@ export function CounselGate({
         </div>
       ) : null}
       {awaiting ? (
-        <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">{t.awaitingHelp}</p>
+        <p className={`mt-2 rounded-lg px-3 py-2 text-xs font-medium ${tone.warning.box} ${tone.warning.text}`}>{t.awaitingHelp}</p>
       ) : approved ? (
-        <p className="mt-2 rounded-lg bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-800">{t.completed}</p>
+        <p className={`mt-2 rounded-lg px-3 py-2 text-xs font-medium ${tone.success.box} ${tone.success.text}`}>{t.completed}</p>
       ) : snapshot?.rejectionReason ? (
-        <p className="mt-2 rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-800">
+        <p className={`mt-2 rounded-lg px-3 py-2 text-xs ${tone.danger.box} ${tone.danger.text}`}>
           {t.rejected}: {snapshot.rejectionReason}
         </p>
       ) : null}
@@ -122,7 +122,7 @@ export function CounselGate({
       ) : (
         <MemoBody memo={memo} />
       )}
-      <label className="mt-3 block text-[11px] font-semibold text-slate-600">
+      <label className="mt-3 block text-[11px] font-semibold text-body">
         {t.editBody}
         <textarea
           id="counsel-memo-draft"
@@ -135,11 +135,11 @@ export function CounselGate({
         />
       </label>
       <div className="mt-3 grid gap-2 sm:grid-cols-2">
-        <label className="text-[11px] font-semibold text-slate-600">
+        <label className="text-[11px] font-semibold text-body">
           {t.counselId}
           <input className={fieldClass} value={counselId} onChange={(e) => setCounselId(e.target.value)} />
         </label>
-        <label className="text-[11px] font-semibold text-slate-600">
+        <label className="text-[11px] font-semibold text-body">
           {t.rejectReason}
           <input className={fieldClass} value={reason} onChange={(e) => setReason(e.target.value)} />
         </label>
@@ -148,7 +148,7 @@ export function CounselGate({
         <button
           type="button"
           disabled={!awaiting || busy}
-          className="rounded-lg bg-emerald-600 px-3.5 py-2 text-sm font-semibold text-white transition duration-150 hover:bg-emerald-700 disabled:opacity-40"
+          className={approveBtn}
           onClick={() => onApprove(counselId)}
         >
           {t.approve}
@@ -156,7 +156,7 @@ export function CounselGate({
         <button
           type="button"
           disabled={!awaiting || busy || reason.trim().length === 0}
-          className="rounded-lg bg-rose-600 px-3.5 py-2 text-sm font-semibold text-white transition duration-150 hover:bg-rose-700 disabled:opacity-40"
+          className={rejectBtn}
           onClick={() => onReject(counselId, reason)}
         >
           {t.reject}
@@ -164,7 +164,7 @@ export function CounselGate({
         <button
           type="button"
           disabled={!awaiting || busy || draft.trim().length === 0}
-          className="rounded-lg bg-slate-900 px-3.5 py-2 text-sm font-semibold text-white transition duration-150 hover:bg-indigo-950 disabled:opacity-40"
+          className={primaryBtn}
           onClick={() => onEditApprove(counselId, draft)}
         >
           {t.editApprove}

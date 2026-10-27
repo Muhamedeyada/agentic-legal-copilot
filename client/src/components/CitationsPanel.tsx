@@ -18,24 +18,24 @@ export function CitationsPanel({
   return (
     <Card>
       <PaneTitle hint={t.citationHint}>{t.citations}</PaneTitle>
-      {empty ? <p className="mt-2 text-sm text-slate-500">{t.noCitations}</p> : null}
+      {empty ? <p className="mt-2 text-sm text-muted">{t.noCitations}</p> : null}
       <ul className="mt-3 max-h-64 space-y-2 overflow-y-auto">
         {memoCitations.map((c, i) => (
-          <li key={`m-${c.id}`} className="rounded-lg border border-slate-200 p-3 text-sm">
+          <li key={`m-${c.id}`} className="rounded-lg border border-line p-3 text-sm">
             <CitationBadge
               index={i + 1}
               label={c.locator || c.id}
               hint={c.id}
               target={{ id: c.id, locator: c.locator, excerpt: c.excerpt, source: c.source }}
             />
-            <p className="mt-1 text-[11px] text-slate-500">
+            <p className="mt-1 text-[11px] text-muted">
               {c.source} · {c.language}
             </p>
-            <p className="mt-2 leading-relaxed text-slate-700">{c.excerpt}</p>
+            <p className="mt-2 leading-relaxed text-body">{c.excerpt}</p>
           </li>
         ))}
         {ragCitations.map((c, i) => (
-          <li key={`r-${c.chunkId}`} className="rounded-lg border border-slate-200 p-3 text-sm">
+          <li key={`r-${c.chunkId}`} className="rounded-lg border border-line p-3 text-sm">
             <CitationBadge
               index={memoCitations.length + i + 1}
               label={c.locator || c.chunkId}
@@ -48,10 +48,10 @@ export function CitationsPanel({
                 source: c.source,
               }}
             />
-            <p className="mt-1 text-[11px] text-slate-500">
+            <p className="mt-1 text-[11px] text-muted">
               {c.source} · {c.language} · {(c.score * 100).toFixed(0)}%
             </p>
-            <p className="mt-2 leading-relaxed text-slate-700">{c.excerpt}</p>
+            <p className="mt-2 leading-relaxed text-body">{c.excerpt}</p>
           </li>
         ))}
       </ul>

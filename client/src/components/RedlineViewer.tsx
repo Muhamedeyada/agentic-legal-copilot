@@ -5,7 +5,7 @@ import { findClauseForCategory } from "../lib/resolve-citation";
 import { diffWords, isStackedRedline } from "../lib/word-diff";
 import { useCitationFocus } from "../citation-focus";
 import { CopyButton } from "./CopyButton";
-import { Card, PaneTitle } from "./ui";
+import { Card, PaneTitle, linkBtn } from "./ui";
 import { usePlaybookInspector } from "./PlaybookInspectorHost";
 
 type T = (typeof copy)[UiLocale];
@@ -33,7 +33,7 @@ export function RedlineViewer({
       <PaneTitle>
         {t.redlines}
       </PaneTitle>
-      <p className="mt-2 text-[11px] text-slate-500">
+      <p className="mt-2 text-[11px] text-muted">
         <span className="redline-del mx-0.5">{t.diffDel}</span>
         <span className="redline-ins mx-0.5">{t.diffIns}</span>
       </p>
@@ -48,7 +48,7 @@ export function RedlineViewer({
           return (
             <li
               key={finding.id}
-              className="cursor-pointer rounded-lg border border-slate-200 p-3 transition duration-150 hover:border-indigo-300 hover:bg-slate-50/80"
+              className="cursor-pointer rounded-lg border border-line p-3 transition duration-150 hover:border-indigo-300 hover:bg-surface-muted dark:hover:border-indigo-700"
               onClick={(event) => {
                 if ((event.target as HTMLElement).closest("button")) {
                   return;
@@ -57,14 +57,14 @@ export function RedlineViewer({
               }}
             >
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="text-[11px] font-semibold tracking-wide text-indigo-900 uppercase">
+                <p className="text-[11px] font-semibold tracking-wide text-accent uppercase">
                   {t.category[finding.category]}
                 </p>
                 <div className="flex items-center gap-2">
                   <CopyButton text={proposed} label={t.copyPlaybook} copiedLabel={t.copied} />
                   <button
                     type="button"
-                    className="text-[11px] font-semibold text-indigo-900 underline-offset-2 hover:underline"
+                    className={linkBtn}
                     onClick={() => inspectFinding(finding)}
                   >
                     {t.inspectPlaybook}
@@ -72,7 +72,7 @@ export function RedlineViewer({
                   {clause ? (
                     <button
                       type="button"
-                      className="text-[11px] font-semibold text-indigo-900 underline-offset-2 hover:underline"
+                      className={linkBtn}
                       onClick={() => focusClauseId(clause.id)}
                     >
                       {t.jumpToClause}
@@ -82,11 +82,11 @@ export function RedlineViewer({
               </div>
               {isStackedRedline(tokens) ? (
                 <div className="mt-2 space-y-2" dir={locale === "ar" ? "rtl" : "ltr"}>
-                  <p className="text-[10px] font-semibold tracking-wide text-slate-500 uppercase">{t.diffDel}</p>
+                  <p className="text-[10px] font-semibold tracking-wide text-muted uppercase">{t.diffDel}</p>
                   <p className="text-sm leading-7">
                     <del className="redline-del">{tokens[0]?.text}</del>
                   </p>
-                  <p className="text-[10px] font-semibold tracking-wide text-slate-500 uppercase">{t.diffIns}</p>
+                  <p className="text-[10px] font-semibold tracking-wide text-muted uppercase">{t.diffIns}</p>
                   <p className="text-sm leading-7">
                     <ins className="redline-ins">{tokens[1]?.text}</ins>
                   </p>

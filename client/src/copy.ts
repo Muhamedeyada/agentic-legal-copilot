@@ -8,6 +8,8 @@ export const copy = {
     toggle: "العربية",
     langEn: "English",
     langAr: "العربية",
+    themeToDark: "Switch to dark theme",
+    themeToLight: "Switch to light theme",
     intro:
       "Select a contract, run the three-agent review, and release the memo only after Counsel approval.",
     runReview: "Run Review",
@@ -130,6 +132,8 @@ export const copy = {
     toggle: "English",
     langEn: "English",
     langAr: "العربية",
+    themeToDark: "التبديل إلى الوضع الداكن",
+    themeToLight: "التبديل إلى الوضع الفاتح",
     intro: "اختر عقداً، شغّل المراجعة ثلاثية الوكلاء، ولا تُصدر المذكرة إلا بعد موافقة المستشار.",
     runReview: "تشغيل المراجعة",
     running: "جاري التشغيل…",

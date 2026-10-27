@@ -4,6 +4,17 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Legal Copilot D1T1 · المساعد القانوني الذكي</title>
+    <script>
+      // Apply the theme before first paint (no light flash in dark mode). Mirrors ThemeContext.
+      (function () {
+        var stored = null;
+        try {
+          stored = localStorage.getItem("app-theme");
+        } catch (e) {}
+        var dark = stored === "dark" || (stored !== "light" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+        document.documentElement.classList.toggle("dark", dark);
+      })();
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
