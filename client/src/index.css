@@ -1,6 +1,5 @@
 @import "tailwindcss";
 
-/* `dark:` follows the `.dark` class set by ThemeContext, not only the OS setting. */
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
@@ -8,7 +7,6 @@
   --font-serif: "Source Serif 4", "Cairo", ui-serif, Georgia, serif;
 }
 
-/* Semantic tokens: utilities such as `bg-surface` resolve to the variables below at runtime. */
 @theme inline {
   --color-canvas: var(--canvas);
   --color-surface: var(--surface);

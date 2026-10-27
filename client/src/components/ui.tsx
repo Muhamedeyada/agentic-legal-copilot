@@ -41,7 +41,6 @@ export const fieldClass =
 export const ghostBtn =
   "rounded-lg border border-line bg-surface px-3 py-1.5 text-xs font-medium text-body transition duration-150 hover:border-line-strong hover:bg-surface-muted disabled:opacity-40";
 
-/** Inverts with the theme: near-black on light, near-white on dark, so it never sinks into a card. */
 export const primaryBtn =
   "rounded-lg bg-slate-900 px-3.5 py-2 text-sm font-semibold text-white transition duration-150 hover:bg-indigo-950 disabled:opacity-40 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white";
 
@@ -55,14 +54,12 @@ export const rejectBtn =
 export const linkBtn = "text-[11px] font-semibold text-accent underline-offset-2 hover:underline";
 
 export const severityBadge: Record<RiskSeverity, string> = {
-  // rose-700, not -600: white on rose-600 sits exactly at the 4.5:1 line.
   critical: "bg-rose-700 text-white",
   high: "bg-rose-100 text-rose-800 dark:bg-rose-950/70 dark:text-rose-200 dark:ring-1 dark:ring-inset dark:ring-rose-800/60",
   medium: "bg-amber-100 text-amber-800 dark:bg-amber-950/70 dark:text-amber-200 dark:ring-1 dark:ring-inset dark:ring-amber-800/60",
   low: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-200 dark:ring-1 dark:ring-inset dark:ring-emerald-800/60",
 };
 
-/** Status surfaces (alerts, notes). `text` is for body copy placed on `box`. */
 export const tone = {
   danger: {
     box: "border border-rose-200 bg-rose-50 dark:border-rose-900/70 dark:bg-rose-950/40",

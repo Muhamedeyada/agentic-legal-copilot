@@ -28,7 +28,6 @@ function systemTheme(): Theme {
   return window.matchMedia?.(DARK_QUERY).matches ? "dark" : "light";
 }
 
-/** Follows the OS setting until the user picks a theme; the pick is remembered in localStorage. */
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [chosen, setChosen] = useState<Theme | null>(storedTheme);
   const [system, setSystem] = useState<Theme>(systemTheme);
@@ -52,9 +51,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     setChosen(next);
     try {
       localStorage.setItem(THEME_STORAGE_KEY, next);
-    } catch {
-      /* private mode: the choice lasts for this session only */
-    }
+    } catch {}
   }, []);
 
   const value = useMemo(
