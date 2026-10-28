@@ -23,7 +23,15 @@ export type {
   ToolName,
   TokenUsage,
 } from "./entities/workflow.js";
-export type { CompletionPort, CompletionRequest, CompletionResult } from "./ports/completion.port.js";
+export type {
+  CompletionPort,
+  CompletionRequest,
+  CompletionResult,
+  ConversationTurn,
+  ToolCallRequest,
+  ToolSpec,
+} from "./ports/completion.port.js";
+export { requestChars } from "./ports/completion.port.js";
 export type { EmbeddingPort } from "./ports/embedding.port.js";
 export type { VectorStorePort, RetrievedChunk } from "./ports/vector-store.port.js";
 export type {
@@ -35,6 +43,7 @@ export type {
 export type { PlaybookPort } from "./ports/playbook.port.js";
 export type { RunStorePort } from "./ports/run-store.port.js";
 export {
+  AgentLoopLimitError,
   ApprovalRequiredError,
   InvalidStateTransitionError,
   MaxIterationsError,

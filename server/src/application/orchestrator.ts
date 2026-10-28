@@ -298,7 +298,7 @@ export class LegalWorkflowOrchestrator {
           step: "DRAFTING",
         });
         await this.step(run, "DRAFTING", "memo_drafter", signal, async () => {
-          const { output, tokenUsage, usedLlm, provider } = await this.drafter.run(
+          const { output, tokenUsage, usedLlm, provider, iterations, toolSteps, fallbackReason } = await this.drafter.run(
             {
               runId: run.runId,
               contractId: run.contractId,
@@ -315,6 +315,9 @@ export class LegalWorkflowOrchestrator {
               memoId: output.memo.id,
               usedLlm,
               provider,
+              reactIterations: iterations,
+              toolCalls: toolSteps.map((t) => (t.ok ? t.tool : `${t.tool}:rejected`)),
+              ...(fallbackReason ? { fallbackReason } : {}),
               citations: output.memo.citations.map((c) => c.id),
             },
             tokenUsage,

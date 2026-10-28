@@ -96,3 +96,15 @@ export class DocumentTooLargeError extends Error {
     this.name = "DocumentTooLargeError";
   }
 }
+
+export class AgentLoopLimitError extends Error {
+  readonly code = "AGENT_LOOP_LIMIT";
+
+  constructor(
+    readonly agentId: string,
+    readonly max: number,
+  ) {
+    super(`${agentId} did not finish within ${max} reasoning iterations.`);
+    this.name = "AgentLoopLimitError";
+  }
+}

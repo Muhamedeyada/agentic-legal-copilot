@@ -1,4 +1,9 @@
-import type { CompletionPort, CompletionRequest, CompletionResult } from "../../domain/ports/completion.port.js";
+import {
+  requestChars,
+  type CompletionPort,
+  type CompletionRequest,
+  type CompletionResult,
+} from "../../domain/ports/completion.port.js";
 import {
   estimateTokens,
   TokenBudgetExceededError,
@@ -7,8 +12,8 @@ import {
 
 /**
  * Enforces the prompt/completion budget around any provider (LLM10).
- * Oversize prompts are refused before the network call: clipping would corrupt the JSON payloads
- * agents send, and the agents already fall back to deterministic rules on any error.
+ * Oversize prompts (including tool-calling history) are refused before the network call: clipping would
+ * corrupt the JSON payloads agents send, and the agents already fall back to deterministic rules on any error.
  * Always reports usage, estimating it when the provider does not.
  */
 export class CappedCompletionAdapter implements CompletionPort {
@@ -18,7 +23,7 @@ export class CappedCompletionAdapter implements CompletionPort {
   ) {}
 
   async complete(input: CompletionRequest): Promise<CompletionResult> {
-    const promptChars = input.system.length + input.user.length;
+    const promptChars = requestChars(input);
     if (promptChars > this.budget.maxPromptChars) {
       throw new TokenBudgetExceededError(promptChars, this.budget.maxPromptChars);
     }
@@ -32,9 +37,10 @@ export class CappedCompletionAdapter implements CompletionPort {
       providerId: result.providerId,
       model: result.model,
       usage: result.usage ?? {
-        promptTokens: estimateTokens(input.system + input.user),
+        promptTokens: Math.ceil(promptChars / 4),
         completionTokens: estimateTokens(result.text),
       },
+      ...(result.toolCalls ? { toolCalls: result.toolCalls } : {}),
     };
   }
 }
