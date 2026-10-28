@@ -18,9 +18,7 @@ export interface AppConfig {
   readonly llmTimeoutMs: number;
   readonly maxUploadChars: number;
   readonly maxUploadBytes: number;
-  /** `sqlite` (default) keeps runs, approvals and uploads across restarts; `memory` does not. */
   readonly persistence: "sqlite" | "memory";
-  /** `file:<path>`, a plain path, or `:memory:`. Empty → `<repo>/data/runtime/app.db`. */
   readonly databaseUrl: string;
   readonly analystToken: string;
   readonly counselToken: string;
@@ -33,12 +31,16 @@ function env(name: string, fallback: string): string {
   return process.env[name] ?? fallback;
 }
 
-function authToken(name: string, demoFallback: string, nodeEnv: string): string {
+function authToken(
+  name: string,
+  demoFallback: string,
+  nodeEnv: string,
+): string {
   const value = process.env[name]?.trim() ?? "";
   if (value.length > 0) {
     return value;
   }
-  if (nodeEnv === "production") {
+  if (nodeEnv === "production" && process.env.ALLOW_DEMO_TOKENS !== "true") {
     throw new Error(`${name} must be set when NODE_ENV=production.`);
   }
   return demoFallback;
@@ -47,11 +49,18 @@ function authToken(name: string, demoFallback: string, nodeEnv: string): string 
 export function loadConfig(): AppConfig {
   const provider = env("LLM_PROVIDER", "openai");
   const nodeEnv = env("NODE_ENV", "development");
+  const isServerless = Boolean(
+    process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME,
+  );
   const analystToken = authToken("DEMO_API_TOKEN", DEMO_ANALYST_TOKEN, nodeEnv);
   const counselToken = authToken("COUNSEL_TOKEN", DEMO_COUNSEL_TOKEN, nodeEnv);
   if (analystToken === counselToken) {
     throw new Error("DEMO_API_TOKEN and COUNSEL_TOKEN must differ.");
   }
+  const defaultDatabaseUrl =
+    nodeEnv === "test" ? ":memory:" : isServerless ? "/tmp/app.db" : "";
+  const defaultPersistence =
+    isServerless && !process.env.DATABASE_URL ? "memory" : "sqlite";
   return {
     nodeEnv,
     port: Number(env("PORT", "3001")),
@@ -67,15 +76,14 @@ export function loadConfig(): AppConfig {
     defaultLocale: env("DEFAULT_LOCALE", "en") === "ar" ? "ar" : "en",
     corpusDir: env("CORPUS_DIR", ""),
     rateLimitPerMinute: Number(env("RATE_LIMIT_PER_MINUTE", "60")),
-    // ~12k tokens: fits every corpus contract plus the extractor's JSON envelope.
     maxPromptChars: Number(env("MAX_PROMPT_CHARS", "48000")),
-    // ~8k tokens: the extractor echoes every clause body, ~10k chars for a corpus contract.
     maxCompletionChars: Number(env("MAX_COMPLETION_CHARS", "32000")),
     llmTimeoutMs: Number(env("LLM_TIMEOUT_MS", "20000")),
     maxUploadChars: Number(env("MAX_UPLOAD_CHARS", "200000")),
     maxUploadBytes: Math.round(Number(env("MAX_UPLOAD_MB", "10")) * 1_048_576),
-    persistence: env("PERSISTENCE", "sqlite") === "memory" ? "memory" : "sqlite",
-    databaseUrl: env("DATABASE_URL", nodeEnv === "test" ? ":memory:" : ""),
+    persistence:
+      env("PERSISTENCE", defaultPersistence) === "memory" ? "memory" : "sqlite",
+    databaseUrl: env("DATABASE_URL", defaultDatabaseUrl),
     analystToken,
     counselToken,
   };

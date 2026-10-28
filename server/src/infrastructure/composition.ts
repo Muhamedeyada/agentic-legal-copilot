@@ -28,9 +28,7 @@ export interface LegalServices {
   readonly catalog: ContractCatalogPort;
   readonly rag: DirectRagUseCase;
   readonly ingest: IngestDocumentUseCase;
-  /** Path of the SQLite file, `:memory:`, or undefined when persistence is `memory`. */
   readonly databasePath: string | undefined;
-  /** Runs that were mid-pipeline when the process last stopped and were marked FAILED. */
   readonly interruptedRuns: Promise<number>;
   close(): void;
 }
@@ -50,18 +48,28 @@ export function resolveCorpusDir(config: AppConfig): string {
   return resolve(process.cwd(), "../data/corpus");
 }
 
-/** Relative paths resolve against the repository root, so dev (cwd `server/`) and Docker agree. */
 export function resolveDatabasePath(config: AppConfig): string {
   const url = config.databaseUrl.trim();
   if (url === ":memory:") {
     return url;
   }
-  const repoRoot = resolve(resolveCorpusDir(config), "..", "..");
+  const isServerless = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
   if (url.length === 0) {
+    if (isServerless) {
+      return "/tmp/app.db";
+    }
+    const repoRoot = resolve(resolveCorpusDir(config), "..", "..");
     return resolve(repoRoot, "data", "runtime", "app.db");
   }
   const path = url.replace(/^file:/, "");
-  return isAbsolute(path) ? path : resolve(repoRoot, path);
+  if (isAbsolute(path)) {
+    return path;
+  }
+  if (isServerless) {
+    return resolve("/tmp", path);
+  }
+  const repoRoot = resolve(resolveCorpusDir(config), "..", "..");
+  return resolve(repoRoot, path);
 }
 
 interface Stores {
@@ -83,17 +91,29 @@ function createStores(config: AppConfig): Stores {
       interruptedRuns: Promise.resolve(0),
     };
   }
-  const path = resolveDatabasePath(config);
-  const db = openDatabase(path);
-  const runs = new SqliteRunStoreAdapter(db);
-  return {
-    runs,
-    approval: new SqliteApprovalStoreAdapter(db),
-    catalog: new SqliteContractCatalogAdapter(db, corpus),
-    db,
-    path,
-    interruptedRuns: runs.failInterruptedRuns("Interrupted: the server stopped before this run finished."),
-  };
+  try {
+    const path = resolveDatabasePath(config);
+    const db = openDatabase(path);
+    const runs = new SqliteRunStoreAdapter(db);
+    return {
+      runs,
+      approval: new SqliteApprovalStoreAdapter(db),
+      catalog: new SqliteContractCatalogAdapter(db, corpus),
+      db,
+      path,
+      interruptedRuns: runs.failInterruptedRuns("Interrupted: the server stopped before this run finished."),
+    };
+  } catch (err) {
+    console.warn(
+      `[alc-server] Failed to initialize SQLite storage (${err instanceof Error ? err.message : String(err)}). Falling back to in-memory persistence.`,
+    );
+    return {
+      runs: new InMemoryRunStoreAdapter(),
+      approval: new InMemoryApprovalAdapter(),
+      catalog: corpus,
+      interruptedRuns: Promise.resolve(0),
+    };
+  }
 }
 
 export function createLegalServices(config: AppConfig): LegalServices {

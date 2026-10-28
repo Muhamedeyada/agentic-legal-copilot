@@ -15,7 +15,7 @@
     "build:server": "npm run build -w server",
     "build:client": "npm run build -w client",
     "start": "npm run start -w server",
-    "typecheck": "npm run typecheck -w server && npm run typecheck -w client",
+    "typecheck": "tsc -p tsconfig.json --noEmit && npm run typecheck -w server && npm run typecheck -w client",
     "lint": "node scripts/check-boundaries.mjs",
     "test": "npm run test -w server",
     "eval": "npm run eval -w server",
