@@ -177,22 +177,47 @@ const FIXTURES: Record<string, (input: CompletionRequest) => string> = {
   memo_drafter_output: memoDraft,
 };
 
+export interface MockStreamOptions {
+  /** Characters per streamed delta when the caller asks for streaming. */
+  readonly chunkChars?: number;
+  /** Pause between deltas; 0 in tests, a few ms in the offline demo so typing is visible. */
+  readonly chunkDelayMs?: number;
+}
+
 export class MockCompletionAdapter implements CompletionPort {
-  constructor(private readonly impl?: Responder) {}
+  constructor(
+    private readonly impl?: Responder,
+    private readonly stream: MockStreamOptions = {},
+  ) {}
 
   async complete(input: CompletionRequest): Promise<CompletionResult> {
     if (this.impl) {
       return this.impl(input);
     }
+    let result: CompletionResult;
     if (input.jsonSchemaName === "memo_drafter_output" && (input.tools?.length ?? 0) > 0) {
       const step = memoReact(input);
-      return this.result(input, step.text, step.toolCalls);
+      result = this.result(input, step.text, step.toolCalls);
+    } else {
+      const fixture = input.jsonSchemaName ? FIXTURES[input.jsonSchemaName] : undefined;
+      if (!fixture) {
+        throw new Error(`MockCompletionAdapter: no fixture for schema "${input.jsonSchemaName ?? "none"}".`);
+      }
+      result = this.result(input, fixture(input));
     }
-    const fixture = input.jsonSchemaName ? FIXTURES[input.jsonSchemaName] : undefined;
-    if (!fixture) {
-      throw new Error(`MockCompletionAdapter: no fixture for schema "${input.jsonSchemaName ?? "none"}".`);
+    if (input.onTextDelta && result.text.length > 0) {
+      await this.emit(result.text, input.onTextDelta);
     }
-    return this.result(input, fixture(input));
+    return result;
+  }
+
+  private async emit(text: string, onDelta: (delta: string) => void): Promise<void> {
+    const size = Math.max(1, this.stream.chunkChars ?? 24);
+    const delay = this.stream.chunkDelayMs ?? 0;
+    for (let i = 0; i < text.length; i += size) {
+      onDelta(text.slice(i, i + size));
+      if (delay > 0) await new Promise((resolve) => setTimeout(resolve, delay));
+    }
   }
 
   private result(input: CompletionRequest, text: string, toolCalls?: readonly ToolCallRequest[]): CompletionResult {

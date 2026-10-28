@@ -132,6 +132,7 @@ export type StreamEventType =
   | "HITL_DECISION"
   | "RUN_FAILED"
   | "RUN_CANCELLED"
+  | "TOKEN_CHUNK"
   | "ping";
 
 export interface StreamEvent {
@@ -148,4 +149,12 @@ export interface StreamEvent {
   totalTokenUsage?: { promptTokens: number; completionTokens: number };
   message?: string;
   decision?: "approved" | "rejected" | "edited";
+  field?: "bodyEn" | "bodyAr";
+  deltaText?: string;
+  reset?: boolean;
+}
+
+export interface LiveMemo {
+  bodyEn: string;
+  bodyAr: string;
 }

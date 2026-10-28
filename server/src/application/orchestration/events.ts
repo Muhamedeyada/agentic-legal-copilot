@@ -31,6 +31,20 @@ export type WorkflowStreamEvent =
       readonly error?: string;
     }
   | {
+      /**
+       * Memo text as the model writes it. Append `deltaText` to `field`; `reset: true` (with empty
+       * `deltaText`) means discard what was streamed, because that turn's text will not be used.
+       * The memo in the run snapshot stays authoritative once AWAITING_APPROVAL arrives.
+       */
+      readonly type: "TOKEN_CHUNK";
+      readonly runId: string;
+      readonly at: string;
+      readonly agentId: "memo_drafter";
+      readonly field: "bodyEn" | "bodyAr";
+      readonly deltaText: string;
+      readonly reset?: true;
+    }
+  | {
       readonly type: "CLAUSE_EXTRACTED";
       readonly runId: string;
       readonly at: string;

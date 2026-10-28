@@ -297,7 +297,22 @@ export class LegalWorkflowOrchestrator {
           agentId: "memo_drafter",
           step: "DRAFTING",
         });
+        let memoStreamed = false;
+        const resetMemoStream = (): void => {
+          memoStreamed = false;
+          this.emit({
+            type: "TOKEN_CHUNK",
+            runId: run.runId,
+            at: new Date().toISOString(),
+            agentId: "memo_drafter",
+            field: "bodyEn",
+            deltaText: "",
+            reset: true,
+          });
+        };
         await this.step(run, "DRAFTING", "memo_drafter", signal, async () => {
+          // A retried attempt starts from an empty live memo.
+          if (memoStreamed) resetMemoStream();
           const { output, tokenUsage, usedLlm, provider, iterations, toolSteps, fallbackReason } = await this.drafter.run(
             {
               runId: run.runId,
@@ -307,6 +322,20 @@ export class LegalWorkflowOrchestrator {
               findings: run.findings,
             },
             { runId: run.runId, agentId: "memo_drafter", state: "DRAFTING" },
+            {
+              onMemoDelta: (field, deltaText) => {
+                memoStreamed = true;
+                this.emit({
+                  type: "TOKEN_CHUNK",
+                  runId: run.runId,
+                  at: new Date().toISOString(),
+                  agentId: "memo_drafter",
+                  field,
+                  deltaText,
+                });
+              },
+              onMemoReset: resetMemoStream,
+            },
           );
           run.memo = output.memo;
           run.tokenUsage = addUsage(run.tokenUsage, tokenUsage);

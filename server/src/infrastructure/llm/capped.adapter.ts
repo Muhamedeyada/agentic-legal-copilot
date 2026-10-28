@@ -27,7 +27,7 @@ export class CappedCompletionAdapter implements CompletionPort {
     if (promptChars > this.budget.maxPromptChars) {
       throw new TokenBudgetExceededError(promptChars, this.budget.maxPromptChars);
     }
-    const result = await this.inner.complete(input);
+    const result = await this.inner.complete(this.withCappedStream(input));
     const text =
       result.text.length > this.budget.maxCompletionChars
         ? result.text.slice(0, this.budget.maxCompletionChars)
@@ -41,6 +41,24 @@ export class CappedCompletionAdapter implements CompletionPort {
         completionTokens: estimateTokens(result.text),
       },
       ...(result.toolCalls ? { toolCalls: result.toolCalls } : {}),
+    };
+  }
+
+  /** Streamed text stops at the same completion cap as the final text. */
+  private withCappedStream(input: CompletionRequest): CompletionRequest {
+    const forward = input.onTextDelta;
+    if (!forward) {
+      return input;
+    }
+    let remaining = this.budget.maxCompletionChars;
+    return {
+      ...input,
+      onTextDelta: (delta) => {
+        if (remaining <= 0) return;
+        const piece = delta.length > remaining ? delta.slice(0, remaining) : delta;
+        remaining -= piece.length;
+        forward(piece);
+      },
     };
   }
 }

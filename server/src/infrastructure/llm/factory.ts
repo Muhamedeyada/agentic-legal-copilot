@@ -26,7 +26,7 @@ export function createCompletionAdapter(config: AppConfig): CompletionPort {
       maxTokens,
     });
   } else if (looksLikePlaceholderKey(config.openaiApiKey)) {
-    inner = new MockCompletionAdapter();
+    inner = new MockCompletionAdapter(undefined, { chunkChars: 12, chunkDelayMs: 8 });
   } else {
     inner = new HostedCompletionAdapter({
       apiKey: config.openaiApiKey,
