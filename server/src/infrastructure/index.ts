@@ -9,3 +9,7 @@ export { CappedCompletionAdapter } from "./llm/capped.adapter.js";
 export { createCompletionAdapter } from "./llm/factory.js";
 export { createLegalServices, resolveCorpusDir } from "./composition.js";
 export { FileContractCatalogAdapter } from "./corpus/file-catalog.adapter.js";
+export { SqliteRunStoreAdapter } from "./runs/sqlite.adapter.js";
+export { SqliteApprovalStoreAdapter } from "./approval/sqlite.adapter.js";
+export { SqliteContractCatalogAdapter } from "./corpus/sqlite-catalog.adapter.js";
+export { openDatabase, type SqliteDatabase } from "./sqlite/database.js";

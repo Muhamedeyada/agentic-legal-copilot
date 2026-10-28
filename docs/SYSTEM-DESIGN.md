@@ -66,7 +66,7 @@ Target: multilingual embeddings (or dual encode), `lang` metadata, never silent 
 | G-01 | Hexagonal packages | Four layers + ports | Domain, application, infra, presentation; `npm run lint` | None for assessment | — | **Done** |
 | G-02 | Express + health | Locale-aware `/health` | `/health` and `/api/health` (unauthenticated) | — | — | **Done** |
 | G-03 | SSE agent events | Typed progress | `/api/workflow/stream/:runId` + event bus | Legacy `/events` is heartbeat only | — | **Done** |
-| G-04 | Counsel memo gate | 403 until approval | Orchestrator + UI CounselGate + G-20 | In-memory approvals die on process restart | 3–5 d persist `ApprovalPort` | **Done** (process lifetime) |
+| G-04 | Counsel memo gate | 403 until approval | Orchestrator + UI CounselGate + G-20 | Approvals persist in SQLite; a run awaiting Counsel survives a restart | — | **Done** |
 | G-05 | React RTL workstation | AR/EN, `dir`, review UX | Full workstation (stepper, risk, chat, traces) | No mobile-first polish | 1–2 w design QA | **Done** |
 | G-06 | Document ingest | PDF/DOCX/TXT, MIME | Markdown corpus + JSON text upload + char cap | No PDF/DOCX. Trade-off: smaller supply chain for the demo | 1–2 w parsers + malware scanning | **Partial** |
 | G-07 | Language detection | Per doc / clause | Script-count + filename `-AR-`/`-EN-` | Weak on mixed legal French/AR | 3–5 d detector port + CLD3 | **Partial** |
@@ -76,7 +76,7 @@ Target: multilingual embeddings (or dual encode), `lang` metadata, never silent 
 | G-11 | Risk Assessor | Severity + citations | Matrix tool + omission Critical; a mandatory family is present only when a heading names it (or a substantive clause's body does), so "Liquidated Damages" / "Notices" never stand in for liability / termination; carve-out-aware uncapped flag; Arabic-Indic digits folded | Flags and notes are keyword checks, not NLU; rationales are English only; no confidentiality playbook clause; non-renewal windows are not flagged | 1–2 w richer feature extractors | **Done** |
 | G-12 | Memo Drafter | Bilingual, RTL-safe | Template + optional LLM; sanitize | Quality depends on findings, not prose model | 1 w counsel-editable templates | **Done** |
 | G-13 | Provider swap | Hosted / local | Factory + cap; hosted/local OpenAI-compatible fetch (JSON mode, provider usage); deterministic mock with estimated tokens | JSON mode, not strict JSON-schema outputs; Zod still validates | 1–2 d strict structured outputs | **Done** |
-| G-14 | Audit log | Redacted durable log | `run.traces` + SSE + Trace drawer | Lost on restart; not redacted for every field | 1 w SQLite + redaction policy | **Partial** |
+| G-14 | Audit log | Redacted durable log | SQLite `run_traces` + `approval_audit` (append-only) + SSE + Trace drawer | Not redacted for every field; no retention policy; SSE replay history is still per process | 3–5 d redaction + retention | **Done** (durable) |
 | G-15 | Golden set | ≥25 Q/A, bilingual | 28 items, `npm run eval`, JSON report | Document-scoped hit-rate ≠ production Recall@5 | Ongoing gold maintenance | **Done** |
 | G-16 | 5-minute demo | Scripted in README | UI + HITL + eval + Docker | README was stale; now matches code | — | **Done** |
 | G-17 | Packaging / CI | Compose + PR checks | `Dockerfile`s, compose, `.github/workflows/ci.yml` | No image scan / SBOM yet | 2–3 d Trivy in CI | **Done** (MVP) |
@@ -100,5 +100,5 @@ Target: multilingual embeddings (or dual encode), `lang` metadata, never silent 
 ## Suggested next vertical (after assessment)
 
 1. Port the ingest pipeline and persistent vector store from `feat/ingestion-and-hybrid-retrieval` (the retrieval math is already on `main`).
-2. Persist runs and approvals.
+2. ~~Persist runs and approvals.~~ Done: SQLite (`better-sqlite3`).
 3. Enforce `DEMO_API_TOKEN` (then replace it).

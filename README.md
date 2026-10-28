@@ -46,7 +46,7 @@ client (Vite :5173 / Docker nginx :3000)
   → presentation/  Express JSON + SSE
     → application/ orchestrator, 3 agents, DirectRag, HITL
       → domain/    entities, ports, chunker, bilingual retrieve helpers
-    ← infrastructure/  mock/hosted/local completion, file catalog, in-memory stores
+    ← infrastructure/  mock/hosted/local completion, file corpus, SQLite stores (data/runtime/app.db)
 ```
 
 **Honest limits:** hosted and local completions call any OpenAI-compatible `/chat/completions` endpoint (JSON mode, real `usage` tokens); without a key the mock adapter returns deterministic schema-valid JSON with estimated tokens (~4 chars/token). Retrieval is **hybrid**: BM25 + 256-dim hashed embeddings, fused with RRF (k=60), over in-memory candidate pools; the hashed embedding is a deterministic stand-in, not a semantic model, so the lexical floor decides refusals. There is no persistent vector index (the `VectorStorePort` adapter is still a stub). Uploads are **plain text** (the UI reads `file.text()`). Auth is **static bearer tokens** (analyst / counsel); the demo client ships both tokens in its bundle, so it is not real identity.
@@ -146,6 +146,8 @@ From `server/src/infrastructure/config.ts` and the Vite client:
 | `RATE_LIMIT_PER_MINUTE` | HTTP 429 |
 | `MAX_PROMPT_CHARS` / `MAX_COMPLETION_CHARS` | Completion caps (48000 / 32000). Oversize prompts are refused, not truncated |
 | `MAX_UPLOAD_CHARS` | HTTP 413 |
+| `PERSISTENCE` | `sqlite` (default): runs, traces, approvals, audit trail and uploads survive restarts; `memory`: they don't |
+| `DATABASE_URL` | SQLite file; empty → `data/runtime/app.db` (relative paths resolve against the repo root) |
 | `DEMO_API_TOKEN` | Analyst bearer token (default `demo-analyst-token` outside production) |
 | `COUNSEL_TOKEN` | Counsel bearer token for approve / reject / edit (default `demo-counsel-token` outside production) |
 | `VITE_API_URL` | Client API prefix; **empty** under Docker nginx |
