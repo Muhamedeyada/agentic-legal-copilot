@@ -1,6 +1,7 @@
 {
   "name": "agentic-legal-copilot",
   "private": true,
+  "type": "module",
   "version": "0.1.0",
   "description": "D1T1 Agentic Legal Copilot — bilingual contract review (Node.js + React)",
   "workspaces": [
