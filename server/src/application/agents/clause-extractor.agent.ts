@@ -36,12 +36,12 @@ export function extractDeterministic(input: ClauseExtractorInput): ExtractedClau
 export class ClauseExtractorAgent {
   constructor(
     private readonly completion: CompletionPort,
-    private readonly tools: ToolRegistry,
+    _tools?: ToolRegistry,
   ) {}
 
   async run(
     input: ClauseExtractorInput,
-    ctx: ToolContext,
+    _ctx?: ToolContext,
   ): Promise<{ output: ClauseExtractorOutput; tokenUsage: TokenUsage; usedLlm: boolean; provider: string }> {
     const fallback = extractDeterministic(input);
     let tokenUsage: TokenUsage = { promptTokens: 0, completionTokens: 0 };
@@ -59,14 +59,11 @@ export class ClauseExtractorAgent {
           }),
         ),
       });
-      // Tokens are spent once the provider answers, even if the answer fails validation.
       tokenUsage = result.usage ?? tokenUsage;
       provider = result.providerId;
       const parsed = parseContract(ClauseExtractorOutputZ, "ClauseExtractorOutput", parseJsonObject(result.text));
       return { output: parsed, tokenUsage, usedLlm: true, provider };
     } catch {
-      void this.tools;
-      void ctx;
       return { output: { clauses: fallback }, tokenUsage, usedLlm: false, provider };
     }
   }

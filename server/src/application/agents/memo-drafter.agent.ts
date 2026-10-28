@@ -28,7 +28,6 @@ import {
   type ModelToolName,
 } from "./memo-drafter.tools.js";
 
-/** Same ceiling as the orchestrator's loop breaker: at most 12 model turns per draft. */
 export const MAX_REACT_ITERATIONS = 12;
 const MAX_TOOL_CALLS_PER_TURN = 4;
 const MAX_EXCERPT_CLAUSES = 6;
@@ -36,7 +35,6 @@ const CLAUSE_EXCERPT_CHARS = 1_200;
 
 export type MemoBodyField = "bodyEn" | "bodyAr";
 
-/** Live view of the memo while the model writes it. A reset means discard what was streamed so far. */
 export interface MemoStreamHooks {
   readonly onMemoDelta?: (field: MemoBodyField, deltaText: string) => void;
   readonly onMemoReset?: () => void;
@@ -196,7 +194,6 @@ interface ReactOutcome {
   readonly toolSteps: readonly ReactToolStep[];
 }
 
-/** Carries the usage and steps spent before the loop failed, so telemetry stays honest on fallback. */
 class ReactFailure extends Error {
   constructor(
     message: string,
@@ -222,7 +219,6 @@ function addUsage(a: TokenUsage, b: TokenUsage | undefined): TokenUsage {
     : a;
 }
 
-/** Clause text the model may compare against precedent, inside the untrusted-document envelope. */
 function flaggedExcerpts(input: MemoDrafterInput): string {
   const clauses = new Map(input.clauses.map((c) => [c.id, c]));
   const excerpts = input.findings
@@ -235,7 +231,6 @@ function flaggedExcerpts(input: MemoDrafterInput): string {
   return wrapUntrustedDocument(input.contractId, JSON.stringify({ excerpts }));
 }
 
-/** Forwards memo body text from each streamed turn; tracks whether the client must discard it. */
 class LiveMemo {
   private streamed = false;
   private readonly fields: readonly MemoBodyField[];

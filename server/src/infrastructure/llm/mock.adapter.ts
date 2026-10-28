@@ -52,7 +52,6 @@ function memoPayload(input: CompletionRequest): Record<string, unknown> {
   return asRecord(JSON.parse(newline < 0 ? input.user : input.user.slice(0, newline)), "memo payload");
 }
 
-/** Findings worth precedent: high/critical deviations first, then omissions; one per category, at most three. */
 function precedentTargets(payload: Record<string, unknown>): MockFinding[] {
   const findings = Array.isArray(payload.findings) ? (payload.findings as MockFinding[]) : [];
   const seen = new Set<string>();
@@ -81,10 +80,6 @@ function firstHit(observation: Record<string, unknown> | undefined): { chunkId: 
   return Array.isArray(hits) && hits.length > 0 ? (hits[0] as { chunkId: string; excerpt: string }) : undefined;
 }
 
-/**
- * Deterministic ReAct script: retrieve precedent for flagged findings, compare flagged clauses with the
- * top hit, then answer with the draft plus a precedent section built from the observations.
- */
 function memoReact(input: CompletionRequest): { text: string; toolCalls?: ToolCallRequest[] } {
   const payload = memoPayload(input);
   const targets = precedentTargets(payload);
@@ -154,7 +149,6 @@ function memoReact(input: CompletionRequest): { text: string; toolCalls?: ToolCa
   };
 }
 
-/** Single-shot fixture for callers that do not offer tools. */
 function memoDraft(input: CompletionRequest): string {
   const payload = memoPayload(input);
   const draft = asRecord(payload.draft, "draft");
@@ -178,9 +172,7 @@ const FIXTURES: Record<string, (input: CompletionRequest) => string> = {
 };
 
 export interface MockStreamOptions {
-  /** Characters per streamed delta when the caller asks for streaming. */
   readonly chunkChars?: number;
-  /** Pause between deltas; 0 in tests, a few ms in the offline demo so typing is visible. */
   readonly chunkDelayMs?: number;
 }
 

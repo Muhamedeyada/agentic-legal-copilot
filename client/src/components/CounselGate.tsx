@@ -148,7 +148,6 @@ export function CounselGate({
   );
 }
 
-/** The memo as the model writes it; replaced by the stored memo once drafting finishes. */
 function LiveDraft({ t, locale, liveMemo }: { t: T; locale: UiLocale; liveMemo: LiveMemo }) {
   const scroller = useRef<HTMLDivElement>(null);
   const preferAr = locale === "ar" ? liveMemo.bodyAr.length > 0 : liveMemo.bodyEn.length === 0;

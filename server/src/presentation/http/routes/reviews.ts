@@ -8,12 +8,7 @@ import {
 import type { LegalWorkflowOrchestrator } from "../../../application/orchestrator.js";
 import type { CounselApprovalUseCase } from "../../../application/hitl/counsel-approval.js";
 import { runSnapshot } from "../snapshot.js";
-import type { WorkflowRun } from "../../../domain/entities/workflow.js";
 import { counselId, requireCounsel } from "../middleware/auth.js";
-
-function snapshot(run: WorkflowRun) {
-  return runSnapshot(run);
-}
 
 export function reviewsRouter(
   orchestrator: LegalWorkflowOrchestrator,
@@ -32,7 +27,7 @@ export function reviewsRouter(
         return;
       }
       const run = await orchestrator.start({ contractId, text, language });
-      res.status(201).json(snapshot(run));
+      res.status(201).json(runSnapshot(run));
     } catch (err) {
       const message = err instanceof Error ? err.message : "unknown-error";
       res.status(500).json({ error: "WORKFLOW_FAILED", message });
@@ -42,7 +37,7 @@ export function reviewsRouter(
   router.get("/runs/:runId", async (req, res) => {
     try {
       const run = await orchestrator.getRun(req.params.runId);
-      res.json(snapshot(run));
+      res.json(runSnapshot(run));
     } catch (err) {
       if (err instanceof RunNotFoundError) {
         res.status(404).json({ error: err.code, message: err.message });
@@ -56,7 +51,7 @@ export function reviewsRouter(
   router.post("/runs/:runId/approve", requireCounsel, async (req, res) => {
     try {
       const run = await counselGate.approveRun(String(req.params.runId), counselId(req));
-      res.json(snapshot(run));
+      res.json(runSnapshot(run));
     } catch (err) {
       sendHitlError(res, err);
     }
@@ -66,7 +61,7 @@ export function reviewsRouter(
     try {
       const reason = String(req.body?.reason ?? "");
       const run = await counselGate.rejectRun(String(req.params.runId), reason, counselId(req));
-      res.json(snapshot(run));
+      res.json(runSnapshot(run));
     } catch (err) {
       sendHitlError(res, err);
     }
@@ -79,7 +74,7 @@ export function reviewsRouter(
         ...(typeof req.body?.bodyAr === "string" ? { bodyAr: req.body.bodyAr as string } : {}),
       };
       const run = await counselGate.editAndApproveRun(String(req.params.runId), editedMemo, counselId(req));
-      res.json(snapshot(run));
+      res.json(runSnapshot(run));
     } catch (err) {
       sendHitlError(res, err);
     }

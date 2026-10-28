@@ -27,7 +27,6 @@ export function TraceDrawer({
   if (inline) {
     return (
       <div className="p-3 space-y-3">
-        {/* Summary stats */}
         <div className="grid grid-cols-2 gap-2">
           <div className="rounded-lg border border-line bg-surface-muted p-2.5">
             <p className="text-[10px] font-semibold uppercase tracking-wide text-muted">{t.runId}</p>
@@ -47,7 +46,6 @@ export function TraceDrawer({
           </div>
         </div>
 
-        {/* Trace list */}
         {traces.length === 0 ? (
           <p className="text-sm text-muted">{t.traceHint}</p>
         ) : (

@@ -172,7 +172,7 @@ export class LegalWorkflowOrchestrator {
     return run;
   }
 
-  /** @deprecated No route calls this; use `start` or `enqueue`. */
+  /** @deprecated Use `start` or `enqueue`. */
   async extractClauses(input: ExtractClausesInput): Promise<ClauseExtractorOutput> {
     const run = await this.start({
       contractId: input.contractId,
@@ -311,7 +311,6 @@ export class LegalWorkflowOrchestrator {
           });
         };
         await this.step(run, "DRAFTING", "memo_drafter", signal, async () => {
-          // A retried attempt starts from an empty live memo.
           if (memoStreamed) resetMemoStream();
           const { output, tokenUsage, usedLlm, provider, iterations, toolSteps, fallbackReason } = await this.drafter.run(
             {

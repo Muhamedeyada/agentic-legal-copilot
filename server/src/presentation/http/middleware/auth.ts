@@ -23,7 +23,6 @@ export interface AuthTokens {
 
 export const COUNSEL_FORBIDDEN = { error: "Forbidden: Requires Legal Counsel authorization" } as const;
 
-/** Constant-time compare; hashing first keeps lengths equal. */
 function tokenMatches(candidate: string, expected: string): boolean {
   const a = createHash("sha256").update(candidate).digest();
   const b = createHash("sha256").update(expected).digest();
@@ -83,7 +82,6 @@ export function authenticate(tokens: AuthTokens): RequestHandler {
   };
 }
 
-/** Decision audit identity comes from the token, never from the request body. */
 export function counselId(req: Request): string {
   return req.user?.userId ?? "anonymous";
 }

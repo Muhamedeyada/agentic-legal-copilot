@@ -62,11 +62,9 @@ export const linkBtn = `rounded-sm text-[11px] font-semibold text-accent underli
 
 export const iconBtn = `grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-line text-lg leading-none text-muted enabled:hover:border-line-strong enabled:hover:bg-surface-sunken enabled:hover:text-ink ${pressable}`;
 
-/** Clickable cards: lift on hover. Keyboard users reach the same action through the card's own button. */
 export const clickableCard =
   "cursor-pointer rounded-lg border border-line p-3 transition duration-150 hover:border-line-strong hover:bg-surface-muted hover:shadow-sm active:scale-[0.995] dark:hover:shadow-black/30";
 
-/** Lets Counsel select text inside a clickable card without the click opening the inspector. */
 export function isTextSelection(): boolean {
   return (window.getSelection()?.toString().length ?? 0) > 0;
 }
