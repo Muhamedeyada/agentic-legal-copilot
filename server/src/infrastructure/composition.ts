@@ -15,6 +15,8 @@ import { LegalWorkflowOrchestrator } from "../application/orchestrator.js";
 import { CounselApprovalUseCase } from "../application/hitl/counsel-approval.js";
 import { RunEventBus } from "../application/orchestration/event-bus.js";
 import { DirectRagUseCase } from "../application/chat/direct-rag.js";
+import { IngestDocumentUseCase } from "../application/ingestion/ingest-document.js";
+import { DocumentTextExtractor } from "./parsing/document-text.adapter.js";
 import type { ContractCatalogPort } from "../domain/ports/contract-catalog.port.js";
 import type { ApprovalPort } from "../domain/ports/approval.port.js";
 import type { RunStorePort } from "../domain/ports/run-store.port.js";
@@ -25,6 +27,7 @@ export interface LegalServices {
   readonly events: RunEventBus;
   readonly catalog: ContractCatalogPort;
   readonly rag: DirectRagUseCase;
+  readonly ingest: IngestDocumentUseCase;
   /** Path of the SQLite file, `:memory:`, or undefined when persistence is `memory`. */
   readonly databasePath: string | undefined;
   /** Runs that were mid-pipeline when the process last stopped and were marked FAILED. */
@@ -115,6 +118,7 @@ export function createLegalServices(config: AppConfig): LegalServices {
     events,
     catalog,
     rag: new DirectRagUseCase(catalog, playbook, embeddings),
+    ingest: new IngestDocumentUseCase(new DocumentTextExtractor(), catalog, config.maxUploadChars),
     databasePath: path,
     interruptedRuns,
     close: () => db?.close(),

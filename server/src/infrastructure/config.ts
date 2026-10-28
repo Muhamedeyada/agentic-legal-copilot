@@ -17,6 +17,7 @@ export interface AppConfig {
   readonly maxCompletionChars: number;
   readonly llmTimeoutMs: number;
   readonly maxUploadChars: number;
+  readonly maxUploadBytes: number;
   /** `sqlite` (default) keeps runs, approvals and uploads across restarts; `memory` does not. */
   readonly persistence: "sqlite" | "memory";
   /** `file:<path>`, a plain path, or `:memory:`. Empty → `<repo>/data/runtime/app.db`. */
@@ -72,6 +73,7 @@ export function loadConfig(): AppConfig {
     maxCompletionChars: Number(env("MAX_COMPLETION_CHARS", "32000")),
     llmTimeoutMs: Number(env("LLM_TIMEOUT_MS", "20000")),
     maxUploadChars: Number(env("MAX_UPLOAD_CHARS", "200000")),
+    maxUploadBytes: Math.round(Number(env("MAX_UPLOAD_MB", "10")) * 1_048_576),
     persistence: env("PERSISTENCE", "sqlite") === "memory" ? "memory" : "sqlite",
     databaseUrl: env("DATABASE_URL", nodeEnv === "test" ? ":memory:" : ""),
     analystToken,

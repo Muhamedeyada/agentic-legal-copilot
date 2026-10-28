@@ -6,7 +6,7 @@ import { fieldClass, focusRing, severityBadge, severityRank, tone } from "./ui";
 
 type T = (typeof copy)[UiLocale];
 
-const ACCEPTED = /\.(txt|md|markdown)$/i;
+const ACCEPTED = /\.(pdf|docx|txt|md|markdown)$/i;
 
 const dotClass: Record<RiskSeverity, string> = {
   critical: "bg-red-500",
@@ -230,7 +230,7 @@ function UploadDropzone({ t, onUpload }: { t: T; onUpload: (file: File) => void 
         <p className="mt-0.5 text-[11px] text-muted">{t.dropHint}</p>
         <input
           type="file"
-          accept=".txt,.md,.markdown,text/plain,text/markdown"
+          accept=".pdf,.docx,.txt,.md,.markdown,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown"
           className="sr-only"
           onChange={(e) => {
             accept(e.target.files?.[0]);

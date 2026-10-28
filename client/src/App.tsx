@@ -11,7 +11,8 @@ import {
   listContracts,
   rejectRun,
   startWorkflow,
-  uploadContract,
+  uploadContractFile,
+  UploadError,
 } from "./api/client";
 import type { ContractRecord, ContractSummary, RagAnswer, WorkflowSnapshot } from "./api/types";
 import { useWorkflowStream } from "./hooks/useWorkflowStream";
@@ -83,14 +84,17 @@ export default function App() {
 
   async function handleUpload(file: File): Promise<void> {
     try {
-      const text = await file.text();
-      const language = /[؀-ۿ]/.test(text) ? "ar" : "en";
-      const record = await uploadContract({ title: file.name, language, text });
+      const record = await uploadContractFile(file);
       await refreshList();
       setSelected(record);
       resetRun();
-    } catch {
-      setToast(t.uploadFailed);
+      const redacted = (record.redactions ?? []).reduce((sum, r) => sum + r.count, 0);
+      if (redacted > 0) setToast(t.redactedToast.replace("{n}", String(redacted)));
+    } catch (err) {
+      const status = err instanceof UploadError ? err.status : 0;
+      setToast(
+        status === 413 ? t.uploadTooLarge : status === 415 ? t.dropInvalid : status === 422 ? t.uploadUnreadable : t.uploadFailed,
+      );
     }
   }
 

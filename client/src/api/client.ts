@@ -65,6 +65,32 @@ export async function uploadContract(input: {
   return parseJson<ContractRecord>(res);
 }
 
+export interface UploadedContract extends ContractRecord {
+  readonly redactions?: ReadonlyArray<{ kind: string; count: number }>;
+}
+
+export class UploadError extends Error {
+  constructor(
+    readonly status: number,
+    readonly code: string,
+    message: string,
+  ) {
+    super(message);
+  }
+}
+
+/** Multipart upload of a PDF, DOCX, TXT or MD file; the server extracts text and redacts personal data. */
+export async function uploadContractFile(file: File): Promise<UploadedContract> {
+  const form = new FormData();
+  form.append("file", file, file.name);
+  const res = await fetch(`${base}/api/contracts/upload-file`, { method: "POST", headers: authHeaders(), body: form });
+  const data = (await res.json().catch(() => ({}))) as Partial<UploadedContract> & { error?: string; message?: string };
+  if (!res.ok) {
+    throw new UploadError(res.status, data.error ?? "", data.message ?? "Upload failed");
+  }
+  return data as UploadedContract;
+}
+
 export async function startWorkflow(input: {
   contractId: string;
   language: "ar" | "en" | "both";

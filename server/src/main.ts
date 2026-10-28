@@ -16,6 +16,7 @@ const app = createApp({
   events: services.events,
   catalog: services.catalog,
   rag: services.rag,
+  ingest: services.ingest,
 });
 
 const server = app.listen(config.port, config.host, () => {
