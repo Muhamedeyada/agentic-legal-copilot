@@ -40,7 +40,7 @@ Contract (AR|EN) → Clause Extractor → Risk Assessor ─┐
 4. **Assess.** Risk Assessor consumes clauses + retrieval hits; severity from a **matrix**, not the LLM.
 5. **Draft.** Memo Drafter writes a **pending** bilingual memo (citations required).
 6. **Gate.** Counsel approve / reject / edit-and-approve. `draftMemo` is 403 until then.
-7. **Stream.** Presentation emits SSE (`AGENT_START`, `RISK_FOUND`, `AWAITING_APPROVAL`, …).
+7. **Stream.** Presentation emits SSE (`AGENT_START`, `RISK_FOUND`, `TOKEN_CHUNK`, `AWAITING_APPROVAL`, …). The drafter requests `stream: true` from the provider, decodes only the memo body fields out of the streamed JSON, and publishes them as `TOKEN_CHUNK`; the UI types them into the memo pane until the stored memo replaces them.
 
 ### A.4 Cross-lingual retrieval (T1)
 

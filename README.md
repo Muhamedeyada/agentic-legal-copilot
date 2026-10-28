@@ -174,7 +174,7 @@ All routes except health need `Authorization: Bearer <token>` (401 otherwise). A
 | `POST` | `/api/contracts/upload-file` | Multipart `file`: PDF / DOCX / TXT / MD → **201**; 415 unsupported, 422 no text |
 | `POST` | `/api/chat` | Hybrid RAG (BM25 + dense, RRF); 404 if refuse |
 | `POST` | `/api/workflow/run` | **202** `{ runId }` immediately |
-| `GET` | `/api/workflow/stream/:runId` | SSE agent events (`?access_token=` allowed) |
+| `GET` | `/api/workflow/stream/:runId` | SSE agent events + `TOKEN_CHUNK` memo text as it is written (`?access_token=` allowed) |
 | `GET` | `/api/workflow/:runId` | Run snapshot |
 | `POST` | `/api/workflow/:runId/cancel` | **202** |
 | `POST` | `/api/workflow/:runId/approve\|reject\|edit-and-approve` | Counsel only; 409 if not `AWAITING_APPROVAL` |

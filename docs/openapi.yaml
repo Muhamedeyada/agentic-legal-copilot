@@ -265,6 +265,9 @@ paths:
                 example: |
                   event: AGENT_DONE
                   data: {"type":"AGENT_DONE","runId":"…","agentId":"clause_extractor","tokenUsage":{"promptTokens":2313,"completionTokens":2406}}
+
+                  event: TOKEN_CHUNK
+                  data: {"type":"TOKEN_CHUNK","runId":"…","agentId":"memo_drafter","field":"bodyEn","deltaText":"## Material dev"}
         "401": { $ref: "#/components/responses/Unauthenticated" }
         "404": { $ref: "#/components/responses/RunNotFound" }
         "429": { $ref: "#/components/responses/RateLimited" }
@@ -876,6 +879,7 @@ components:
         - $ref: "#/components/schemas/HitlDecisionEvent"
         - $ref: "#/components/schemas/RunFailedEvent"
         - $ref: "#/components/schemas/RunCancelledEvent"
+        - $ref: "#/components/schemas/TokenChunkEvent"
         - $ref: "#/components/schemas/PingEvent"
       discriminator:
         propertyName: type
@@ -889,6 +893,7 @@ components:
           HITL_DECISION: "#/components/schemas/HitlDecisionEvent"
           RUN_FAILED: "#/components/schemas/RunFailedEvent"
           RUN_CANCELLED: "#/components/schemas/RunCancelledEvent"
+          TOKEN_CHUNK: "#/components/schemas/TokenChunkEvent"
           ping: "#/components/schemas/PingEvent"
     RunEventBase:
       type: object
@@ -897,6 +902,24 @@ components:
         type: { type: string }
         runId: { type: string }
         at: { type: string, format: date-time }
+    TokenChunkEvent:
+      description: |
+        Memo text while the drafter's model writes it, decoded from the model's JSON (only `bodyEn` /
+        `bodyAr`, never raw JSON). Append `deltaText` to `field`. `reset: true` (empty `deltaText`) means
+        discard everything streamed so far: that turn became a tool call, the step was retried, or the
+        agent fell back to the deterministic memo. The run snapshot's memo, available once
+        `AWAITING_APPROVAL` arrives, is authoritative and sanitized; render chunks as plain text.
+        On reconnect, consecutive chunks are replayed merged into one event.
+      allOf:
+        - $ref: "#/components/schemas/RunEventBase"
+        - type: object
+          required: [agentId, field, deltaText]
+          properties:
+            type: { type: string, enum: [TOKEN_CHUNK] }
+            agentId: { type: string, enum: [memo_drafter] }
+            field: { type: string, enum: [bodyEn, bodyAr] }
+            deltaText: { type: string }
+            reset: { type: boolean, enum: [true] }
     AgentStartEvent:
       allOf:
         - $ref: "#/components/schemas/RunEventBase"

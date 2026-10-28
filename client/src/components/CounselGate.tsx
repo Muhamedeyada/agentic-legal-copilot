@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import { createPortal } from "react-dom";
-import type { ReviewMemo, RiskFinding, WorkflowSnapshot } from "../api/types";
+import type { LiveMemo, ReviewMemo, RiskFinding, WorkflowSnapshot } from "../api/types";
 import type { copy, UiLocale } from "../copy";
 import { buildMemoMarkdown, downloadTextFile } from "../lib/export-memo";
 import { mergeMemoWithInserts } from "../lib/playbook-insert";
@@ -20,6 +20,7 @@ interface Props {
   contractTitle: string;
   findings: RiskFinding[];
   drafting: boolean;
+  liveMemo: LiveMemo;
   draft: string;
   onDraftChange: Dispatch<SetStateAction<string>>;
   draftPulse: number;
@@ -34,6 +35,7 @@ export function CounselGate({
   contractTitle,
   findings,
   drafting,
+  liveMemo,
   draft,
   onDraftChange,
   draftPulse,
@@ -108,11 +110,7 @@ export function CounselGate({
         </p>
       ) : null}
       {drafting && !memo ? (
-        <div className="mt-3 space-y-2">
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-11/12" />
-          <Skeleton className="h-24 w-full" />
-        </div>
+        <LiveDraft t={t} locale={locale} liveMemo={liveMemo} />
       ) : (
         <MemoBody memo={memo} />
       )}
@@ -147,6 +145,43 @@ export function CounselGate({
         )
       : null}
     </>
+  );
+}
+
+/** The memo as the model writes it; replaced by the stored memo once drafting finishes. */
+function LiveDraft({ t, locale, liveMemo }: { t: T; locale: UiLocale; liveMemo: LiveMemo }) {
+  const scroller = useRef<HTMLDivElement>(null);
+  const preferAr = locale === "ar" ? liveMemo.bodyAr.length > 0 : liveMemo.bodyEn.length === 0;
+  const text = preferAr ? liveMemo.bodyAr : liveMemo.bodyEn;
+
+  useEffect(() => {
+    const el = scroller.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [text]);
+
+  if (text.length === 0) {
+    return (
+      <div className="mt-3 space-y-2">
+        <Skeleton className="h-4 w-full" />
+        <Skeleton className="h-4 w-11/12" />
+        <Skeleton className="h-24 w-full" />
+      </div>
+    );
+  }
+  return (
+    <div className="mt-3 rounded-lg border border-line bg-surface-muted p-3" aria-busy="true">
+      <p role="status" className="text-[10px] font-bold tracking-widest text-muted uppercase">
+        {t.memoStreaming}
+      </p>
+      <div
+        ref={scroller}
+        dir={preferAr ? "rtl" : "ltr"}
+        className="mt-1.5 max-h-72 overflow-y-auto font-sans text-xs leading-relaxed whitespace-pre-wrap text-ink"
+      >
+        {text}
+        <span className="typing-caret" aria-hidden="true" />
+      </div>
+    </div>
   );
 }
 

@@ -8,7 +8,20 @@ export class RunEventBus {
 
   publish(event: WorkflowStreamEvent): void {
     const bucket = this.history.get(event.runId) ?? [];
-    bucket.push(event);
+    const last = bucket.at(-1);
+    // Token chunks are merged in the replay history so a late subscriber gets the text so far in one
+    // event, and hundreds of deltas cannot evict clause/risk events from the capped history.
+    if (
+      event.type === "TOKEN_CHUNK" &&
+      !event.reset &&
+      last?.type === "TOKEN_CHUNK" &&
+      !last.reset &&
+      last.field === event.field
+    ) {
+      bucket[bucket.length - 1] = { ...last, at: event.at, deltaText: last.deltaText + event.deltaText };
+    } else {
+      bucket.push(event);
+    }
     if (bucket.length > HISTORY_CAP) {
       bucket.splice(0, bucket.length - HISTORY_CAP);
     }

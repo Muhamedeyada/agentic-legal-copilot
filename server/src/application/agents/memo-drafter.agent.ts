@@ -13,6 +13,7 @@ import type { PlaybookPort } from "../../domain/ports/playbook.port.js";
 import type { PlaybookClause } from "../../domain/entities/playbook.js";
 import { MemoDrafterOutputZ, parseContract, toReviewMemo } from "./schemas.js";
 import { parseJsonObject } from "./json.js";
+import { JsonStringFieldStream } from "./json-field-stream.js";
 import type { MemoDrafterOutput } from "./contracts.js";
 import type { ToolRegistry, ToolContext } from "../tools/registry.js";
 import type { RetrievalOutput } from "../tools/retrieval.tool.js";
@@ -32,6 +33,14 @@ export const MAX_REACT_ITERATIONS = 12;
 const MAX_TOOL_CALLS_PER_TURN = 4;
 const MAX_EXCERPT_CLAUSES = 6;
 const CLAUSE_EXCERPT_CHARS = 1_200;
+
+export type MemoBodyField = "bodyEn" | "bodyAr";
+
+/** Live view of the memo while the model writes it. A reset means discard what was streamed so far. */
+export interface MemoStreamHooks {
+  readonly onMemoDelta?: (field: MemoBodyField, deltaText: string) => void;
+  readonly onMemoReset?: () => void;
+}
 
 export interface ReactToolStep {
   readonly iteration: number;
@@ -226,6 +235,39 @@ function flaggedExcerpts(input: MemoDrafterInput): string {
   return wrapUntrustedDocument(input.contractId, JSON.stringify({ excerpts }));
 }
 
+/** Forwards memo body text from each streamed turn; tracks whether the client must discard it. */
+class LiveMemo {
+  private streamed = false;
+  private readonly fields: readonly MemoBodyField[];
+
+  constructor(
+    language: MemoDrafterInput["language"],
+    private readonly hooks: MemoStreamHooks,
+  ) {
+    this.fields = language === "en" ? ["bodyEn"] : language === "ar" ? ["bodyAr"] : ["bodyEn", "bodyAr"];
+  }
+
+  get enabled(): boolean {
+    return this.hooks.onMemoDelta !== undefined;
+  }
+
+  turn(): (delta: string) => void {
+    const parser = new JsonStringFieldStream(this.fields, (field, text) => {
+      const clean = text.replace(/\u0000/g, "");
+      if (clean.length === 0) return;
+      this.streamed = true;
+      this.hooks.onMemoDelta?.(field, clean);
+    });
+    return (delta) => parser.push(delta);
+  }
+
+  discard(): void {
+    if (!this.streamed) return;
+    this.streamed = false;
+    this.hooks.onMemoReset?.();
+  }
+}
+
 export class MemoDrafterAgent {
   constructor(
     private readonly completion: CompletionPort,
@@ -243,6 +285,7 @@ export class MemoDrafterAgent {
   async run(
     input: MemoDrafterInput,
     ctx: ToolContext,
+    hooks: MemoStreamHooks = {},
   ): Promise<{
     output: MemoDrafterOutput;
     tokenUsage: TokenUsage;
@@ -262,9 +305,10 @@ export class MemoDrafterAgent {
     let provider = "deterministic";
     let iterations = 0;
     let toolSteps: readonly ReactToolStep[] = [];
+    const live = new LiveMemo(input.language, hooks);
 
     try {
-      const outcome = await this.react(input, fallback, ctx);
+      const outcome = await this.react(input, fallback, ctx, live);
       ({ tokenUsage, provider, iterations, toolSteps, hits } = outcome);
       bodyEn = sanitizeModelText(outcome.bodyEn ?? bodyEn);
       bodyAr = sanitizeModelText(outcome.bodyAr ?? bodyAr);
@@ -274,6 +318,7 @@ export class MemoDrafterAgent {
         ({ tokenUsage, provider, iterations, toolSteps } = err);
       }
       fallbackReason = err instanceof Error ? err.message : String(err);
+      live.discard();
       const extra = await this.tools.invoke<unknown, RetrievalOutput>(
         "retrieval_tool",
         { query: "mandatory liability termination governing law indemnity", topK: 4 },
@@ -331,6 +376,7 @@ export class MemoDrafterAgent {
     input: MemoDrafterInput,
     fallback: { bodyEn: string; bodyAr: string },
     ctx: ToolContext,
+    live: LiveMemo,
   ): Promise<ReactOutcome> {
     const user = `${JSON.stringify({
       contractId: input.contractId,
@@ -348,12 +394,14 @@ export class MemoDrafterAgent {
     try {
       while (iteration < this.maxIterations) {
         iteration += 1;
+        live.discard();
         const result = await this.completion.complete({
           jsonSchemaName: "memo_drafter_output",
           system: REACT_SYSTEM,
           user,
           history,
           tools: MEMO_DRAFTER_TOOL_SPECS,
+          ...(live.enabled ? { onTextDelta: live.turn() } : {}),
         });
         tokenUsage = addUsage(tokenUsage, result.usage);
         provider = result.providerId;

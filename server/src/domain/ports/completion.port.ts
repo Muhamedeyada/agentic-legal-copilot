@@ -23,6 +23,8 @@ export interface CompletionRequest {
   readonly jsonSchemaName?: string;
   readonly history?: readonly ConversationTurn[];
   readonly tools?: readonly ToolSpec[];
+  /** When set, adapters that can stream report message content as it arrives; the result is still complete. */
+  readonly onTextDelta?: (delta: string) => void;
 }
 
 export interface TokenUsageHint {

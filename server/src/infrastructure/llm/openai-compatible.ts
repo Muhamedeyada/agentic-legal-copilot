@@ -24,12 +24,38 @@ interface WireToolCall {
   readonly function?: { readonly name?: string; readonly arguments?: string };
 }
 
+interface WireUsage {
+  readonly prompt_tokens?: number;
+  readonly completion_tokens?: number;
+}
+
 interface ChatCompletionResponse {
   readonly model?: string;
   readonly choices?: ReadonlyArray<{
     readonly message?: { readonly content?: string | null; readonly tool_calls?: readonly WireToolCall[] };
   }>;
-  readonly usage?: { readonly prompt_tokens?: number; readonly completion_tokens?: number };
+  readonly usage?: WireUsage;
+}
+
+interface WireToolCallDelta extends WireToolCall {
+  readonly index?: number;
+}
+
+interface ChatCompletionChunk {
+  readonly model?: string;
+  readonly choices?: ReadonlyArray<{
+    readonly delta?: { readonly content?: string | null; readonly tool_calls?: readonly WireToolCallDelta[] };
+  }>;
+  readonly usage?: WireUsage | null;
+  readonly error?: { readonly message?: string };
+}
+
+/** A reply read either from one JSON body or from accumulated stream chunks. */
+interface WireReply {
+  readonly model?: string;
+  readonly content: string;
+  readonly toolCalls: readonly WireToolCall[];
+  readonly usage?: WireUsage;
 }
 
 const MAX_RETRY_DELAY_MS = 5_000;
@@ -101,6 +127,7 @@ export async function chatComplete(endpoint: ChatEndpoint, input: CompletionRequ
         ? { response_format: { type: "json_object" } }
         : {}),
     ...(endpoint.maxTokens ? { max_tokens: endpoint.maxTokens } : {}),
+    ...(input.onTextDelta ? { stream: true, stream_options: { include_usage: true } } : {}),
   });
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   if (endpoint.apiKey) {
@@ -145,10 +172,10 @@ export async function chatComplete(endpoint: ChatEndpoint, input: CompletionRequ
       throw new Error(message);
     }
 
-    const data = (await res.json()) as ChatCompletionResponse;
-    const message = data.choices?.[0]?.message;
-    const toolCalls = fromWireToolCalls(message?.tool_calls);
-    const text = typeof message?.content === "string" ? message.content : "";
+    const isStream = (res.headers.get("content-type") ?? "").includes("text/event-stream");
+    const data = isStream && res.body ? await readStream(res.body) : readJson((await res.json()) as ChatCompletionResponse);
+    const toolCalls = fromWireToolCalls(data.toolCalls);
+    const text = data.content;
     if (text.length === 0 && toolCalls.length === 0) {
       throw new Error(`${endpoint.providerId}: completion had no message content.`);
     }
@@ -163,6 +190,102 @@ export async function chatComplete(endpoint: ChatEndpoint, input: CompletionRequ
         completionTokens: typeof completion === "number" ? completion : estimateTokens(text),
       },
       ...(toolCalls.length > 0 ? { toolCalls } : {}),
+    };
+  }
+
+  function readJson(data: ChatCompletionResponse): WireReply {
+    const message = data.choices?.[0]?.message;
+    const content = typeof message?.content === "string" ? message.content : "";
+    // A server that ignored `stream: true` still gets its text shown once.
+    if (content.length > 0) input.onTextDelta?.(content);
+    return {
+      ...(data.model ? { model: data.model } : {}),
+      content,
+      toolCalls: message?.tool_calls ?? [],
+      ...(data.usage ? { usage: data.usage } : {}),
+    };
+  }
+
+  /**
+   * Reads `data:` lines from an OpenAI-style SSE body, forwarding content deltas as they arrive and
+   * stitching tool-call fragments by index. Once a delta has been forwarded the request is never
+   * retried, so the caller never sees duplicated text.
+   */
+  async function readStream(stream: ReadableStream<Uint8Array>): Promise<WireReply> {
+    const reader = stream.getReader();
+    const decoder = new TextDecoder();
+    const calls = new Map<number, { id?: string; type?: string; name: string; arguments: string }>();
+    let buffered = "";
+    let content = "";
+    let model: string | undefined;
+    let usage: WireUsage | undefined;
+    let done = false;
+
+    const handle = (line: string): void => {
+      if (!line.startsWith("data:")) return;
+      const payload = line.slice(5).trim();
+      if (payload === "[DONE]") {
+        done = true;
+        return;
+      }
+      if (payload.length === 0) return;
+      const chunk = JSON.parse(payload) as ChatCompletionChunk;
+      if (chunk.error) {
+        throw new Error(`${endpoint.providerId}: stream error — ${chunk.error.message ?? "unknown"}`);
+      }
+      model ??= chunk.model;
+      if (chunk.usage) usage = chunk.usage;
+      const delta = chunk.choices?.[0]?.delta;
+      if (typeof delta?.content === "string" && delta.content.length > 0) {
+        content += delta.content;
+        input.onTextDelta?.(delta.content);
+      }
+      for (const part of delta?.tool_calls ?? []) {
+        const index = part.index ?? 0;
+        const call = calls.get(index) ?? { name: "", arguments: "" };
+        if (part.id) call.id = part.id;
+        if (part.type) call.type = part.type;
+        call.name += part.function?.name ?? "";
+        call.arguments += part.function?.arguments ?? "";
+        calls.set(index, call);
+      }
+    };
+
+    try {
+      while (!done) {
+        const { value, done: ended } = await reader.read();
+        if (ended) break;
+        buffered += decoder.decode(value, { stream: true });
+        const lines = buffered.split(/\r?\n/);
+        buffered = lines.pop() ?? "";
+        for (const line of lines) {
+          handle(line);
+          if (done) break;
+        }
+      }
+      buffered += decoder.decode();
+      if (!done && buffered.length > 0) handle(buffered);
+    } catch (err) {
+      if (err instanceof Error && (err.name === "TimeoutError" || err.name === "AbortError")) {
+        throw new Error(`${endpoint.providerId}: stream stalled past ${endpoint.timeoutMs}ms.`);
+      }
+      if (err instanceof Error && err.message.startsWith(`${endpoint.providerId}:`)) throw err;
+      throw new Error(`${endpoint.providerId}: stream interrupted (${err instanceof Error ? err.message : String(err)}).`);
+    } finally {
+      reader.releaseLock();
+    }
+
+    return {
+      ...(model ? { model } : {}),
+      content,
+      toolCalls: [...calls.entries()]
+        .sort(([a], [b]) => a - b)
+        .map(([, c]) => ({
+          ...(c.id ? { id: c.id } : {}),
+          ...(c.type ? { type: c.type } : {}),
+          function: { name: c.name, arguments: c.arguments },
+        })),
+      ...(usage ? { usage } : {}),
     };
   }
 }

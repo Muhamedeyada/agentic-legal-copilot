@@ -276,8 +276,25 @@ html[dir="rtl"] .contract-body {
   .step-pulse,
   .status-pulse,
   .skeleton-bar-fill,
+  .typing-caret,
   .inspector-sheet {
     animation: none;
+  }
+}
+
+.typing-caret {
+  display: inline-block;
+  width: 0.45em;
+  height: 1em;
+  margin-inline-start: 1px;
+  vertical-align: text-bottom;
+  background: currentColor;
+  animation: caret-blink 1s steps(1) infinite;
+}
+
+@keyframes caret-blink {
+  50% {
+    opacity: 0;
   }
 }
 

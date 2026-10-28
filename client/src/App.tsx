@@ -50,7 +50,7 @@ export default function App() {
   const [reason, setReason] = useState("");
   const [toast, setToast] = useState<string | null>(null);
   const [rightTab, setRightTab] = useState<RightTab>("risks");
-  const { snapshot, setSnapshot, clauses, findings, progress, lastEvent, liveTokens } = useWorkflowStream(runId);
+  const { snapshot, setSnapshot, clauses, findings, progress, lastEvent, liveTokens, liveMemo } = useWorkflowStream(runId);
 
   const liveClauses = snapshot?.clauses.length ? snapshot.clauses : clauses;
   const liveFindings = snapshot?.findings.length ? snapshot.findings : findings;
@@ -148,7 +148,11 @@ export default function App() {
   const ragCitations = rag?.citations ?? [];
   const tabs: ReadonlyArray<{ id: RightTab; label: string; badge?: number; pulse?: boolean }> = [
     { id: "risks", label: t.riskTab, ...(liveFindings.length > 0 ? { badge: liveFindings.length } : {}) },
-    { id: "memo", label: t.memoTitle, pulse: progress.gate === "waiting" },
+    {
+      id: "memo",
+      label: t.memoTitle,
+      pulse: progress.gate === "waiting" || (progress.memo === "active" && (liveMemo.bodyEn + liveMemo.bodyAr).length > 0),
+    },
     { id: "chat", label: t.rag },
     { id: "trace", label: t.trace },
   ];
@@ -280,6 +284,7 @@ export default function App() {
                       contractTitle={selected?.title ?? snapshot?.contractId ?? "contract"}
                       findings={liveFindings}
                       drafting={progress.memo === "active"}
+                      liveMemo={liveMemo}
                       draft={memoDraft}
                       onDraftChange={setMemoDraft}
                       draftPulse={draftPulse}

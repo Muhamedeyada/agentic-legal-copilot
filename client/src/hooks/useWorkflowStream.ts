@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { getRun, workflowStreamUrl } from "../api/client";
-import type { ExtractedClause, RiskFinding, StreamEvent, WorkflowSnapshot } from "../api/types";
+import type { ExtractedClause, LiveMemo, RiskFinding, StreamEvent, WorkflowSnapshot } from "../api/types";
 
 export interface LiveProgress {
   extract: "idle" | "active" | "done";
@@ -8,6 +8,8 @@ export interface LiveProgress {
   memo: "idle" | "active" | "done";
   gate: "idle" | "waiting" | "done";
 }
+
+const emptyMemo: LiveMemo = { bodyEn: "", bodyAr: "" };
 
 const idleProgress: LiveProgress = {
   extract: "idle",
@@ -24,6 +26,7 @@ export function useWorkflowStream(runId: string | null) {
   const [lastEvent, setLastEvent] = useState<string | null>(null);
   const [liveTokens, setLiveTokens] = useState(0);
   const [streamError, setStreamError] = useState<string | null>(null);
+  const [liveMemo, setLiveMemo] = useState<LiveMemo>(emptyMemo);
   const sourceRef = useRef<EventSource | null>(null);
 
   useEffect(() => {
@@ -34,9 +37,27 @@ export function useWorkflowStream(runId: string | null) {
       setProgress(idleProgress);
       setLastEvent(null);
       setLiveTokens(0);
+      setLiveMemo(emptyMemo);
       return;
     }
     setLiveTokens(0);
+    setLiveMemo(emptyMemo);
+
+    // Token chunks arrive faster than the screen refreshes; append them once per frame.
+    let pending: LiveMemo = { ...emptyMemo };
+    let frame = 0;
+    const flushTokens = (): void => {
+      frame = 0;
+      const add = pending;
+      pending = { ...emptyMemo };
+      setLiveMemo((prev) => ({ bodyEn: prev.bodyEn + add.bodyEn, bodyAr: prev.bodyAr + add.bodyAr }));
+    };
+    const clearTokens = (): void => {
+      if (frame) cancelAnimationFrame(frame);
+      frame = 0;
+      pending = { ...emptyMemo };
+      setLiveMemo(emptyMemo);
+    };
 
     const apply = (event: StreamEvent): void => {
       setLastEvent(event.type);
@@ -48,6 +69,15 @@ export function useWorkflowStream(runId: string | null) {
       }
       if (event.type === "AGENT_START" && event.agentId === "memo_drafter") {
         setProgress((p) => ({ ...p, risk: "done", memo: "active" }));
+        clearTokens();
+      }
+      if (event.type === "TOKEN_CHUNK") {
+        if (event.reset) {
+          clearTokens();
+        } else if (event.deltaText && (event.field === "bodyEn" || event.field === "bodyAr")) {
+          pending[event.field] += event.deltaText;
+          if (!frame) frame = requestAnimationFrame(flushTokens);
+        }
       }
       if (event.type === "AGENT_DONE" && event.totalTokenUsage) {
         setLiveTokens(event.totalTokenUsage.promptTokens + event.totalTokenUsage.completionTokens);
@@ -85,6 +115,7 @@ export function useWorkflowStream(runId: string | null) {
       "HITL_DECISION",
       "RUN_FAILED",
       "RUN_CANCELLED",
+      "TOKEN_CHUNK",
     ];
     for (const type of types) {
       source.addEventListener(type, (msg: MessageEvent<string>) => {
@@ -100,10 +131,11 @@ export function useWorkflowStream(runId: string | null) {
     };
 
     return () => {
+      if (frame) cancelAnimationFrame(frame);
       source.close();
       sourceRef.current = null;
     };
   }, [runId]);
 
-  return { snapshot, setSnapshot, clauses, findings, progress, lastEvent, streamError, liveTokens };
+  return { snapshot, setSnapshot, clauses, findings, progress, lastEvent, streamError, liveTokens, liveMemo };
 }
