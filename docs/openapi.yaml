@@ -110,7 +110,7 @@ paths:
   /api/contracts/upload:
     post:
       tags: [Contracts]
-      summary: Upload contract text (plain text / Markdown, held in memory)
+      summary: Upload contract text as JSON (personal data is redacted before storage)
       operationId: uploadContract
       requestBody:
         required: true
@@ -119,13 +119,61 @@ paths:
             schema: { $ref: "#/components/schemas/UploadContractRequest" }
       responses:
         "201":
-          description: Stored. `source` is `upload` and `id` starts with `upload-`.
+          description: Stored with personal data redacted. `source` is `upload` and `id` starts with `upload-`.
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/ContractRecord" }
+              schema: { $ref: "#/components/schemas/UploadedContract" }
         "400": { $ref: "#/components/responses/InvalidInput" }
         "401": { $ref: "#/components/responses/Unauthenticated" }
         "413": { $ref: "#/components/responses/PayloadTooLarge" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+
+  /api/contracts/upload-file:
+    post:
+      tags: [Contracts]
+      summary: Upload a contract file (PDF, DOCX, TXT, MD)
+      description: |
+        Multipart upload. The server extracts plain text (PDF via pdf-parse; DOCX via mammoth, keeping
+        heading styles and auto-numbering as clause headings), redacts personal data (email, IBAN, card,
+        phone, national ID), detects the language and stores the contract. Scanned PDFs without a text
+        layer are rejected with 422: OCR is not supported. Legacy `.doc` is not supported.
+      operationId: uploadContractFile
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: "`.pdf`, `.docx`, `.txt`, `.md`; at most `MAX_UPLOAD_MB` (default 10)."
+                title:
+                  type: string
+                  description: Defaults to the file name.
+      responses:
+        "201":
+          description: Stored. `text` is the redacted extracted text.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UploadedContract" }
+        "400": { $ref: "#/components/responses/InvalidInput" }
+        "401": { $ref: "#/components/responses/Unauthenticated" }
+        "413": { $ref: "#/components/responses/PayloadTooLarge" }
+        "415":
+          description: Unsupported file type.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example: { error: UNSUPPORTED_DOCUMENT, message: "old.doc: only PDF, DOCX, TXT and MD files are supported." }
+        "422":
+          description: The file could not be read, or contains no text layer.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              example: { error: UNREADABLE_DOCUMENT, message: "scan.pdf: no text found. Scanned PDFs need OCR, which is not supported; export the contract with a text layer." }
         "429": { $ref: "#/components/responses/RateLimited" }
 
   /api/chat:
@@ -643,6 +691,21 @@ components:
           required: [text]
           properties:
             text: { type: string }
+    UploadedContract:
+      allOf:
+        - $ref: "#/components/schemas/ContractRecord"
+        - type: object
+          required: [redactions]
+          properties:
+            redactions:
+              type: array
+              description: Personal data removed before storage, by kind.
+              items:
+                type: object
+                required: [kind, count]
+                properties:
+                  kind: { type: string, enum: [email, iban, card, phone, national_id] }
+                  count: { type: integer, minimum: 1 }
     UploadContractRequest:
       type: object
       required: [text]

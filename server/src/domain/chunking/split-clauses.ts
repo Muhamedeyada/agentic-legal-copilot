@@ -10,7 +10,7 @@ export interface SplitClause {
 }
 
 const HEADING =
-  /(?:^|\n)[ \t]*(?:#{1,3}[ \t]+)?(?:(?:\d{1,2}[.)])|(?:Article|ARTICLE|Clause|CLAUSE|بند|المادة|الماده)[ \t]*\d*)[^\n]*/g;
+  /(?:^|\n)[ \t]*(?:#{2,3}[ \t]+\S[^\n]*|(?:#{1,3}[ \t]+)?(?:[0-9٠-٩۰-۹]{1,2}[.)]|(?:Article|ARTICLE|Clause|CLAUSE|بند|المادة|الماده)[ \t]*[0-9٠-٩۰-۹]*)[^\n]*)/g;
 
 function detectLanguage(text: string): Locale {
   const arabic = (text.match(/[\u0600-\u06FF]/g) ?? []).length;

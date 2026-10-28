@@ -37,7 +37,7 @@ This product is a **governed copilot**, not an autonomous lawyer. It extracts, r
 - Training or fine-tuning on real client data.
 - Fully autonomous send/export without a human.
 - Production identity provider / role IAM (paralegal vs Counsel tokens).
-- PDF/DOCX binary parsers and a hosted vector database.
+- OCR for scanned PDFs, legacy `.doc`, and a hosted vector database.
 
 ---
 
@@ -55,7 +55,7 @@ This product is a **governed copilot**, not an autonomous lawyer. It extracts, r
 
 | ID | Requirement | Priority | Notes |
 | --- | --- | --- | --- |
-| BR-01 | Upload contract files with size limits | Must | **Partial:** JSON/text upload + 32-file catalog. PDF/DOCX MIME pipeline deferred |
+| BR-01 | Upload contract files with size limits | Must | PDF / DOCX / TXT / MD multipart upload (`MAX_UPLOAD_MB`), text extraction, PII redaction before storage, SQLite catalog. No OCR |
 | BR-02 | Detect and tag language per document and per clause (`ar` / `en` / `mixed`) | Must | Heading splitter + script-count detector |
 | BR-03 | Extract clauses into a versioned typed schema | Must | Clause Extractor + Zod; deterministic fallback |
 | BR-04 | Classify contractual risk with severity and rationale | Must | Risk Assessor + `risk_calculator_tool`; category-specific deviation notes name a defect only when a deterministic check finds it |
@@ -88,7 +88,7 @@ This product is a **governed copilot**, not an autonomous lawyer. It extracts, r
 
 | BR ID | Description | Design | Architecture | Security | Evaluation | Status |
 | --- | --- | --- | --- | --- | --- | --- |
-| BR-01 | Upload / catalog | SYSTEM-DESIGN G-06 | File catalog adapter | A03 size cap | — | **Partial** (text only) |
+| BR-01 | Upload / catalog | SYSTEM-DESIGN G-06 | `IngestDocumentUseCase` + `DocumentTextExtractor` | A03 size cap, type allow-list | `document-ingestion.test.ts` | **Complete** (no OCR) |
 | BR-02 | Language tagging | G-07 | `splitClauses` + `Locale` | — | Lang on chunks | **Complete** (heuristic) |
 | BR-03 | Clause extraction | G-08 | ADR-0003; Zod schemas | LLM05 schema | Schema fixture in eval | **Complete** |
 | BR-04 | Risk assessment | G-11 | `risk_calculator_tool` | LLM09 not LLM-scored | G-18, G-19 | **Complete** |
@@ -108,7 +108,7 @@ This product is a **governed copilot**, not an autonomous lawyer. It extracts, r
 
 | Item | Why deferred | Next increment |
 | --- | --- | --- |
-| PDF/DOCX ingest | Assessment corpus is markdown; parsers add supply-chain surface | MIME allow-list + `pdf-parse` / mammoth behind infra |
+| OCR / legacy `.doc` | Scanned PDFs are rejected (422) instead of OCR'd; parsers add supply-chain surface | OCR adapter behind `DocumentTextExtractorPort`; malware scanning |
 | Semantic dense retrieval | BM25 + RRF ship with a hashed embedding that mostly echoes lexical signal | Plug a multilingual `EmbeddingPort` adapter and calibrate a dense floor |
 | Hosted completion HTTP | Classroom must not require a key | Wire SDK only in `infrastructure/llm/hosted.adapter.ts` |
 | Production auth / roles | Demo is local; `DEMO_API_TOKEN` unused | Token middleware + Counsel vs Paralegal |

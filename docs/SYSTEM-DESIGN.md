@@ -68,7 +68,7 @@ Target: multilingual embeddings (or dual encode), `lang` metadata, never silent 
 | G-03 | SSE agent events | Typed progress | `/api/workflow/stream/:runId` + event bus | Legacy `/events` is heartbeat only | — | **Done** |
 | G-04 | Counsel memo gate | 403 until approval | Orchestrator + UI CounselGate + G-20 | Approvals persist in SQLite; a run awaiting Counsel survives a restart | — | **Done** |
 | G-05 | React RTL workstation | AR/EN, `dir`, review UX | Full workstation (stepper, risk, chat, traces) | No mobile-first polish | 1–2 w design QA | **Done** |
-| G-06 | Document ingest | PDF/DOCX/TXT, MIME | Markdown corpus + JSON text upload + char cap | No PDF/DOCX. Trade-off: smaller supply chain for the demo | 1–2 w parsers + malware scanning | **Partial** |
+| G-06 | Document ingest | PDF/DOCX/TXT, MIME | Multipart PDF/DOCX/TXT/MD → text (pdf-parse, mammoth keeping heading styles + auto-numbering) → PII redaction → SQLite | No OCR (scanned PDFs → 422), no `.doc`, no malware scan | 1–2 w parsers + malware scanning | **Done** (no OCR) |
 | G-07 | Language detection | Per doc / clause | Script-count + filename `-AR-`/`-EN-` | Weak on mixed legal French/AR | 3–5 d detector port + CLD3 | **Partial** |
 | G-08 | Clause Extractor | Typed schema | Agent + Zod + heading fallback; headings decide the category before body cues | Heading-less clauses still rely on keyword cues | 2–3 d strict structured outputs | **Done** |
 | G-09 | Vector index | Multilingual embed | Port + in-memory stub **throws**; retrieval ranks in-memory pools with hashed embeddings | No persistent index or ANN recall | 1–2 w persist + ingest pipeline | **Open** |
@@ -89,7 +89,7 @@ Target: multilingual embeddings (or dual encode), `lang` metadata, never silent 
 | --- | --- | --- |
 | Wire hosted embeddings | 1–2 | Token spend; cap already in config |
 | Hybrid retrieve in prod (Qdrant + BM25) | 3–5 | Vector hosting + re-index jobs |
-| PDF/DOCX + OCR | 2–4 | CPU; malware scanning |
+| OCR for scanned PDFs | 2–4 | CPU; malware scanning |
 | Durable audit + SSO | 3–6 | IdP contract |
 | Keep AR retrieval honest | Ongoing | Gold-set refresh each corpus change |
 

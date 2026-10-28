@@ -6,6 +6,7 @@ import type { CounselApprovalUseCase } from "../../application/hitl/counsel-appr
 import type { RunEventBus } from "../../application/orchestration/event-bus.js";
 import type { ContractCatalogPort } from "../../domain/ports/contract-catalog.port.js";
 import type { DirectRagUseCase } from "../../application/chat/direct-rag.js";
+import type { IngestDocumentUseCase } from "../../application/ingestion/ingest-document.js";
 import { healthRouter } from "./routes/health.js";
 import { sseRouter } from "./routes/sse.js";
 import { reviewsRouter } from "./routes/reviews.js";
@@ -22,6 +23,7 @@ export interface HttpDeps {
   readonly events: RunEventBus;
   readonly catalog: ContractCatalogPort;
   readonly rag: DirectRagUseCase;
+  readonly ingest: IngestDocumentUseCase;
 }
 
 export function parseOrigins(raw: string): string | string[] {
@@ -62,7 +64,7 @@ export function createApp(deps: HttpDeps): Express {
   const auth = authenticate(deps.config);
   app.use("/events", auth, sseRouter());
   app.use("/reviews", auth, reviewsRouter(deps.orchestrator, deps.counselGate));
-  app.use("/api/contracts", auth, contractsRouter(deps.catalog));
+  app.use("/api/contracts", auth, contractsRouter(deps.catalog, deps.ingest, { maxUploadBytes: deps.config.maxUploadBytes }));
   app.use("/api/chat", auth, chatRouter(deps.rag));
   app.use(
     "/api/workflow",

@@ -69,3 +69,30 @@ export class RunCancelledError extends Error {
     this.name = "RunCancelledError";
   }
 }
+
+export class UnsupportedDocumentError extends Error {
+  readonly code = "UNSUPPORTED_DOCUMENT";
+
+  constructor(fileName: string) {
+    super(`${fileName}: only PDF, DOCX, TXT and MD files are supported.`);
+    this.name = "UnsupportedDocumentError";
+  }
+}
+
+export class UnreadableDocumentError extends Error {
+  readonly code = "UNREADABLE_DOCUMENT";
+
+  constructor(fileName: string, detail: string) {
+    super(`${fileName}: ${detail}`);
+    this.name = "UnreadableDocumentError";
+  }
+}
+
+export class DocumentTooLargeError extends Error {
+  readonly code = "DOCUMENT_TOO_LARGE";
+
+  constructor(chars: number, max: number) {
+    super(`Extracted text has ${chars} characters; the limit is ${max}.`);
+    this.name = "DocumentTooLargeError";
+  }
+}
