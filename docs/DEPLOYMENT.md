@@ -37,7 +37,10 @@ Railway or Fly work the same way: build `server/Dockerfile` from the repository 
 from `PORT`, set the variables above.
 
 **Free-tier caveats.** Render's free instances sleep after ~15 minutes idle; the first request then takes
-about a minute. Runs, approvals and uploads are in memory, so a restart or redeploy clears them.
+about a minute. Runs, approvals, the audit trail and uploads live in SQLite at `/app/data/runtime/app.db`.
+On Render's free tier the disk is ephemeral, so a redeploy still clears them; attach a persistent disk
+(paid) mounted at `/app/data/runtime` to keep them. Runs that were mid-pipeline when the process stopped
+are marked FAILED on startup; runs waiting for Counsel are kept and can still be approved.
 
 ## 2. Point `vercel.json` at the API
 

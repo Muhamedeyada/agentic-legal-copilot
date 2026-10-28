@@ -27,7 +27,7 @@ This product is a **governed copilot**, not an autonomous lawyer. It extracts, r
 - Draft a bilingual review memo that is **issued only after Counsel approval**.
 - Present Arabic UI in RTL (`document.documentElement.dir`).
 - Stream agent progress over SSE.
-- Keep an in-memory audit trail of agent steps and human gates (Trace drawer).
+- Keep a durable audit trail of agent steps and human gates (SQLite; Trace drawer).
 - Re-run a bilingual golden set without a paid API (`npm run eval`).
 
 ### Non-goals (this assessment / MVP)
@@ -66,7 +66,7 @@ This product is a **governed copilot**, not an autonomous lawyer. It extracts, r
 | BR-09 | Cite contract spans and corpus chunks; refuse uncited legal claims | Must | RAG min-score + eval groundedness |
 | BR-10 | Swap LLM/embedding providers without changing domain logic | Must | Ports + factory; hosted and local OpenAI-compatible HTTP adapters |
 | BR-11 | Local / offline fallback when hosted provider is unavailable | Should | Empty key → mock; agents use rules |
-| BR-12 | Audit log of agent I/O and approval events | Must | **Partial:** in-memory `run.traces` + SSE + Trace UI; no durable store |
+| BR-12 | Audit log of agent I/O and approval events | Must | SQLite: `run_traces` per step/tool call, `approval_audit` append-only per Counsel decision; SSE + Trace UI |
 | BR-13 | Evaluation harness against ≥25 bilingual Q/A pairs | Must | 28-item gold set; EN/AR/XL sliced |
 | BR-14 | Never persist raw personal data in git or logs | Must | Synthetic corpus; `redactPii`; `.gitignore` on `.env` |
 | BR-15 | Stream review progress to the client via SSE | Should | `/api/workflow/stream/:runId` |
@@ -99,7 +99,7 @@ This product is a **governed copilot**, not an autonomous lawyer. It extracts, r
 | BR-09 | Citations / refuse | G-10 | DirectRag / CorpusRag | LLM09 | Groundedness + G-21…G-24 | **Complete** |
 | BR-10 | Provider ports | G-13 | ADR-0002 | LLM03 | Eval uses mock | **Complete** |
 | BR-11 | Offline fallback | G-13 | Factory → mock | — | `npm run eval` | **Complete** |
-| BR-12 | Audit / traces | G-14 | `run.traces`, SSE | A09 | Trace UI | **Partial** (in-memory) |
+| BR-12 | Audit / traces | G-14 | `run_traces`, `approval_audit` (SQLite), SSE | A09 | Trace UI, restart tests | **Complete** |
 | BR-13 | Golden eval | G-15 | `run_eval.ts` | LLM09 | `EVALUATION.md` | **Complete** |
 | BR-14 | No secrets / PII | G-06 | `.gitignore`, redact | A02, LLM02 | Synthetic gold | **Complete** |
 | BR-15 | SSE progress | G-03 | Event bus | — | Streaming tests | **Complete** |
@@ -112,7 +112,7 @@ This product is a **governed copilot**, not an autonomous lawyer. It extracts, r
 | Semantic dense retrieval | BM25 + RRF ship with a hashed embedding that mostly echoes lexical signal | Plug a multilingual `EmbeddingPort` adapter and calibrate a dense floor |
 | Hosted completion HTTP | Classroom must not require a key | Wire SDK only in `infrastructure/llm/hosted.adapter.ts` |
 | Production auth / roles | Demo is local; `DEMO_API_TOKEN` unused | Token middleware + Counsel vs Paralegal |
-| Durable audit / OTel | In-memory traces suffice for the 5-minute demo | SQLite audit table + redacted export |
+| OTel / redacted audit export | Audit is durable in SQLite but has no export or retention policy | OTel exporter + redacted export |
 
 ---
 

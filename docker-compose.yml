@@ -25,6 +25,7 @@ services:
       COUNSEL_TOKEN: ${COUNSEL_TOKEN:-demo-counsel-token}
     volumes:
       - ./data/corpus:/app/data/corpus:ro
+      - app-data:/app/data/runtime
 
   web:
     build:
@@ -40,3 +41,6 @@ services:
     depends_on:
       api:
         condition: service_healthy
+
+volumes:
+  app-data:

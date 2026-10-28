@@ -15,6 +15,8 @@ const FORBIDDEN = [
   /from\s+["']@qdrant\//,
   /from\s+["']chromadb["']/,
   /from\s+["']dotenv["']/,
+  /from\s+["']better-sqlite3["']/,
+  /from\s+["']node:sqlite["']/,
   /from\s+["'].*presentation\//,
   /from\s+["'].*infrastructure\//,
 ];
