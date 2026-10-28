@@ -20,7 +20,7 @@ export interface ToolDefinition<I, O> {
 const ALLOWLIST: Record<AgentId, readonly ToolName[]> = {
   clause_extractor: ["retrieval_tool"],
   risk_assessor: ["retrieval_tool", "clause_comparison_tool", "risk_calculator_tool"],
-  memo_drafter: ["retrieval_tool", "save_draft_memo_tool"],
+  memo_drafter: ["retrieval_tool", "clause_comparison_tool", "save_draft_memo_tool"],
 };
 
 export type ToolTraceListener = (event: {
