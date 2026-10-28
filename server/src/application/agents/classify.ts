@@ -61,12 +61,7 @@ const CUES: readonly Cue[] = [
 const STANDARD_HEADING =
   /\b(liability|indemnity|termination|governing\s+law|jurisdiction|payment|intellectual|confidential|بند|المادة|مسؤول|تعويض|إنهاء|القانون|دفع|ملكية|سرية)/i;
 
-/**
- * Terms that *name* a family. Stricter than CUES: CUES only route a clause to a playbook clause,
- * while these decide whether a mandatory family is present, so loose words such as "damages",
- * "notice", "licence" or التعويض الاتفاقي (liquidated damages) are left out.
- * Patterns run on `normalizeArabic` output (lower-case, أ/إ/آ → ا, ة → ه, ى → ي).
- */
+/** High-precision naming patterns matched against normalized text to detect mandatory families. */
 const NAMING_CUES: readonly Cue[] = [
   { category: "liability", patterns: [/\bliabilit(?:y|ies)\b/, /مسؤوليه|مسئوليه/] },
   {
@@ -161,7 +156,7 @@ export function evidencedFamilies(heading: string, text: string): ClauseCategory
 const CARVE_OUT_SCOPE =
   "(?:fraud(?:ulent)?|wil+ful|deliberate|gross(?:ly)?\\s+negligen\\w*|death|personal\\s+injury|الاحتيال|الغش|سوء\\s+النيه|العمد|الاهمال\\s+الجسيم|الوفاه)";
 
-// `(?:cap|limit)\b` so "without limiting any other remedy" is not read as "without limit".
+// Word-boundary cap prevents matching "without limiting other remedies".
 const UNLIMITED =
   /\bunlimited\b|\buncapped\b|without\s+(?:any\s+)?(?:monetary\s+)?(?:cap|limit)\b|not\s+(?:be\s+)?subject\s+to\s+any\s+(?:monetary\s+)?(?:cap|limit)\b|بلا\s+سقف|دون\s+سقف|دون\s+حد\s+اقصي|غير\s+محدود/;
 

@@ -58,25 +58,37 @@ interface WireReply {
   readonly usage?: WireUsage;
 }
 
+type Mutable<T> = { -readonly [K in keyof T]?: T[K] };
+type MutableCompletionResult = Mutable<CompletionResult> & {
+  text: string;
+  providerId: string;
+  model: string;
+  usage: CompletionResult["usage"];
+};
+type MutableWireReply = Mutable<WireReply> & {
+  content: string;
+  toolCalls: readonly WireToolCall[];
+};
+type MutableWireToolCall = Mutable<WireToolCall>;
+
 const MAX_RETRY_DELAY_MS = 5_000;
 
 function toWireTurn(turn: ConversationTurn): Record<string, unknown> {
   if (turn.role === "tool") {
     return { role: "tool", tool_call_id: turn.toolCallId, content: turn.content };
   }
-  return {
+  const assistantTurn: Record<string, unknown> = {
     role: "assistant",
     content: turn.content.length > 0 ? turn.content : null,
-    ...(turn.toolCalls.length > 0
-      ? {
-          tool_calls: turn.toolCalls.map((c) => ({
-            id: c.id,
-            type: "function",
-            function: { name: c.name, arguments: c.arguments },
-          })),
-        }
-      : {}),
   };
+  if (turn.toolCalls.length > 0) {
+    assistantTurn.tool_calls = turn.toolCalls.map((c) => ({
+      id: c.id,
+      type: "function",
+      function: { name: c.name, arguments: c.arguments },
+    }));
+  }
+  return assistantTurn;
 }
 
 function fromWireToolCalls(calls: readonly WireToolCall[] | undefined): ToolCallRequest[] {
@@ -107,7 +119,7 @@ export async function chatComplete(endpoint: ChatEndpoint, input: CompletionRequ
   const doFetch = endpoint.fetchImpl ?? fetch;
   const url = `${endpoint.baseUrl.replace(/\/+$/, "")}/chat/completions`;
   const tools = input.tools ?? [];
-  const body = JSON.stringify({
+  const payload: Record<string, unknown> = {
     model: endpoint.model,
     temperature: 0,
     messages: [
@@ -115,20 +127,24 @@ export async function chatComplete(endpoint: ChatEndpoint, input: CompletionRequ
       { role: "user", content: input.user },
       ...(input.history ?? []).map(toWireTurn),
     ],
-    ...(tools.length > 0
-      ? {
-          tools: tools.map((t) => ({
-            type: "function",
-            function: { name: t.name, description: t.description, parameters: t.parameters },
-          })),
-          tool_choice: "auto",
-        }
-      : input.jsonSchemaName
-        ? { response_format: { type: "json_object" } }
-        : {}),
-    ...(endpoint.maxTokens ? { max_tokens: endpoint.maxTokens } : {}),
-    ...(input.onTextDelta ? { stream: true, stream_options: { include_usage: true } } : {}),
-  });
+  };
+  if (tools.length > 0) {
+    payload.tools = tools.map((t) => ({
+      type: "function",
+      function: { name: t.name, description: t.description, parameters: t.parameters },
+    }));
+    payload.tool_choice = "auto";
+  } else if (input.jsonSchemaName) {
+    payload.response_format = { type: "json_object" };
+  }
+  if (endpoint.maxTokens) {
+    payload.max_tokens = endpoint.maxTokens;
+  }
+  if (input.onTextDelta) {
+    payload.stream = true;
+    payload.stream_options = { include_usage: true };
+  }
+  const body = JSON.stringify(payload);
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   if (endpoint.apiKey) {
     headers.Authorization = `Bearer ${endpoint.apiKey}`;
@@ -181,7 +197,7 @@ export async function chatComplete(endpoint: ChatEndpoint, input: CompletionRequ
     }
     const prompt = data.usage?.prompt_tokens;
     const completion = data.usage?.completion_tokens;
-    return {
+    const result: MutableCompletionResult = {
       text,
       providerId: endpoint.providerId,
       model: data.model ?? endpoint.model,
@@ -189,21 +205,24 @@ export async function chatComplete(endpoint: ChatEndpoint, input: CompletionRequ
         promptTokens: typeof prompt === "number" ? prompt : Math.ceil(requestChars(input) / 4),
         completionTokens: typeof completion === "number" ? completion : estimateTokens(text),
       },
-      ...(toolCalls.length > 0 ? { toolCalls } : {}),
     };
+    if (toolCalls.length > 0) {
+      result.toolCalls = toolCalls;
+    }
+    return result as CompletionResult;
   }
 
   function readJson(data: ChatCompletionResponse): WireReply {
     const message = data.choices?.[0]?.message;
     const content = typeof message?.content === "string" ? message.content : "";
-    // A server that ignored `stream: true` still gets its text shown once.
     if (content.length > 0) input.onTextDelta?.(content);
-    return {
-      ...(data.model ? { model: data.model } : {}),
+    const reply: MutableWireReply = {
       content,
       toolCalls: message?.tool_calls ?? [],
-      ...(data.usage ? { usage: data.usage } : {}),
     };
+    if (data.model) reply.model = data.model;
+    if (data.usage) reply.usage = data.usage;
+    return reply;
   }
 
   /**
@@ -275,17 +294,23 @@ export async function chatComplete(endpoint: ChatEndpoint, input: CompletionRequ
       reader.releaseLock();
     }
 
-    return {
-      ...(model ? { model } : {}),
-      content,
-      toolCalls: [...calls.entries()]
-        .sort(([a], [b]) => a - b)
-        .map(([, c]) => ({
-          ...(c.id ? { id: c.id } : {}),
-          ...(c.type ? { type: c.type } : {}),
+    const toolCalls: WireToolCall[] = [...calls.entries()]
+      .sort(([a], [b]) => a - b)
+      .map(([, c]) => {
+        const call: MutableWireToolCall = {
           function: { name: c.name, arguments: c.arguments },
-        })),
-      ...(usage ? { usage } : {}),
+        };
+        if (c.id) call.id = c.id;
+        if (c.type) call.type = c.type;
+        return call;
+      });
+
+    const reply: MutableWireReply = {
+      content,
+      toolCalls,
     };
+    if (model) reply.model = model;
+    if (usage) reply.usage = usage;
+    return reply;
   }
 }

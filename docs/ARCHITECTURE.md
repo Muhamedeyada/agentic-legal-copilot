@@ -112,7 +112,7 @@ sequenceDiagram
   actor Counsel
   participant UI as React client
   participant API as Express presentation
-  participant Orch as ReviewOrchestrator
+  participant Orch as LegalWorkflowOrchestrator
   participant Gate as ApprovalPort
   participant Memo as Memo Drafter
 
@@ -184,7 +184,7 @@ Keep ADRs short: context, decision, consequences. Four records are required for 
 | --- | --- |
 | Status | Accepted |
 | Context | Unbounded “one agent with tools” is hard to evaluate and easy to over-act. |
-| Decision | Clause Extractor, Risk Assessor, Memo Drafter, coordinated by `ReviewOrchestrator` via typed schemas. Memo drafting and side effects require Counsel approval (`ApprovalRequiredError` → HTTP 403). |
+| Decision | Clause Extractor, Risk Assessor, Memo Drafter, coordinated by `LegalWorkflowOrchestrator` via typed schemas. Memo drafting and side effects require Counsel approval (`ApprovalRequiredError` → HTTP 403). |
 | Consequences | More hops per review; clear eval surfaces per agent; no silent exports. |
 
 ### ADR-0004 — Bilingual AR+EN with RTL presentation and cross-lingual retrieval

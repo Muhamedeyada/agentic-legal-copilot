@@ -12,7 +12,7 @@ import type { PlaybookPort } from "../domain/ports/playbook.port.js";
 import type { RunStorePort } from "../domain/ports/run-store.port.js";
 import type { ApprovalPort } from "../domain/ports/approval.port.js";
 import type { EmbeddingPort } from "../domain/ports/embedding.port.js";
-import type { RunTraceEvent, TokenUsage, WorkflowRun, WorkflowState } from "../domain/entities/workflow.js";
+import type { AgentId, RunTraceEvent, TokenUsage, WorkflowRun, WorkflowState } from "../domain/entities/workflow.js";
 import { assertTransition } from "../domain/workflow/transitions.js";
 import type { DraftMemoInput, ExtractClausesInput, AssessRiskInput } from "./dto.js";
 import type { ClauseExtractorOutput, MemoDrafterOutput, RiskAssessorOutput } from "./agents/contracts.js";
@@ -227,16 +227,7 @@ export class LegalWorkflowOrchestrator {
   private async execute(run: WorkflowRun, signal?: AbortSignal): Promise<void> {
     await runAls.run(run, async () => {
       try {
-        this.throwIfAborted(run, signal);
-        await this.transition(run, "EXTRACTING");
-        this.emit({
-          type: "AGENT_START",
-          runId: run.runId,
-          at: new Date().toISOString(),
-          agentId: "clause_extractor",
-          step: "EXTRACTING",
-        });
-        await this.step(run, "EXTRACTING", "clause_extractor", signal, async () => {
+        await this.executeAgentStep(run, "EXTRACTING", "clause_extractor", signal, async () => {
           const { output, tokenUsage, usedLlm, provider } = await this.extractor.run(
             { contractId: run.contractId, text: run.contractText },
             { runId: run.runId, agentId: "clause_extractor", state: "EXTRACTING" },
@@ -254,16 +245,7 @@ export class LegalWorkflowOrchestrator {
           return { summary: { clauses: output.clauses.length, usedLlm, provider }, tokenUsage };
         });
 
-        this.throwIfAborted(run, signal);
-        await this.transition(run, "ASSESSING");
-        this.emit({
-          type: "AGENT_START",
-          runId: run.runId,
-          at: new Date().toISOString(),
-          agentId: "risk_assessor",
-          step: "ASSESSING",
-        });
-        await this.step(run, "ASSESSING", "risk_assessor", signal, async () => {
+        await this.executeAgentStep(run, "ASSESSING", "risk_assessor", signal, async () => {
           const { output, tokenUsage, provider } = await this.assessor.run(
             { contractId: run.contractId, language: run.language, clauses: run.clauses },
             { runId: run.runId, agentId: "risk_assessor", state: "ASSESSING" },
@@ -288,15 +270,6 @@ export class LegalWorkflowOrchestrator {
           };
         });
 
-        this.throwIfAborted(run, signal);
-        await this.transition(run, "DRAFTING");
-        this.emit({
-          type: "AGENT_START",
-          runId: run.runId,
-          at: new Date().toISOString(),
-          agentId: "memo_drafter",
-          step: "DRAFTING",
-        });
         let memoStreamed = false;
         const resetMemoStream = (): void => {
           memoStreamed = false;
@@ -310,7 +283,7 @@ export class LegalWorkflowOrchestrator {
             reset: true,
           });
         };
-        await this.step(run, "DRAFTING", "memo_drafter", signal, async () => {
+        await this.executeAgentStep(run, "DRAFTING", "memo_drafter", signal, async () => {
           if (memoStreamed) resetMemoStream();
           const { output, tokenUsage, usedLlm, provider, iterations, toolSteps, fallbackReason } = await this.drafter.run(
             {
@@ -338,18 +311,18 @@ export class LegalWorkflowOrchestrator {
           );
           run.memo = output.memo;
           run.tokenUsage = addUsage(run.tokenUsage, tokenUsage);
-          return {
-            summary: {
-              memoId: output.memo.id,
-              usedLlm,
-              provider,
-              reactIterations: iterations,
-              toolCalls: toolSteps.map((t) => (t.ok ? t.tool : `${t.tool}:rejected`)),
-              ...(fallbackReason ? { fallbackReason } : {}),
-              citations: output.memo.citations.map((c) => c.id),
-            },
-            tokenUsage,
+          const summary: Record<string, unknown> = {
+            memoId: output.memo.id,
+            usedLlm,
+            provider,
+            reactIterations: iterations,
+            toolCalls: toolSteps.map((t) => (t.ok ? t.tool : `${t.tool}:rejected`)),
+            citations: output.memo.citations.map((c) => c.id),
           };
+          if (fallbackReason) {
+            summary.fallbackReason = fallbackReason;
+          }
+          return { summary, tokenUsage };
         });
 
         this.throwIfAborted(run, signal);
@@ -467,10 +440,26 @@ export class LegalWorkflowOrchestrator {
     }
   }
 
+  private async executeAgentStep(
+    run: WorkflowRun,
+    step: WorkflowState,
+    agentId: AgentId,
+    signal: AbortSignal | undefined,
+    action: () => Promise<{ summary: unknown; tokenUsage: TokenUsage }>,
+  ): Promise<void> {
+    this.throwIfAborted(run, signal);
+    await this.transition(run, step);
+    this.emit({
+      type: "AGENT_START",
+      runId: run.runId,
+      at: new Date().toISOString(),
+      agentId,
+      step,
+    });
+    await this.step(run, step, agentId, signal, action);
+  }
+
   private trace(run: WorkflowRun, event: RunTraceEvent): void {
     run.traces.push(event);
   }
 }
-
-/** @deprecated Alias of `LegalWorkflowOrchestrator`; only re-exported from `application/index.ts`. */
-export { LegalWorkflowOrchestrator as ReviewOrchestrator };

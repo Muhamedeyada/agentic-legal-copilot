@@ -1,14 +1,10 @@
 import { Router } from "express";
-import {
-  ApprovalRequiredError,
-  InvalidStateTransitionError,
-  RunNotFoundError,
-  SchemaViolationError,
-} from "../../../domain/errors.js";
+import { ApprovalRequiredError, RunNotFoundError } from "../../../domain/errors.js";
 import type { LegalWorkflowOrchestrator } from "../../../application/orchestrator.js";
 import type { CounselApprovalUseCase } from "../../../application/hitl/counsel-approval.js";
 import { runSnapshot } from "../snapshot.js";
 import { counselId, requireCounsel } from "../middleware/auth.js";
+import { parseEditedMemo, sendHitlError } from "../middleware/hitl-error.js";
 
 export function reviewsRouter(
   orchestrator: LegalWorkflowOrchestrator,
@@ -69,10 +65,7 @@ export function reviewsRouter(
 
   router.post("/runs/:runId/edit-approve", requireCounsel, async (req, res) => {
     try {
-      const editedMemo = {
-        ...(typeof req.body?.bodyEn === "string" ? { bodyEn: req.body.bodyEn as string } : {}),
-        ...(typeof req.body?.bodyAr === "string" ? { bodyAr: req.body.bodyAr as string } : {}),
-      };
+      const editedMemo = parseEditedMemo(req.body);
       const run = await counselGate.editAndApproveRun(String(req.params.runId), editedMemo, counselId(req));
       res.json(runSnapshot(run));
     } catch (err) {
@@ -105,21 +98,4 @@ export function reviewsRouter(
   });
 
   return router;
-}
-
-function sendHitlError(res: import("express").Response, err: unknown): void {
-  if (err instanceof RunNotFoundError) {
-    res.status(404).json({ error: err.code, message: err.message });
-    return;
-  }
-  if (err instanceof InvalidStateTransitionError || err instanceof ApprovalRequiredError) {
-    res.status(409).json({ error: err.code, message: err.message });
-    return;
-  }
-  if (err instanceof SchemaViolationError) {
-    res.status(400).json({ error: err.code, message: err.message });
-    return;
-  }
-  const message = err instanceof Error ? err.message : "unknown-error";
-  res.status(400).json({ error: "HITL_FAILED", message });
 }

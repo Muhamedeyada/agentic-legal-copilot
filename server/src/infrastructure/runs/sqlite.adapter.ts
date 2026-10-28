@@ -160,18 +160,21 @@ function fromRow(row: RunRow, traces: TraceRow[]): WorkflowRun {
   };
 }
 
+type MutableTraceEvent = { -readonly [K in keyof RunTraceEvent]?: RunTraceEvent[K] };
+
 function fromTraceRow(row: TraceRow): RunTraceEvent {
-  return {
+  const event: MutableTraceEvent = {
     at: row.at,
     step: row.step,
     latencyMs: row.latency_ms,
     input: JSON.parse(row.input) as unknown,
     output: JSON.parse(row.output) as unknown,
-    ...(row.agent_id ? { agentId: row.agent_id } : {}),
-    ...(row.tool_name ? { toolName: row.tool_name } : {}),
-    ...(row.prompt_tokens !== null && row.completion_tokens !== null
-      ? { tokenUsage: { promptTokens: row.prompt_tokens, completionTokens: row.completion_tokens } }
-      : {}),
-    ...(row.error ? { error: row.error } : {}),
   };
+  if (row.agent_id) event.agentId = row.agent_id;
+  if (row.tool_name) event.toolName = row.tool_name;
+  if (row.prompt_tokens !== null && row.completion_tokens !== null) {
+    event.tokenUsage = { promptTokens: row.prompt_tokens, completionTokens: row.completion_tokens };
+  }
+  if (row.error) event.error = row.error;
+  return event as RunTraceEvent;
 }

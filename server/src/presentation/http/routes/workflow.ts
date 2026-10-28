@@ -1,11 +1,6 @@
 import type { Response } from "express";
 import { Router } from "express";
-import {
-  ApprovalRequiredError,
-  InvalidStateTransitionError,
-  RunNotFoundError,
-  SchemaViolationError,
-} from "../../../domain/errors.js";
+import { RunNotFoundError } from "../../../domain/errors.js";
 import type { LegalWorkflowOrchestrator } from "../../../application/orchestrator.js";
 import type { CounselApprovalUseCase } from "../../../application/hitl/counsel-approval.js";
 import type { RunEventBus } from "../../../application/orchestration/event-bus.js";
@@ -13,6 +8,7 @@ import type { ContractCatalogPort } from "../../../domain/ports/contract-catalog
 import type { WorkflowStreamEvent } from "../../../application/orchestration/events.js";
 import { runSnapshot } from "../snapshot.js";
 import { counselId, requireCounsel } from "../middleware/auth.js";
+import { parseEditedMemo, sendHitlError } from "../middleware/hitl-error.js";
 
 function writeSse(res: Response, event: WorkflowStreamEvent | { type: "ping"; at: number }): void {
   res.write(`event: ${event.type}\ndata: ${JSON.stringify(event)}\n\n`);
@@ -172,11 +168,7 @@ export function workflowRouter(deps: {
       return;
     }
     try {
-      const editedMemo = {
-        ...(typeof req.body?.bodyEn === "string" ? { bodyEn: req.body.bodyEn as string } : {}),
-        ...(typeof req.body?.bodyAr === "string" ? { bodyAr: req.body.bodyAr as string } : {}),
-        ...(typeof req.body?.editedMemo === "string" ? { bodyEn: req.body.editedMemo as string } : {}),
-      };
+      const editedMemo = parseEditedMemo(req.body);
       const run = await deps.counselGate.editAndApproveRun(
         runId,
         editedMemo,
@@ -189,21 +181,4 @@ export function workflowRouter(deps: {
   });
 
   return router;
-}
-
-function sendHitlError(res: Response, err: unknown): void {
-  if (err instanceof RunNotFoundError) {
-    res.status(404).json({ error: err.code, message: err.message });
-    return;
-  }
-  if (err instanceof InvalidStateTransitionError || err instanceof ApprovalRequiredError) {
-    res.status(409).json({ error: err.code, message: err.message });
-    return;
-  }
-  if (err instanceof SchemaViolationError) {
-    res.status(400).json({ error: err.code, message: err.message });
-    return;
-  }
-  const message = err instanceof Error ? err.message : "unknown-error";
-  res.status(400).json({ error: "HITL_FAILED", message });
 }

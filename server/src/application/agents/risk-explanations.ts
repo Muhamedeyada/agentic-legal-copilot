@@ -138,7 +138,7 @@ const EN_GRANT =
 const EN_MUTUAL = /\b(?:either|each|any|both)\s+(?:of\s+the\s+)?part(?:y|ies)\b|\bthe\s+parties\b|\b(?:or|and)\b/;
 const EN_NOT_A_PARTY = /\b(?:agreement|contract|order|statement\s+of\s+work|it|which)\s*$/;
 const AR_GRANT = /(?:يجوز|يحق)\s+(ل\S+(?:\s+\S+){0,3}?)\s+(?:انهاء|الانهاء|انهاوه|انهاءه|فسخ)/g;
-// JS `\b` is ASCII-only, so Arabic word ends use a lookahead.
+// Arabic word-boundary lookahead.
 const AR_MUTUAL = /^(?:لاي|لكل|للطرفين|لكلا)(?=\s|$)|\s(?:او\s+|و)ل/;
 
 function singlePartyGrants(text: string): Set<string> {
