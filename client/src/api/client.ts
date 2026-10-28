@@ -5,7 +5,21 @@ import type {
   WorkflowSnapshot,
 } from "./types";
 
-const base = (import.meta.env.VITE_API_URL ?? "").trim().replace(/\/+$/, "");
+function resolveBaseUrl(): string {
+  const envUrl = (import.meta.env.VITE_API_URL ?? "").trim().replace(/\/+$/, "");
+
+  // In production, never assume or connect to localhost / 127.0.0.1; default to relative path ""
+  if (import.meta.env.PROD) {
+    if (!envUrl || envUrl.includes("localhost") || envUrl.includes("127.0.0.1")) {
+      return "";
+    }
+    return envUrl;
+  }
+
+  return envUrl;
+}
+
+const base = resolveBaseUrl();
 
 const analystToken = import.meta.env.VITE_API_TOKEN || "demo-analyst-token";
 const counselToken = import.meta.env.VITE_COUNSEL_TOKEN || "demo-counsel-token";
@@ -26,7 +40,11 @@ async function parseJson<T>(res: Response): Promise<T> {
 export async function fetchHealth(): Promise<boolean> {
   try {
     const res = await fetch(`${base}/api/health`);
-    return res.ok;
+    if (res.ok) {
+      return true;
+    }
+    const fallbackRes = await fetch(`${base}/health`);
+    return fallbackRes.ok;
   } catch {
     return false;
   }
